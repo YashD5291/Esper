@@ -10,6 +10,7 @@ final class ProcessBridge: @unchecked Sendable {
 
     private var eventContinuation: AsyncStream<ServerEvent>.Continuation?
     private(set) var isRunning = false
+    private var userInitiatedStop = false
 
     /// Async stream of events from the Python process.
     let events: AsyncStream<ServerEvent>
@@ -66,13 +67,13 @@ final class ProcessBridge: @unchecked Sendable {
 
         // Handle process termination
         let continuation = eventContinuation
+        userInitiatedStop = false
         proc.terminationHandler = { [weak self] process in
             DispatchQueue.main.async {
                 self?.isRunning = false
-                if process.terminationStatus != 0 {
-                    continuation?.yield(
-                        .error("Python process exited with code \(process.terminationStatus)")
-                    )
+                let code = process.terminationStatus
+                if code != 0, self?.userInitiatedStop != true {
+                    continuation?.yield(.crashed(code))
                 }
             }
         }
@@ -106,6 +107,7 @@ final class ProcessBridge: @unchecked Sendable {
     }
 
     func terminate() {
+        userInitiatedStop = true
         stdinPipe?.fileHandleForWriting.closeFile()
         process?.terminate()
         process = nil

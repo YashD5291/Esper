@@ -14,6 +14,7 @@ final class TranscriptionEngine {
     var draftText: String = ""
     var finalizedText: String = ""
     var errorMessage: String?
+    var telegramTestResult: TelegramTestResult?
 
     // Dependencies
     let bridge = ProcessBridge()
@@ -21,6 +22,10 @@ final class TranscriptionEngine {
 
     @ObservationIgnored
     private var eventTask: Task<Void, Never>?
+
+    @ObservationIgnored
+    private var restartAttempts = 0
+    private static let maxRestartAttempts = 3
 
     // MARK: - Lifecycle
 
@@ -88,6 +93,14 @@ final class TranscriptionEngine {
         }
     }
 
+    func testTelegram(botToken: String, chatId: String) {
+        telegramTestResult = nil
+        bridge.send(cmd: "test_telegram", data: [
+            "bot_token": botToken,
+            "chat_id": chatId,
+        ])
+    }
+
     func restart() {
         shutdown()
         Task { @MainActor [weak self] in
@@ -121,6 +134,9 @@ final class TranscriptionEngine {
             if newStatus == .idle {
                 energyLevel = 0.0
             }
+            if newStatus == .listening {
+                restartAttempts = 0
+            }
             errorMessage = nil
 
         case .transcript(let payload):
@@ -134,11 +150,40 @@ final class TranscriptionEngine {
         case .telegramSent:
             break
 
+        case .telegramTest(let success, let error):
+            telegramTestResult = TelegramTestResult(success: success, error: error)
+
+        case .crashed(let exitCode):
+            status = .idle
+            energyLevel = 0.0
+            if restartAttempts < Self.maxRestartAttempts {
+                restartAttempts += 1
+                errorMessage = "Python crashed (exit \(exitCode)). Restarting (\(restartAttempts)/\(Self.maxRestartAttempts))..."
+                Task { @MainActor [weak self] in
+                    try? await Task.sleep(for: .seconds(2))
+                    guard let self, self.restartAttempts <= Self.maxRestartAttempts else { return }
+                    self.restart()
+                }
+            } else {
+                errorMessage = "Python crashed repeatedly. Restart manually."
+            }
+
         case .error(let message):
-            errorMessage = message
+            errorMessage = Self.friendlyError(message)
 
         case .unknown:
             break
         }
+    }
+
+    private static func friendlyError(_ message: String) -> String {
+        let lower = message.lowercased()
+        if lower.contains("model not found") || lower.contains("no such file") && lower.contains("model") {
+            return "Model files missing. Run the download command from the README."
+        }
+        if lower.contains("no audio device") || lower.contains("no input device") || lower.contains("invalid device") {
+            return "No microphone detected. Check System Settings > Sound."
+        }
+        return message
     }
 }

@@ -56,7 +56,7 @@ struct MenuBarView: View {
         if let error = engine.errorMessage {
             Label(error, systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.red)
-                .lineLimit(2)
+                .lineLimit(3)
 
             Button("Restart") {
                 engine.restart()

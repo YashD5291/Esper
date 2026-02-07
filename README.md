@@ -151,7 +151,7 @@ The app runs as a **menu bar icon** (waveform circle). Click it for:
 - Input device picker
 - Open the main window (transcript view, audio level meter, settings)
 
-The app automatically finds the Python venv at `.venv/bin/python` and launches `python -m src.server` as a subprocess. Settings (engine, buffer size, Telegram config, paths) are configurable from the main window.
+The app automatically finds the Python venv at `.venv/bin/python` and launches `python -m src.server` as a subprocess. Settings (engine, buffer size, Telegram config, paths) are configurable from the main window. If the Python process crashes, the app auto-restarts it (up to 3 times). You can test your Telegram credentials directly from settings with the "Test Connection" button.
 
 ## Performance
 
@@ -176,7 +176,7 @@ src/
   coreml_transcriber.py    CoreML transcriber with TDT greedy decoding
   telegram_sender.py       Background Telegram sender with retry logic
   realtime_demo.py         CLI entry point (--engine, --telegram, --record)
-  server.py                Headless JSON server for SwiftUI app
+  server.py                Headless JSON server for SwiftUI app (structured logging to stderr)
 
 EsperApp/
   EsperApp.xcodeproj/      Xcode project (macOS 14+, no sandbox)
@@ -216,6 +216,7 @@ The SwiftUI app communicates with `src/server.py` via newline-delimited JSON ove
 | `start` | `{engine, device?, buffer?, telegram?}` | Load model, start capture + transcription |
 | `stop` | — | Shut down capture + transcriber |
 | `set_device` | `{device: int}` | Hot-swap audio input device |
+| `test_telegram` | `{bot_token, chat_id}` | Send a test message to Telegram |
 
 ### Events (Python -> Swift)
 
@@ -225,4 +226,5 @@ The SwiftUI app communicates with `src/server.py` via newline-delimited JSON ove
 | `status` | `"idle" / "loading_model" / "listening"` | State changes |
 | `transcript` | `{finalized_text, draft_text, finalized_sentences}` | Each transcription update |
 | `energy` | `{level: 0.0-1.0}` | ~10 Hz while listening |
+| `telegram_test` | `{success: bool, error?: string}` | After `test_telegram` |
 | `error` | `{message}` | On any error |

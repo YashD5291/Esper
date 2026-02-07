@@ -65,7 +65,7 @@ struct MainWindowView: View {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .font(.caption)
-                        .lineLimit(1)
+                        .lineLimit(3)
                         .help(error)
 
                     Button("Restart") {
@@ -90,8 +90,14 @@ struct MainWindowView: View {
             // Settings panel (collapsible)
             if showSettings {
                 Divider()
-                SettingsSection(settings: engine.settings)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                SettingsSection(
+                    settings: engine.settings,
+                    onTestTelegram: { botToken, chatId in
+                        engine.testTelegram(botToken: botToken, chatId: chatId)
+                    },
+                    telegramTestResult: engine.telegramTestResult
+                )
+                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
         .frame(minWidth: 420, minHeight: 400)

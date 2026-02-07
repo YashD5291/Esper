@@ -8,5 +8,6 @@ dist/
 build/
 models/
 .history
-EsperApp/.build/
-EsperApp/Package.swift
+.DS_Store
+*.xcuserstate
+xcuserdata/

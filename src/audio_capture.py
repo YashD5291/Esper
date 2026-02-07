@@ -1,11 +1,14 @@
 """Continuous microphone capture with queue-based chunk delivery."""
 
+import logging
 import math
 import queue
 import threading
 
 import numpy as np
 import sounddevice as sd
+
+log = logging.getLogger(__name__)
 
 SAMPLE_RATE = 16000
 CHANNELS = 1
@@ -106,7 +109,7 @@ class AudioCapture:
 
     def _callback(self, indata: np.ndarray, frames: int, time_info, status):
         if status:
-            pass  # xruns etc. — ignore in demo
+            log.warning("Audio stream status: %s", status)
         chunk = indata[:, 0].copy()  # (frames,) float32
         rms = math.sqrt(float(np.mean(chunk ** 2)))
         with self._lock:
