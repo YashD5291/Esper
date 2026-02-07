@@ -6,3 +6,7 @@ recordings/
 *.egg-info/
 dist/
 build/
+models/
+.history
+EsperApp/.build/
+EsperApp/Package.swift
