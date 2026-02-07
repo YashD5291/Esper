@@ -92,29 +92,49 @@ Voice-to-Telegram relay for macOS. Captures microphone audio, transcribes it in 
  └──────────┘     └──────────┘
 ```
 
-## Quick Start
+## Installation
+
+### One-Line Setup
+
+```bash
+git clone https://github.com/YOUR_USER/Esper.git
+cd Esper
+./setup.sh
+```
+
+The setup script checks prerequisites, creates a Python venv, installs dependencies, downloads CoreML models (~200MB), builds the SwiftUI app, and optionally copies it to `/Applications`.
+
+Use `./setup.sh --cli` to skip the Xcode build and set up CLI-only usage.
 
 ### Prerequisites
 
 - macOS 14+ (Sonoma or later)
-- Python 3.11 (via pyenv recommended — avoid 3.11.14 which is missing `_lzma`)
-- `ffmpeg` (install via `brew install ffmpeg`)
-- Xcode 15+ (only needed to build the SwiftUI app)
+- Python 3.11+ (via [pyenv](https://github.com/pyenv/pyenv) recommended — avoid 3.11.14 which is missing `_lzma`)
+- `ffmpeg` (`brew install ffmpeg` — the setup script installs this automatically if Homebrew is available)
+- Xcode 15+ (only needed for the SwiftUI menu bar app, not the CLI)
 
-### CLI Setup
+### Manual Setup
+
+If you prefer to set things up manually:
 
 ```bash
-# Create venv and install dependencies
-python -m venv .venv && source .venv/bin/activate
+# 1. Create venv and install dependencies
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Download CoreML models (~200MB)
+# 2. Download CoreML models (~200MB)
 python -c "from huggingface_hub import snapshot_download; snapshot_download('FluidInference/parakeet-tdt-0.6b-v3-coreml', local_dir='models/coreml')"
+
+# 3. (Optional) Build the SwiftUI app
+xcodebuild -project EsperApp/EsperApp.xcodeproj -scheme EsperApp -configuration Release build
 ```
 
-### CLI Usage
+## Usage
+
+### CLI
 
 ```bash
+source .venv/bin/activate
 python -m src.realtime_demo                    # CoreML on ANE (default)
 python -m src.realtime_demo --engine mlx       # MLX on GPU
 python -m src.realtime_demo --list-devices     # Show audio devices
@@ -133,17 +153,16 @@ TELEGRAM_BOT_TOKEN=your-bot-token-here
 TELEGRAM_CHAT_ID=your-chat-id-here
 ```
 
-Then run with `--telegram` flag.
+Then run with `--telegram` flag, or configure it in the app settings.
 
 ### SwiftUI App
 
-```bash
-# Build from command line
-cd EsperApp
-xcodebuild -project EsperApp.xcodeproj -scheme EsperApp -configuration Debug build
+After running `./setup.sh`, open EsperApp from `/Applications` or launch it from Xcode:
 
-# Or open in Xcode and hit Cmd+R
-open EsperApp/EsperApp.xcodeproj
+```bash
+open /Applications/EsperApp.app
+# or
+open EsperApp/EsperApp.xcodeproj   # Cmd+R to run
 ```
 
 The app runs as a **menu bar icon** (waveform circle). Click it for:
@@ -170,6 +189,9 @@ The app automatically finds the Python venv at `.venv/bin/python` and launches `
 ## Project Structure
 
 ```
+setup.sh                     One-line install script
+requirements.txt             Python dependencies
+
 src/
   audio_capture.py         Mic input via sounddevice (16kHz mono)
   transcriber.py           MLX streaming transcriber + TranscriptionUpdate dataclass
