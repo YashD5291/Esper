@@ -9,7 +9,7 @@ Voice-to-Telegram relay for macOS. Captures microphone audio, transcribes it in 
 │     SwiftUI App (EsperApp/)      │
 │                                  │
 │  MenuBarExtra ◄── quick controls │
-│  WindowGroup  ◄── full UI       │
+│  WindowGroup  ◄── full UI        │
 │       │                          │
 │  TranscriptionEngine             │
 │       │                          │
@@ -48,7 +48,7 @@ Voice-to-Telegram relay for macOS. Captures microphone audio, transcribes it in 
       │ np.ndarray chunks via thread-safe queue
       v
  +-----------+
- |Transcriber|─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
+ |Transcriber| ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐
  | (daemon   |                                       |
  |  thread)  |    CoreML engine       MLX engine     |
  +-----------+    (default)           (--engine mlx) |
@@ -61,7 +61,7 @@ Voice-to-Telegram relay for macOS. Captures microphone audio, transcribes it in 
       |               |             └──────┬──────┘  |
       |               v                    |         |
       |     ┌─────────────────┐            |         |
-      |     |   MelEncoder    |  ← ANE    |         |
+      |     |   MelEncoder    |  ← ANE     |         |
       |     | (fused mel +    |            |         |
       |     |  FastConformer) |            |         |
       |     └────────┬────────┘            |         |
@@ -81,8 +81,8 @@ Voice-to-Telegram relay for macOS. Captures microphone audio, transcribes it in 
       |     |  SentencePiece) |            |         |
       |     └────────┬────────┘            |         |
       |              |                     |         |
-      └──────────────┴─────────────────────┘         |
-      |                                    ─ ─ ─ ─ ─┘
+      └──────────────┴─────────────────────┘─ ─ ─ ─ ─┘         |
+      |                                    
       │ TranscriptionUpdate
       │ (finalized_text, draft_text, sentences)
       v
