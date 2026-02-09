@@ -2,11 +2,40 @@ import SwiftUI
 
 struct SettingsSection: View {
     @Bindable var settings: AppSettings
+    var devices: [AudioDevice] = []
+    var selectedDevice: Int?
+    var onSelectDevice: ((_ index: Int) -> Void)?
+    var onRefreshDevices: (() -> Void)?
     var onTestTelegram: ((_ botToken: String, _ chatId: String) -> Void)?
     var telegramTestResult: TelegramTestResult?
 
     var body: some View {
         Form {
+            // Input Device
+            Section("Input Device") {
+                HStack {
+                    Picker("Microphone", selection: Binding(
+                        get: { selectedDevice ?? -1 },
+                        set: { if $0 != -1 { onSelectDevice?($0) } }
+                    )) {
+                        if devices.isEmpty {
+                            Text("No devices").tag(-1)
+                        }
+                        ForEach(devices) { device in
+                            Text(device.name).tag(device.index)
+                        }
+                    }
+
+                    Button {
+                        onRefreshDevices?()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Refresh device list")
+                }
+            }
+
             // Engine
             Section("Engine") {
                 Picker("Backend", selection: $settings.engine) {

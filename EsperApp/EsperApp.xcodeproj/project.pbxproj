@@ -18,6 +18,7 @@
 		A100000009 /* AudioLevelMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009; };
 		A100000010 /* SettingsSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010; };
 		A100000011 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011; };
+		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		B100000009 /* AudioLevelMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLevelMeter.swift; sourceTree = "<group>"; };
 		B100000010 /* SettingsSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsSection.swift; sourceTree = "<group>"; };
 		B100000011 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
+		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -52,6 +54,7 @@
 				B100000003 /* TranscriptionEngine.swift */,
 				D100000003 /* Models */,
 				D100000004 /* Views */,
+				B100000012 /* Assets.xcassets */,
 			);
 			path = EsperApp;
 			sourceTree = "<group>";
@@ -95,6 +98,7 @@
 			buildPhases = (
 				E100000002 /* Sources */,
 				E100000003 /* Frameworks */,
+				E100000004 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -163,6 +167,17 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		E100000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100000012 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		F100000010 /* Debug */ = {
@@ -292,7 +307,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access for speech-to-text transcription.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -318,7 +333,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access for speech-to-text transcription.";
 				LD_RUNPATH_SEARCH_PATHS = (

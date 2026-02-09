@@ -92,6 +92,10 @@ struct MainWindowView: View {
                 Divider()
                 SettingsSection(
                     settings: engine.settings,
+                    devices: engine.devices,
+                    selectedDevice: engine.selectedDevice,
+                    onSelectDevice: { engine.setDevice($0) },
+                    onRefreshDevices: { engine.refreshDevices() },
                     onTestTelegram: { botToken, chatId in
                         engine.testTelegram(botToken: botToken, chatId: chatId)
                     },

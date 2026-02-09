@@ -93,6 +93,10 @@ final class TranscriptionEngine {
         }
     }
 
+    func refreshDevices() {
+        bridge.send(cmd: "list_devices")
+    }
+
     func testTelegram(botToken: String, chatId: String) {
         telegramTestResult = nil
         bridge.send(cmd: "test_telegram", data: [

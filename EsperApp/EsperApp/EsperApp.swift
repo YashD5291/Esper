@@ -3,6 +3,7 @@ import SwiftUI
 @main
 struct EsperApp: App {
     @State private var engine = TranscriptionEngine()
+    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         MenuBarExtra {
@@ -13,6 +14,9 @@ struct EsperApp: App {
 
         WindowGroup("Esper", id: "main") {
             MainWindowView(engine: engine)
+                .onAppear {
+                    NSApp.activate(ignoringOtherApps: true)
+                }
         }
         .defaultSize(width: 520, height: 640)
     }
@@ -21,6 +25,8 @@ struct EsperApp: App {
         // Launch Python process on app start
         DispatchQueue.main.async { [self] in
             engine.launch()
+            // Open the main window automatically on launch
+            openWindow(id: "main")
         }
     }
 }
