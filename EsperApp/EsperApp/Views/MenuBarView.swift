@@ -5,7 +5,6 @@ struct MenuBarView: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        // Status
         HStack {
             StatusBadge(status: engine.status)
             Text(engine.status.displayName)
@@ -14,7 +13,6 @@ struct MenuBarView: View {
 
         Divider()
 
-        // Start / Stop
         if engine.status == .listening {
             Button("Stop Listening") {
                 engine.stopListening()
@@ -30,7 +28,6 @@ struct MenuBarView: View {
 
         Divider()
 
-        // Device picker
         if !engine.devices.isEmpty {
             Text("Input Device")
                 .font(.caption)
@@ -52,7 +49,6 @@ struct MenuBarView: View {
             Divider()
         }
 
-        // Error display
         if let error = engine.errorMessage {
             Label(error, systemImage: "exclamationmark.triangle")
                 .foregroundStyle(.red)
@@ -65,12 +61,16 @@ struct MenuBarView: View {
             Divider()
         }
 
-        // Window / Quit
         Button("Open Window") {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
         }
         .keyboardShortcut("o")
+
+        SettingsLink {
+            Text("Settings...")
+        }
+        .keyboardShortcut(",")
 
         Button("Quit Esper") {
             engine.shutdown()
@@ -79,15 +79,5 @@ struct MenuBarView: View {
             }
         }
         .keyboardShortcut("q")
-    }
-}
-
-private extension EngineStatus {
-    var displayName: String {
-        switch self {
-        case .idle: "Idle"
-        case .loadingModel: "Loading Model"
-        case .listening: "Listening"
-        }
     }
 }

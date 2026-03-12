@@ -7,10 +7,9 @@ struct TranscriptView: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 6) {
+                LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(sentences.enumerated()), id: \.offset) { index, sentence in
                         Text(sentence.text)
-                            .foregroundStyle(.primary)
                             .textSelection(.enabled)
                             .id("sentence-\(index)")
                     }
@@ -22,18 +21,14 @@ struct TranscriptView: View {
                     }
 
                     if sentences.isEmpty && draftText.isEmpty {
-                        Text("Transcription will appear here...")
-                            .foregroundStyle(.tertiary)
-                            .italic()
+                        emptyState
                     }
 
-                    // Invisible anchor for scrolling
                     Color.clear
                         .frame(height: 1)
                         .id("bottom")
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(16)
             }
             .onChange(of: sentences.count) {
                 withAnimation(.easeOut(duration: 0.15)) {
@@ -44,5 +39,18 @@ struct TranscriptView: View {
                 proxy.scrollTo("bottom", anchor: .bottom)
             }
         }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "waveform")
+                .font(.system(size: 32))
+                .foregroundStyle(.quaternary)
+            Text("Transcription will appear here")
+                .font(.subheadline)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 60)
     }
 }

@@ -3,7 +3,6 @@ import SwiftUI
 struct AudioLevelMeter: View {
     let level: Double
 
-    // Scale up raw RMS (speech is typically 0.01-0.3)
     private var displayLevel: Double {
         min(level * 3.0, 1.0)
     }
@@ -21,17 +20,15 @@ struct AudioLevelMeter: View {
     var body: some View {
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                // Background track
-                RoundedRectangle(cornerRadius: 2)
+                RoundedRectangle(cornerRadius: 3)
                     .fill(.quaternary)
 
-                // Active level
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(meterColor)
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(meterColor.gradient)
                     .frame(width: geo.size.width * displayLevel)
                     .animation(.linear(duration: 0.08), value: displayLevel)
             }
         }
-        .frame(height: 4)
+        .frame(height: 6)
     }
 }

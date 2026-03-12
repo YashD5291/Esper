@@ -19,13 +19,15 @@ struct EsperApp: App {
                 }
         }
         .defaultSize(width: 520, height: 640)
+
+        Settings {
+            SettingsView(engine: engine)
+        }
     }
 
     init() {
-        // Launch Python process on app start
         DispatchQueue.main.async { [self] in
             engine.launch()
-            // Open the main window automatically on launch
             openWindow(id: "main")
         }
     }

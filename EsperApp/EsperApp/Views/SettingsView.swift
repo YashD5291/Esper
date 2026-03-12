@@ -1,17 +1,46 @@
 import SwiftUI
 
-struct SettingsSection: View {
+struct SettingsView: View {
+    let engine: TranscriptionEngine
+
+    var body: some View {
+        TabView {
+            GeneralTab(
+                settings: engine.settings,
+                devices: engine.devices,
+                selectedDevice: engine.selectedDevice,
+                onSelectDevice: { engine.setDevice($0) },
+                onRefreshDevices: { engine.refreshDevices() }
+            )
+            .tabItem { Label("General", systemImage: "gear") }
+
+            TelegramTab(
+                settings: engine.settings,
+                onTestTelegram: { botToken, chatId in
+                    engine.testTelegram(botToken: botToken, chatId: chatId)
+                },
+                telegramTestResult: engine.telegramTestResult
+            )
+            .tabItem { Label("Telegram", systemImage: "paperplane") }
+
+            AdvancedTab(settings: engine.settings)
+            .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
+        }
+        .frame(width: 460, height: 320)
+    }
+}
+
+// MARK: - General
+
+private struct GeneralTab: View {
     @Bindable var settings: AppSettings
-    var devices: [AudioDevice] = []
+    var devices: [AudioDevice]
     var selectedDevice: Int?
-    var onSelectDevice: ((_ index: Int) -> Void)?
+    var onSelectDevice: ((Int) -> Void)?
     var onRefreshDevices: (() -> Void)?
-    var onTestTelegram: ((_ botToken: String, _ chatId: String) -> Void)?
-    var telegramTestResult: TelegramTestResult?
 
     var body: some View {
         Form {
-            // Input Device
             Section("Input Device") {
                 HStack {
                     Picker("Microphone", selection: Binding(
@@ -36,14 +65,13 @@ struct SettingsSection: View {
                 }
             }
 
-            // Engine
             Section("Engine") {
                 Picker("Backend", selection: $settings.engine) {
                     Text("CoreML").tag("coreml")
                     Text("MLX").tag("mlx")
                 }
                 .pickerStyle(.segmented)
-                .help("CoreML runs on Apple Neural Engine (fastest). MLX runs on GPU (better sentence segmentation).")
+                .help("CoreML uses Apple Neural Engine (fastest). MLX uses GPU.")
 
                 if settings.engine == "coreml" {
                     HStack {
@@ -53,26 +81,40 @@ struct SettingsSection: View {
                             .monospacedDigit()
                             .frame(width: 36, alignment: .trailing)
                     }
-                    .help("Seconds of audio to accumulate before transcribing. Lower = faster but less context.")
+                    .help("Seconds of audio to buffer before transcribing. Lower = faster, less context.")
                 }
             }
+        }
+        .formStyle(.grouped)
+    }
+}
 
-            // Telegram
-            Section("Telegram") {
+// MARK: - Telegram
+
+private struct TelegramTab: View {
+    @Bindable var settings: AppSettings
+    var onTestTelegram: ((String, String) -> Void)?
+    var telegramTestResult: TelegramTestResult?
+
+    var body: some View {
+        Form {
+            Section {
                 Toggle("Send transcriptions to Telegram", isOn: $settings.telegramEnabled)
-                    .help("Send transcribed text to a Telegram chat in real time.")
+                    .help("Relay transcribed text to a Telegram chat in real time.")
+            }
 
-                if settings.telegramEnabled {
+            if settings.telegramEnabled {
+                Section("Credentials") {
                     TextField("Bot Token", text: $settings.telegramBotToken)
                         .textFieldStyle(.roundedBorder)
-                        .overlay(validationBorder(isValid: !settings.telegramBotToken.isEmpty))
                         .help("Create a bot via @BotFather on Telegram to get this token.")
 
                     TextField("Chat ID", text: $settings.telegramChatId)
                         .textFieldStyle(.roundedBorder)
-                        .overlay(validationBorder(isValid: !settings.telegramChatId.isEmpty))
-                        .help("The numeric ID of the Telegram chat to send messages to.")
+                        .help("Numeric ID of the Telegram chat to send messages to.")
+                }
 
+                Section {
                     HStack {
                         Button("Test Connection") {
                             onTestTelegram?(settings.telegramBotToken, settings.telegramChatId)
@@ -94,42 +136,42 @@ struct SettingsSection: View {
                     }
                 }
             }
+        }
+        .formStyle(.grouped)
+    }
+}
 
-            // Advanced
-            Section("Advanced") {
-                TextField("Python Path", text: $settings.pythonPath, prompt: Text(settings.resolvedPythonPath))
-                    .textFieldStyle(.roundedBorder)
-                    .overlay(pathValidationBorder(path: settings.resolvedPythonPath))
-                    .help("Path to the Python interpreter with Esper's dependencies installed.")
+// MARK: - Advanced
 
-                TextField("Project Directory", text: $settings.projectDir, prompt: Text(settings.resolvedProjectDir))
-                    .textFieldStyle(.roundedBorder)
-                    .overlay(pathValidationBorder(path: settings.resolvedProjectDir))
-                    .help("Root directory of the Esper project (where src/ lives).")
+private struct AdvancedTab: View {
+    @Bindable var settings: AppSettings
+
+    var body: some View {
+        Form {
+            Section("Paths") {
+                LabeledContent("Python") {
+                    TextField("", text: $settings.pythonPath, prompt: Text(settings.resolvedPythonPath))
+                        .textFieldStyle(.roundedBorder)
+                        .overlay(pathBorder(settings.resolvedPythonPath))
+                }
+                .help("Path to the Python interpreter with Esper's dependencies.")
+
+                LabeledContent("Project Dir") {
+                    TextField("", text: $settings.projectDir, prompt: Text(settings.resolvedProjectDir))
+                        .textFieldStyle(.roundedBorder)
+                        .overlay(pathBorder(settings.resolvedProjectDir))
+                }
+                .help("Root directory of the Esper project (where src/ lives).")
             }
         }
         .formStyle(.grouped)
-        .frame(maxHeight: 340)
     }
 
     @ViewBuilder
-    private func validationBorder(isValid: Bool) -> some View {
-        if !isValid {
-            RoundedRectangle(cornerRadius: 5)
-                .stroke(.red, lineWidth: 1)
-        }
-    }
-
-    @ViewBuilder
-    private func pathValidationBorder(path: String) -> some View {
+    private func pathBorder(_ path: String) -> some View {
         if !path.isEmpty && !FileManager.default.fileExists(atPath: path) {
             RoundedRectangle(cornerRadius: 5)
                 .stroke(.red, lineWidth: 1)
         }
     }
-}
-
-struct TelegramTestResult {
-    let success: Bool
-    let error: String?
 }

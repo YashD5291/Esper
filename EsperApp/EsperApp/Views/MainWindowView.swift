@@ -2,36 +2,17 @@ import SwiftUI
 
 struct MainWindowView: View {
     let engine: TranscriptionEngine
-    @State private var showSettings = false
 
     var body: some View {
         VStack(spacing: 0) {
-            // Top bar
-            HStack {
-                StatusBadge(status: engine.status)
-                Text(engine.status == .listening ? "Listening" : engine.status == .loadingModel ? "Loading..." : "Idle")
-                    .font(.headline)
+            headerBar
 
-                Spacer()
-
-                Text(engine.settings.engine.uppercased())
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(.quaternary)
-                    .clipShape(Capsule())
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-
-            // Audio level meter
             AudioLevelMeter(level: engine.energyLevel)
                 .padding(.horizontal, 16)
+                .padding(.bottom, 8)
 
             Divider()
-                .padding(.top, 8)
 
-            // Transcript
             TranscriptView(
                 sentences: engine.finalizedSentences,
                 draftText: engine.draftText
@@ -39,71 +20,109 @@ struct MainWindowView: View {
 
             Divider()
 
-            // Bottom bar
-            HStack {
-                if engine.status == .listening {
-                    Button("Stop") {
-                        engine.stopListening()
+            controlBar
+        }
+        .frame(minWidth: 480, minHeight: 420)
+    }
+
+    // MARK: - Header
+
+    private var headerBar: some View {
+        HStack(spacing: 10) {
+            StatusBadge(status: engine.status)
+
+            Text(engine.status.displayName)
+                .font(.headline)
+
+            Spacer()
+
+            if !engine.devices.isEmpty {
+                Picker(selection: Binding(
+                    get: { engine.selectedDevice ?? -1 },
+                    set: { if $0 != -1 { engine.setDevice($0) } }
+                )) {
+                    ForEach(engine.devices) { device in
+                        Text(device.name).tag(device.index)
                     }
-                    .buttonStyle(.bordered)
-                } else if engine.status == .idle {
-                    Button("Start") {
-                        engine.startListening()
-                    }
-                    .buttonStyle(.borderedProminent)
-                } else {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text("Loading model...")
-                        .foregroundStyle(.secondary)
+                } label: {
+                    Label("Input", systemImage: "mic")
                 }
+                .labelsHidden()
+                .fixedSize()
+            }
 
-                Spacer()
+            Text(engine.settings.engine.uppercased())
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(.quaternary)
+                .clipShape(Capsule())
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
 
-                // Error indicator
-                if let error = engine.errorMessage {
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.red)
+    // MARK: - Controls
+
+    private var controlBar: some View {
+        VStack(spacing: 8) {
+            Button {
+                if engine.status == .listening {
+                    engine.stopListening()
+                } else if engine.status == .idle {
+                    engine.startListening()
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    if engine.status == .loadingModel {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Label(buttonLabel, systemImage: buttonIcon)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .controlSize(.large)
+            .buttonStyle(.borderedProminent)
+            .tint(engine.status == .listening ? .red : .accentColor)
+            .disabled(engine.status == .loadingModel)
+
+            if let error = engine.errorMessage {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.yellow)
+                    Text(error)
                         .font(.caption)
-                        .lineLimit(3)
-                        .help(error)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+
+                    Spacer()
 
                     Button("Restart") {
                         engine.restart()
                     }
-                    .buttonStyle(.bordered)
                     .controlSize(.small)
                 }
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showSettings.toggle()
-                    }
-                } label: {
-                    Image(systemName: "gear")
-                }
-                .buttonStyle(.borderless)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-
-            // Settings panel (collapsible)
-            if showSettings {
-                Divider()
-                SettingsSection(
-                    settings: engine.settings,
-                    devices: engine.devices,
-                    selectedDevice: engine.selectedDevice,
-                    onSelectDevice: { engine.setDevice($0) },
-                    onRefreshDevices: { engine.refreshDevices() },
-                    onTestTelegram: { botToken, chatId in
-                        engine.testTelegram(botToken: botToken, chatId: chatId)
-                    },
-                    telegramTestResult: engine.telegramTestResult
-                )
-                .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
-        .frame(minWidth: 420, minHeight: 400)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    private var buttonLabel: String {
+        switch engine.status {
+        case .idle: "Start Listening"
+        case .loadingModel: "Loading Model..."
+        case .listening: "Stop Listening"
+        }
+    }
+
+    private var buttonIcon: String {
+        switch engine.status {
+        case .idle: "mic.fill"
+        case .loadingModel: "hourglass"
+        case .listening: "stop.fill"
+        }
     }
 }
