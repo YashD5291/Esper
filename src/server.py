@@ -141,7 +141,7 @@ def _load_model_with_timeout(engine: str, data: dict):
                 result[0] = CoreMLTranscriber(
                     models, vocab,
                     on_update=_on_update,
-                    buffer_seconds=data.get("buffer", 5.0),
+                    buffer_seconds=data.get("buffer", 1.5),
                 )
             else:
                 from .transcriber import StreamingTranscriber, load_model
@@ -185,8 +185,9 @@ def _do_start(data: dict):
         chat_id = telegram_cfg.get("chat_id", "")
         if bot_token and chat_id:
             from .telegram_sender import TelegramSender
-            _telegram_sender = TelegramSender(bot_token, chat_id)
-            log.info("Telegram sender configured")
+            stream = telegram_cfg.get("stream", True)
+            _telegram_sender = TelegramSender(bot_token, chat_id, stream=stream)
+            log.info("Telegram sender configured (stream=%s)", stream)
 
     # Load model
     _send("status", "loading_model")

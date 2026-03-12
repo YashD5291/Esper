@@ -1,8 +1,10 @@
-"""Queue-based Telegram sender for Esper.
+"""Streaming Telegram sender for Esper.
 
-Receives TranscriptionUpdate callbacks and sends only *new* finalized
-sentences to a Telegram chat via the Bot API.  Runs a background daemon
-thread so that HTTP calls never block the transcriber.
+Streams transcription to Telegram in real-time:
+  - sendMessageDraft: live-updates partial text as it's transcribed
+  - sendMessage: finalizes complete sentences as permanent messages
+
+Set stream=False for legacy sentence-by-sentence mode (no drafts).
 """
 
 from __future__ import annotations
@@ -18,54 +20,120 @@ from .transcriber import TranscriptionUpdate
 
 log = logging.getLogger(__name__)
 
-# Retry config
 _MAX_RETRIES = 3
-_BACKOFF_BASE = 1.0  # seconds; doubles each retry
+_BACKOFF_BASE = 1.0
+_DRAFT_INTERVAL = 0.5  # min seconds between draft updates
 
 
 class TelegramSender:
-    """Enqueue new sentences and POST them to Telegram in the background."""
+    """Stream transcription to Telegram via sendMessageDraft + sendMessage."""
 
-    def __init__(self, bot_token: str, chat_id: str):
-        self._url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    def __init__(self, bot_token: str, chat_id: str, *, stream: bool = True):
+        self._base_url = f"https://api.telegram.org/bot{bot_token}"
         self._chat_id = chat_id
-        self._send_queue: queue.Queue[str | None] = queue.Queue()
+        self._stream = stream
+        self._queue: queue.Queue[TranscriptionUpdate | str | None] = queue.Queue()
+
+        # Streaming state
+        self._processed_chars = 0
+        self._draft_buf = ""
+        self._draft_id = int(time.time()) & 0x7FFFFFFF or 1  # non-zero int32
+        self._last_draft_t = 0.0
+
+        # Legacy state (stream=False)
         self._prev_sentence_count = 0
+
         self._thread = threading.Thread(
-            target=self._sender_loop, daemon=True, name="telegram-sender"
+            target=self._loop, daemon=True, name="telegram-sender"
         )
         self._thread.start()
 
     # -- callback wired into the transcriber --
 
     def on_update(self, update: TranscriptionUpdate):
-        """Fast callback — just enqueues new sentences."""
-        sentences = update.finalized_sentences
-        new = sentences[self._prev_sentence_count:]
-        self._prev_sentence_count = len(sentences)
-        for s in new:
-            text = s.text.strip() if hasattr(s, "text") else ""
-            if text:
-                self._send_queue.put(text)
+        """Fast callback — enqueues update for background processing."""
+        if self._stream:
+            self._queue.put(update)
+        else:
+            sentences = update.finalized_sentences
+            new = sentences[self._prev_sentence_count :]
+            self._prev_sentence_count = len(sentences)
+            for s in new:
+                text = s.text.strip() if hasattr(s, "text") else ""
+                if text:
+                    self._queue.put(text)
 
     # -- background sender --
 
-    def _sender_loop(self):
+    def _loop(self):
         client = httpx.Client(timeout=10.0)
         try:
             while True:
-                msg = self._send_queue.get()
-                if msg is None:
-                    break  # shutdown sentinel
-                self._send_with_retry(client, msg)
+                item = self._queue.get()
+                if item is None:
+                    break
+                if isinstance(item, TranscriptionUpdate):
+                    self._process_streaming(client, item)
+                elif isinstance(item, str):
+                    self._send_message(client, item)
         finally:
+            if self._stream and self._draft_buf.strip():
+                self._send_message(client, self._draft_buf.strip())
             client.close()
 
-    def _send_with_retry(self, client: httpx.Client, text: str):
+    def _process_streaming(self, client: httpx.Client, update: TranscriptionUpdate):
+        full = update.finalized_text
+        new_text = full[self._processed_chars :]
+        if not new_text.strip():
+            return
+        self._processed_chars = len(full)
+
+        self._draft_buf += new_text
+
+        # Scan for sentence-ending punctuation
+        last_end = -1
+        for i, ch in enumerate(self._draft_buf):
+            if ch in ".!?":
+                last_end = i
+
+        if last_end >= 0:
+            to_send = self._draft_buf[: last_end + 1].strip()
+            self._draft_buf = self._draft_buf[last_end + 1 :]
+            if to_send:
+                self._send_message(client, to_send)
+                self._draft_id = (self._draft_id + 1) | 1  # keep non-zero
+
+        # Stream remaining draft
+        draft = self._draft_buf.strip()
+        if draft:
+            self._send_draft(client, draft)
+
+    def _send_draft(self, client: httpx.Client, text: str):
+        now = time.monotonic()
+        if now - self._last_draft_t < _DRAFT_INTERVAL:
+            return
+        self._last_draft_t = now
+        try:
+            resp = client.post(
+                f"{self._base_url}/sendMessageDraft",
+                json={
+                    "chat_id": self._chat_id,
+                    "draft_id": self._draft_id,
+                    "text": text,
+                },
+            )
+            if resp.status_code == 200:
+                log.debug("Draft: %s", text[:40])
+            else:
+                log.warning("Draft API %d: %s", resp.status_code, resp.text[:200])
+        except (httpx.TransportError, httpx.TimeoutException) as exc:
+            log.warning("Draft send failed: %s", exc)
+
+    def _send_message(self, client: httpx.Client, text: str):
         for attempt in range(_MAX_RETRIES):
             try:
                 resp = client.post(
-                    self._url,
+                    f"{self._base_url}/sendMessage",
                     json={"chat_id": self._chat_id, "text": text},
                 )
                 if resp.status_code == 200:
@@ -75,16 +143,17 @@ class TelegramSender:
                     "Telegram API %d: %s", resp.status_code, resp.text[:200]
                 )
             except (httpx.TransportError, httpx.TimeoutException) as exc:
-                log.warning("Telegram send error (attempt %d): %s", attempt + 1, exc)
-            backoff = _BACKOFF_BASE * (2 ** attempt)
-            time.sleep(backoff)
+                log.warning(
+                    "Telegram send error (attempt %d): %s", attempt + 1, exc
+                )
+            time.sleep(_BACKOFF_BASE * (2**attempt))
         log.error("Failed to send after %d attempts: %s", _MAX_RETRIES, text[:60])
 
     # -- lifecycle --
 
     def stop(self):
         """Signal the background thread to drain and exit."""
-        self._send_queue.put(None)
+        self._queue.put(None)
 
     def wait(self, timeout: float = 5.0):
         self._thread.join(timeout=timeout)

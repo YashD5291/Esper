@@ -30,7 +30,7 @@ BLANK_ID = 8192
 DURATION_BINS = [0, 1, 2, 3, 4]
 MAX_SYMBOLS_PER_STEP = 10
 MAX_AUDIO_SAMPLES = 240_000  # 15s at 16kHz
-OVERLAP_SAMPLES = SAMPLE_RATE  # 1s overlap between chunks
+OVERLAP_SAMPLES = SAMPLE_RATE  # 1s default overlap (overridden per-instance)
 
 
 @dataclass
@@ -207,7 +207,7 @@ class CoreMLTranscriber:
         vocab: dict,
         *,
         on_update: Callable[[TranscriptionUpdate], None] | None = None,
-        buffer_seconds: float = 5.0,
+        buffer_seconds: float = 1.5,
     ):
         self.mel_encoder = models["mel_encoder"]
         self.decoder = models["decoder"]
@@ -215,6 +215,11 @@ class CoreMLTranscriber:
         self.vocab = vocab
         self.on_update = on_update
         self.buffer_seconds = min(buffer_seconds, 15.0)
+
+        # Scale overlap with buffer: ~33% of buffer, capped at 1s
+        self._overlap_samples = int(
+            SAMPLE_RATE * min(self.buffer_seconds * 0.33, 1.0)
+        )
 
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -351,8 +356,8 @@ class CoreMLTranscriber:
                 while len(buffer) >= chunk_samples:
                     take = min(len(buffer), MAX_AUDIO_SAMPLES)
                     chunk = buffer[:take]
-                    # Keep last OVERLAP_SAMPLES in the buffer for next chunk
-                    advance = take - OVERLAP_SAMPLES
+                    # Keep overlap in the buffer for next chunk
+                    advance = take - self._overlap_samples
                     buffer = buffer[advance:]
 
                     text = self._transcribe_chunk(chunk)

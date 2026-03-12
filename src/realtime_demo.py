@@ -87,7 +87,7 @@ def main():
     parser.add_argument("--list-devices", action="store_true", help="List audio devices and exit")
     parser.add_argument("--engine", choices=["coreml", "mlx"], default="coreml", help="Inference backend (default: coreml)")
     parser.add_argument("--record", nargs="?", const="auto", default=None, metavar="PATH", help="Record audio to WAV file (auto-generates name if no path given)")
-    parser.add_argument("--buffer", type=float, default=5.0, help="CoreML: seconds of audio to buffer (default: 5.0)")
+    parser.add_argument("--buffer", type=float, default=1.5, help="CoreML: seconds of audio to buffer (default: 1.5)")
     parser.add_argument("--feed-interval", type=float, default=0.4, help="MLX: seconds between model feeds (default: 0.4)")
     parser.add_argument("--context-size", type=int, nargs=2, default=[256, 256], metavar=("LEFT", "RIGHT"), help="MLX: streaming context window (default: 256 256)")
     parser.add_argument("--depth", type=int, default=1, help="MLX: encoder cache depth (default: 1)")
