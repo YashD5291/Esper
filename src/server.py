@@ -56,7 +56,8 @@ def _send_error(message: str):
 import numpy as np
 import sounddevice as sd
 
-from .audio_capture import AudioCapture, SAMPLE_RATE
+from . import config
+from .audio_capture import AudioCapture
 from .transcriber import TranscriptionUpdate
 
 
@@ -67,9 +68,7 @@ _telegram_sender = None
 _pump_thread: threading.Thread | None = None
 _energy_thread: threading.Thread | None = None
 _stop_event = threading.Event()
-_engine_name: str = "coreml"
-
-_MODEL_LOAD_TIMEOUT = 30  # seconds
+_engine_name: str = config.DEFAULT_ENGINE
 
 
 def _list_devices():
@@ -125,7 +124,7 @@ def _emit_energy():
     while not _stop_event.is_set():
         if _capture is not None:
             _send("energy", {"level": _capture.energy})
-        time.sleep(0.1)
+        time.sleep(config.ENERGY_EMIT_INTERVAL_S)
 
 
 def _load_model_with_timeout(engine: str, data: dict):
@@ -157,10 +156,10 @@ def _load_model_with_timeout(engine: str, data: dict):
 
     thread = threading.Thread(target=_load, name="model-loader")
     thread.start()
-    thread.join(timeout=_MODEL_LOAD_TIMEOUT)
+    thread.join(timeout=config.MODEL_LOAD_TIMEOUT_S)
 
     if thread.is_alive():
-        raise TimeoutError(f"Model loading timed out after {_MODEL_LOAD_TIMEOUT}s")
+        raise TimeoutError(f"Model loading timed out after {config.MODEL_LOAD_TIMEOUT_S}s")
     if error[0] is not None:
         raise error[0]
     return result[0]
@@ -171,7 +170,7 @@ def _do_start(data: dict):
     global _capture, _transcriber, _telegram_sender, _pump_thread, _energy_thread
     global _stop_event, _engine_name
 
-    engine = data.get("engine", "coreml")
+    engine = data.get("engine", config.DEFAULT_ENGINE)
     device = data.get("device")  # int or None
     telegram_cfg = data.get("telegram")  # {bot_token, chat_id} or None
 
@@ -186,6 +185,9 @@ def _do_start(data: dict):
         if bot_token and chat_id:
             from .telegram_sender import TelegramSender
             stream = telegram_cfg.get("stream", True)
+            config.TELEGRAM_BOT_TOKEN = bot_token
+            config.TELEGRAM_CHAT_ID = chat_id
+            config.TELEGRAM_STREAM = stream
             _telegram_sender = TelegramSender(bot_token, chat_id, stream=stream)
             log.info("Telegram sender configured (stream=%s)", stream)
 
