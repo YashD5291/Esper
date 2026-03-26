@@ -30,7 +30,10 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Telegram credentials are passed via the `start` command data dict at runtime, not read from a .env file at import time
   3. All `print()` calls in audio_capture.py that were corrupting the IPC stream are replaced with log calls
   4. The VAD, Whisper, Telegram, and IPC constant namespaces are present in config.py with documented defaults, ready for later phases to consume
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Create config.py and migrate leaf modules (audio_capture, transcriber, coreml_transcriber)
+- [ ] 01-02-PLAN.md — Migrate entry points (server.py, realtime_demo.py) and telegram_sender.py
 
 ### Phase 2: IPC Cleanup
 **Goal**: The Python backend communicates with SwiftUI exclusively over a dedicated file descriptor, making it safe to add log-heavy VAD and Whisper components without corrupting the protocol stream
@@ -94,7 +97,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Config Consolidation | 0/? | Not started | - |
+| 1. Config Consolidation | 0/2 | Planning complete | - |
 | 2. IPC Cleanup | 0/? | Not started | - |
 | 3. VAD Integration | 0/? | Not started | - |
 | 4. Whisper Integration | 0/? | Not started | - |
