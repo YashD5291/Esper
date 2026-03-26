@@ -29,7 +29,7 @@ Real-time, accurate transcription of accented English speech — if the transcri
 
 - [ ] Silero VAD for speech boundary detection
 - [ ] Whisper large-v3-turbo via mlx-whisper (Indian accent support)
-- [ ] Single config.py (consolidate .env + @AppStorage + CLI args)
+- [x] Single config.py (consolidate .env + @AppStorage + CLI args) — Validated in Phase 1: Config Consolidation
 - [ ] Clean IPC protocol (remove stdout fd redirect hack)
 - [ ] Defensive error handling (watchdog timeouts, graceful fallbacks)
 - [ ] Proper Telegram lifecycle (not bolted-on)
@@ -77,7 +77,7 @@ Real-time, accurate transcription of accented English speech — if the transcri
 |----------|-----------|---------|
 | Whisper large-v3-turbo over Parakeet | Better Indian accent recognition, good speed/accuracy tradeoff on MLX | -- Pending |
 | Silero VAD from The Professor | Proven stable (50+ generations zero hangs), lightweight | -- Pending |
-| Single config.py pattern | The Professor's pattern works well, eliminates config fragmentation | -- Pending |
+| Single config.py pattern | The Professor's pattern works well, eliminates config fragmentation | Validated — Phase 1 |
 
 ## Evolution
 
@@ -97,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after milestone v2.0 initialization*
+*Last updated: 2026-03-27 after Phase 1: Config Consolidation complete*
