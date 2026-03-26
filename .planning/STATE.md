@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01-config-consolidation plan 01 — config.py created, modules migrated
-last_updated: "2026-03-26T23:13:47.479Z"
+status: verifying
+stopped_at: Completed 01-config-consolidation plan 02 — entry points migrated to config
+last_updated: "2026-03-26T23:22:36.203Z"
 last_activity: 2026-03-26
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 
 Phase: 01 (config-consolidation) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-03-26
 
 Progress: [░░░░░░░░░░] 0%
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01-config-consolidation P01 | 6min | 2 tasks | 5 files |
+| Phase 01-config-consolidation P02 | 4min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,8 @@ Recent decisions affecting current work:
 - [Phase 01-config-consolidation]: MODEL_LOAD_TIMEOUT_S set to 120.0 per CLEAN-03 — covers Whisper cold Metal shader compile time
 - [Phase 01-config-consolidation]: from . import config pattern used — module-import allows runtime mutation visible to all callers
 - [Phase 01-config-consolidation]: Zero print() in non-CLI modules — all audio_capture.py calls converted to log.info()
+- [Phase 01-config-consolidation]: TelegramSender.__init__ signature kept unchanged — cleanup deferred to Phase 5 per RESEARCH.md
+- [Phase 01-config-consolidation]: Entry-point mutation pattern: server._do_start and realtime_demo.main mutate config.* before constructing dependent objects
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-26T23:13:47.477Z
-Stopped at: Completed 01-config-consolidation plan 01 — config.py created, modules migrated
+Last session: 2026-03-26T23:22:36.200Z
+Stopped at: Completed 01-config-consolidation plan 02 — entry points migrated to config
 Resume file: None

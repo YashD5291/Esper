@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans:** 2 plans
 Plans:
 - [x] 01-01-PLAN.md — Create config.py and migrate leaf modules (audio_capture, transcriber, coreml_transcriber)
-- [ ] 01-02-PLAN.md — Migrate entry points (server.py, realtime_demo.py) and telegram_sender.py
+- [x] 01-02-PLAN.md — Migrate entry points (server.py, realtime_demo.py) and telegram_sender.py
 
 ### Phase 2: IPC Cleanup
 **Goal**: The Python backend communicates with SwiftUI exclusively over a dedicated file descriptor, making it safe to add log-heavy VAD and Whisper components without corrupting the protocol stream
