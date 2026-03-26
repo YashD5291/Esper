@@ -61,28 +61,28 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PIPE-01 | -- | Pending |
-| PIPE-02 | -- | Pending |
-| PIPE-03 | -- | Pending |
-| PIPE-04 | -- | Pending |
-| PIPE-05 | -- | Pending |
-| PIPE-06 | -- | Pending |
-| ARCH-01 | -- | Pending |
-| ARCH-02 | -- | Pending |
-| ARCH-03 | -- | Pending |
-| ARCH-04 | -- | Pending |
-| INTG-01 | -- | Pending |
-| INTG-02 | -- | Pending |
-| INTG-03 | -- | Pending |
-| CLEAN-01 | -- | Pending |
-| CLEAN-02 | -- | Pending |
-| CLEAN-03 | -- | Pending |
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 2 | Pending |
+| INTG-03 | Phase 2 | Pending |
+| PIPE-01 | Phase 3 | Pending |
+| PIPE-02 | Phase 3 | Pending |
+| PIPE-03 | Phase 3 | Pending |
+| PIPE-04 | Phase 4 | Pending |
+| PIPE-05 | Phase 4 | Pending |
+| PIPE-06 | Phase 4 | Pending |
+| ARCH-03 | Phase 4 | Pending |
+| ARCH-04 | Phase 4 | Pending |
+| CLEAN-03 | Phase 4 | Pending |
+| INTG-01 | Phase 5 | Pending |
+| INTG-02 | Phase 5 | Pending |
+| CLEAN-01 | Phase 6 | Pending |
+| CLEAN-02 | Phase 6 | Pending |
 
 **Coverage:**
 - v2.0 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-27*
-*Last updated: 2026-03-27 after initial definition*
+*Last updated: 2026-03-27 after roadmap creation*
