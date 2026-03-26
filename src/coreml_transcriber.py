@@ -20,7 +20,7 @@ from typing import Callable
 import coremltools as ct
 import numpy as np
 
-from .audio_capture import SAMPLE_RATE
+from . import config
 from .transcriber import TranscriptionUpdate
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models" / "coreml"
@@ -30,7 +30,7 @@ BLANK_ID = 8192
 DURATION_BINS = [0, 1, 2, 3, 4]
 MAX_SYMBOLS_PER_STEP = 10
 MAX_AUDIO_SAMPLES = 240_000  # 15s at 16kHz
-OVERLAP_SAMPLES = SAMPLE_RATE  # 1s default overlap (overridden per-instance)
+OVERLAP_SAMPLES = config.SAMPLE_RATE  # 1s default overlap (overridden per-instance)
 
 
 @dataclass
@@ -218,7 +218,7 @@ class CoreMLTranscriber:
 
         # Scale overlap with buffer: ~33% of buffer, capped at 1s
         self._overlap_samples = int(
-            SAMPLE_RATE * min(self.buffer_seconds * 0.33, 1.0)
+            config.SAMPLE_RATE * min(self.buffer_seconds * 0.33, 1.0)
         )
 
         self._stop = threading.Event()
@@ -337,12 +337,12 @@ class CoreMLTranscriber:
         import traceback
 
         buffer = np.array([], dtype=np.float32)
-        chunk_samples = int(self.buffer_seconds * SAMPLE_RATE)
+        chunk_samples = int(self.buffer_seconds * config.SAMPLE_RATE)
         self._prev_tail = ""
 
         try:
             # Warmup: run a silent chunk to trigger CoreML compilation
-            silence = np.zeros(SAMPLE_RATE, dtype=np.float32)  # 1s silence
+            silence = np.zeros(config.SAMPLE_RATE, dtype=np.float32)  # 1s silence
             self._transcribe_chunk(silence)
 
             while not self._stop.is_set():
@@ -369,7 +369,7 @@ class CoreMLTranscriber:
                         self._prev_tail = " ".join(words[-12:])
 
             # Flush remaining buffer on stop
-            if len(buffer) > SAMPLE_RATE * 0.3:
+            if len(buffer) > config.SAMPLE_RATE * 0.3:
                 text = self._transcribe_chunk(buffer)
                 buffer = np.array([], dtype=np.float32)
                 self._emit_update(text)

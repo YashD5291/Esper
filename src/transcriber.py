@@ -10,7 +10,7 @@ from typing import Callable
 import mlx.core as mx
 import numpy as np
 
-from .audio_capture import SAMPLE_RATE
+from . import config
 
 MODEL_NAME = "mlx-community/parakeet-tdt-0.6b-v3"
 
@@ -99,7 +99,7 @@ class StreamingTranscriber:
             depth=self.depth,
         ) as streamer:
             # Warmup: feed 0.5 s of silence so MLX compiles its graphs
-            silence = mx.zeros((int(SAMPLE_RATE * 0.5),))
+            silence = mx.zeros((int(config.SAMPLE_RATE * 0.5),))
             streamer.add_audio(silence)
             mx.eval(streamer.audio_buffer)  # force compilation
 
