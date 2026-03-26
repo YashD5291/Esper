@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. The VAD, Whisper, Telegram, and IPC constant namespaces are present in config.py with documented defaults, ready for later phases to consume
 **Plans:** 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Create config.py and migrate leaf modules (audio_capture, transcriber, coreml_transcriber)
+- [x] 01-01-PLAN.md — Create config.py and migrate leaf modules (audio_capture, transcriber, coreml_transcriber)
 - [ ] 01-02-PLAN.md — Migrate entry points (server.py, realtime_demo.py) and telegram_sender.py
 
 ### Phase 2: IPC Cleanup

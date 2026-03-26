@@ -18,7 +18,7 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 ### Architecture
 
-- [ ] **ARCH-01**: Single config.py replaces .env + @AppStorage + CLI args as source of truth
+- [x] **ARCH-01**: Single config.py replaces .env + @AppStorage + CLI args as source of truth
 - [ ] **ARCH-02**: IPC uses dedicated fd (--protocol-fd) instead of stdout redirect hack
 - [ ] **ARCH-03**: Cascading watchdog timeouts at per-utterance and process level
 - [ ] **ARCH-04**: TranscriptionUpdate dataclass defines clear contract between Whisper and all consumers
@@ -61,7 +61,7 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ARCH-01 | Phase 1 | Pending |
+| ARCH-01 | Phase 1 | Complete |
 | ARCH-02 | Phase 2 | Pending |
 | INTG-03 | Phase 2 | Pending |
 | PIPE-01 | Phase 3 | Pending |
