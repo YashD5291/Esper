@@ -1,7 +1,14 @@
 """Tests for src/config.py — single source of truth for all Esper tunables."""
 
 import importlib
+import pathlib
 import sys
+
+# Ensure project root is on sys.path so `from src import config` works
+# when running tests directly (e.g., python tests/test_config.py)
+_PROJECT_ROOT = str(pathlib.Path(__file__).parent.parent)
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
 
 
 def get_config():
