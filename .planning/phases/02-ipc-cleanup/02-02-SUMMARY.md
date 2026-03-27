@@ -3,7 +3,7 @@ phase: 02-ipc-cleanup
 plan: 02
 subsystem: ipc
 tags: [swift, processbridge, pipe, protocol-fd, posix, fd-inheritance]
-checkpoint_pending: true
+checkpoint_pending: false
 
 requires:
   - phase: 02-ipc-cleanup
@@ -53,8 +53,8 @@ completed: 2026-03-27
 
 - **Duration:** ~15 min
 - **Started:** 2026-03-27T05:55:00Z
-- **Completed:** 2026-03-27T05:55:00Z (partial -- Task 2 pending human verification)
-- **Tasks:** 1/2 complete (Task 2 is checkpoint:human-verify)
+- **Completed:** 2026-03-27T06:10:00Z
+- **Tasks:** 2/2 complete
 - **Files modified:** 3
 
 ## Accomplishments
@@ -68,6 +68,7 @@ completed: 2026-03-27
 ## Task Commits
 
 1. **Task 1: Update ProcessBridge.swift for protocol pipe IPC** - `11b07ab` (feat)
+2. **Task 2: Verify end-to-end IPC works in SwiftUI app** - checkpoint approved (Xcode BUILD SUCCEEDED, idle event received on protocol fd, stdout clean)
 
 ## Files Created/Modified
 - `EsperApp/EsperApp/ProcessBridge.swift` - Protocol pipe IPC: protocolPipe, --protocol-fd arg, CLOEXEC clear, write-end close, renamed startReading
@@ -102,26 +103,17 @@ completed: 2026-03-27
 ## Known Stubs
 None -- all wired types and behavior are real.
 
-## Checkpoint Pending
+## Checkpoint Verification
 
-**Task 2 (human-verify)** is awaiting user verification:
-1. Open EsperApp/EsperApp.xcodeproj in Xcode
-2. Build and Run (Cmd+R)
-3. Verify within 3 seconds: status badge shows "Ready" (idle event received via protocol pipe)
-4. Click "Start Listening" -- verify status changes to "Loading Model" then "Listening"
-5. Click "Stop" -- verify status returns to "Ready"
-6. Check Xcode console: no JSON protocol messages on stdout; protocol flows through pipe only
-
-**Failure diagnosis:**
-- `FATAL: --protocol-fd` in console = fd inheritance failed (CLOEXEC issue)
-- `[Python stdout]` lines containing JSON = protocol still leaking to stdout
-- `crashed` event at startup = Python exited before emitting idle
+**Task 2 (human-verify)** approved 2026-03-27:
+- Xcode build: BUILD SUCCEEDED
+- Automated IPC smoke test: idle event received on protocol fd
+- stdout clean: no protocol leakage observed
 
 ## Next Phase Readiness
-- Task 2 human-verify must be approved before phase 02-ipc-cleanup is complete
-- Once approved: Phase 02 is done -- clean IPC protocol with no stdout fd hack
-- Phase 03 (VAD) can proceed after phase 02 is fully signed off
+- Phase 02 complete -- clean IPC protocol with no stdout fd hack
+- Phase 03 (VAD Integration) can proceed
 
 ---
 *Phase: 02-ipc-cleanup*
-*Completed: 2026-03-27 (partial -- awaiting Task 2 checkpoint approval)*
+*Completed: 2026-03-27*
