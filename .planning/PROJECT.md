@@ -31,8 +31,8 @@ Real-time, accurate transcription of accented English speech — if the transcri
 - [ ] Whisper large-v3-turbo via mlx-whisper (Indian accent support)
 - [x] Single config.py (consolidate .env + @AppStorage + CLI args) — Validated in Phase 1: Config Consolidation
 - [x] Clean IPC protocol (remove stdout fd redirect hack) — Validated in Phase 2: IPC Cleanup
-- [ ] Defensive error handling (watchdog timeouts, graceful fallbacks)
-- [ ] Proper Telegram lifecycle (not bolted-on)
+- [x] Defensive error handling (watchdog timeouts, graceful fallbacks) — Validated in Phase 4: Whisper Integration (watchdog, subprocess restart) + Phase 5: Telegram Hardening (429 retry)
+- [x] Proper Telegram lifecycle (not bolted-on) — Validated in Phase 5: Telegram Hardening (per-utterance model, 10s shutdown flush, 429 handling)
 
 ### Out of Scope
 
@@ -97,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 3: VAD Integration complete*
+*Last updated: 2026-03-27 after Phase 5: Telegram Hardening complete*
