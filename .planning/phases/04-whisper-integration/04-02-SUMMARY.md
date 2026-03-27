@@ -126,6 +126,15 @@ None — all plan requirements implemented.
 - Ready for Plan 03: Swift client updates to consume new transcript event shape
 - Full test suite (58 tests) passing
 
+## Self-Check: PASSED
+
+- src/server.py: FOUND
+- src/telegram_sender.py: FOUND
+- src/realtime_demo.py: FOUND
+- tests/test_telegram_sender.py: FOUND
+- 04-02-SUMMARY.md: FOUND
+- Commits e1a86ce, 0c33ea1, 966e939, efbad93, 7e720ae: ALL FOUND
+
 ---
 *Phase: 04-whisper-integration*
 *Completed: 2026-03-27*
