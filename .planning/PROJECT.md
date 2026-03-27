@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A real-time voice-to-text app for macOS that captures microphone audio, transcribes it live, and optionally streams transcriptions to Telegram. Ships as both a CLI tool and a native SwiftUI menu bar app. Runs locally on Apple Silicon.
+A real-time voice-to-text app for macOS that captures microphone audio, transcribes it using Whisper large-v3-turbo, and streams transcriptions to Telegram. Ships as both a CLI tool and a native SwiftUI menu bar app. Runs locally on Apple Silicon with VAD-gated batch inference.
 
 ## Core Value
 
@@ -12,64 +12,47 @@ Real-time, accurate transcription of accented English speech — if the transcri
 
 ### Validated
 
-<!-- Shipped and confirmed valuable. Inferred from existing codebase. -->
-
-- Audio capture via sounddevice (16kHz mono, 100ms chunks)
-- Real-time transcription with streaming draft/finalized text
+- Audio capture via sounddevice (16kHz mono, 512-sample blocks)
+- Whisper large-v3-turbo transcription via mlx-whisper in isolated subprocess — v2.0
+- Silero VAD for speech boundary detection with pre/post-buffer — v2.0
+- Single config.py as source of truth for all tunables — v2.0
+- Clean IPC protocol over dedicated fd (`--protocol-fd`) — v2.0
 - SwiftUI menu bar app with ProcessBridge JSON-line IPC
 - CLI mode (`python -m src.realtime_demo`)
-- Telegram relay with sendMessage + sendMessageDraft streaming
+- Per-utterance Telegram relay with 429 retry and 10s shutdown flush — v2.0
+- Watchdog timeouts and subprocess auto-restart (15s inference timeout, 3-strike crash limit) — v2.0
 - Audio device hot-swapping mid-session
-- Optional session recording to WAV
-- ~~Dual-engine support (CoreML + MLX backends)~~ — Removed in Phase 6: Cleanup (Whisper-only architecture)
+- Optional session recording to WAV (speech-only utterances from speech_q)
 
 ### Active
 
-<!-- Current scope. Building toward these in v2.0. -->
-
-- [x] Silero VAD for speech boundary detection — Validated in Phase 3: VAD Integration
-- [x] Whisper large-v3-turbo via mlx-whisper (Indian accent support) — Validated in Phase 4: Whisper Integration
-- [x] Single config.py (consolidate .env + @AppStorage + CLI args) — Validated in Phase 1: Config Consolidation
-- [x] Clean IPC protocol (remove stdout fd redirect hack) — Validated in Phase 2: IPC Cleanup
-- [x] Defensive error handling (watchdog timeouts, graceful fallbacks) — Validated in Phase 4: Whisper Integration (watchdog, subprocess restart) + Phase 5: Telegram Hardening (429 retry)
-- [x] Proper Telegram lifecycle (not bolted-on) — Validated in Phase 5: Telegram Hardening (per-utterance model, 10s shutdown flush, 429 handling)
+(No active requirements — next milestone TBD)
 
 ### Out of Scope
-
-<!-- Explicit boundaries. -->
 
 - Cloud inference — must stay local-only on Apple Silicon
 - Voice cloning / TTS — that's The Professor's domain
 - iOS / iPadOS port — macOS only for now
 - Multi-speaker diarization — single speaker focus
+- Streaming word-level tokens — mlx-whisper is batch-only; VAD gating makes this acceptable
+- Dual-engine support — removed in v2.0 (Whisper-only architecture)
 
 ## Context
 
-- Existing codebase works end-to-end but feels fragile compared to The Professor
-- The Professor's patterns (Silero VAD, single config, subprocess isolation, cascading timeouts) are the reference architecture
-- User has Indian accent — Parakeet accuracy is insufficient, Whisper large-v3-turbo recommended
-- Current architecture: Python backend as subprocess of SwiftUI app, JSON-line protocol over stdio with fd redirect hack
-- CoreML Parakeet TDT v3 models (~200MB) in models/coreml/ — will be replaced by Whisper
+- v2.0 Pipeline Overhaul shipped 2026-03-27 — full pipeline rebuild complete
+- Architecture: Python backend as subprocess of SwiftUI app, JSON-line protocol over `--protocol-fd`
+- Pipeline: AudioCapture → VadThread (Silero) → speech_q → WhisperTranscriber (subprocess) → TranscriptionUpdate → consumers
+- Codebase: ~6,964 Python LOC + ~5,023 Swift LOC
+- All Parakeet/CoreML code removed — Whisper is the only transcription engine
+- The Professor's patterns (Silero VAD, single config, subprocess isolation) successfully adopted
 
 ## Constraints
 
 - **Platform**: macOS 14+ with Apple Silicon (M1+) — local inference only
-- **Latency**: Near real-time transcription (<500ms from speech to text)
+- **Latency**: <3 seconds from utterance end to transcription (VAD silence detection + Whisper inference)
 - **Compatibility**: Must maintain both CLI and SwiftUI app interfaces
-- **Model**: Whisper large-v3-turbo via mlx-whisper — confirmed choice
+- **Model**: Whisper large-v3-turbo via mlx-whisper — confirmed and validated
 - **Reference**: The Professor's architecture patterns as quality baseline
-
-## Current Milestone: v2.0 Pipeline Overhaul
-
-**Goal:** Rebuild Esper's transcription pipeline with VAD, Whisper large-v3-turbo, and clean architecture.
-
-**Target features:**
-- Silero VAD for speech boundary detection
-- Whisper large-v3-turbo via mlx-whisper
-- Consolidated config.py
-- Clean IPC protocol
-- Hardened error handling
-- Proper Telegram integration
 
 ## Key Decisions
 
@@ -78,12 +61,19 @@ Real-time, accurate transcription of accented English speech — if the transcri
 | Whisper large-v3-turbo over Parakeet | Better Indian accent recognition, good speed/accuracy tradeoff on MLX | Validated — Phase 4, Parakeet removed Phase 6 |
 | Silero VAD from The Professor | Proven stable (50+ generations zero hangs), lightweight | Validated — Phase 3 |
 | Single config.py pattern | The Professor's pattern works well, eliminates config fragmentation | Validated — Phase 1 |
+| Spawn-context subprocess for Whisper | MLX thread safety unfixed upstream, process isolation prevents Metal crashes | Validated — Phase 4 |
+| Per-utterance TranscriptionUpdate | Simpler than streaming draft/finalized model, natural fit with VAD boundaries | Validated — Phase 4 |
+| --protocol-fd over stdout redirect | Eliminates print() corruption of IPC stream, safe for log-heavy components | Validated — Phase 2 |
+
+## Shipped Milestones
+
+- **v2.0 Pipeline Overhaul** (2026-03-27) — 6 phases, 11 plans. Full pipeline rebuild with VAD, Whisper, clean IPC, hardened Telegram, Parakeet removal.
 
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
 
-**After each phase transition** (via `/gsd:transition`):
+**After each phase transition:**
 1. Requirements invalidated? -> Move to Out of Scope with reason
 2. Requirements validated? -> Move to Validated with phase reference
 3. New requirements emerged? -> Add to Active
@@ -97,4 +87,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 6: Cleanup complete — v2.0 Pipeline Overhaul milestone complete*
+*Last updated: 2026-03-27 after v2.0 Pipeline Overhaul milestone complete*
