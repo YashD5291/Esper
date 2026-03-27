@@ -30,15 +30,12 @@ log = logging.getLogger("esper.transcriber")
 class TranscriptionUpdate:
     """Per-utterance transcription result from Whisper (Phase 4).
 
-    New fields (D-01):
+    Fields (D-01):
       text            — this utterance's transcript
       finalized_text  — session accumulator (all utterances joined)
       sentences       — list of utterance strings accumulated this session
       no_speech_prob  — average no_speech_prob across Whisper segments
       duration_s      — length of the audio utterance in seconds
-
-    Backward-compat fields kept for coreml_transcriber.py (removed in Phase 6):
-      draft_text, finalized_sentences, draft_sentences
     """
 
     text: str = ""
@@ -46,10 +43,6 @@ class TranscriptionUpdate:
     sentences: list[str] = field(default_factory=list)
     no_speech_prob: float = 0.0
     duration_s: float = 0.0
-    # Backward compat for coreml_transcriber.py — Phase 6 removes these
-    draft_text: str = ""
-    finalized_sentences: list = field(default_factory=list)
-    draft_sentences: list = field(default_factory=list)
 
 
 def _whisper_worker_entry(audio_q, result_q) -> None:

@@ -87,7 +87,6 @@ _speech_q: _queue.Queue | None = None
 _bridge_thread: threading.Thread | None = None
 _energy_thread: threading.Thread | None = None
 _stop_event = threading.Event()
-_engine_name: str = "whisper"
 
 
 def _list_devices():
@@ -154,15 +153,13 @@ def _emit_energy():
 def _do_start(data: dict):
     """Handle the 'start' command: spawn WhisperTranscriber, start capture + VAD."""
     global _capture, _transcriber, _telegram_sender, _vad_thread, _speech_q, _bridge_thread
-    global _energy_thread, _stop_event, _engine_name
+    global _energy_thread, _stop_event
 
-    engine = data.get("engine", "whisper")  # Default changes from "coreml" to "whisper"
     device = data.get("device")
     telegram_cfg = data.get("telegram")
 
-    _engine_name = engine
     _stop_event.clear()
-    log.info("Starting: engine=%s, device=%s", engine, device)
+    log.info("Starting: device=%s", device)
 
     # Telegram setup (unchanged)
     if telegram_cfg:

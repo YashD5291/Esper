@@ -36,4 +36,3 @@ TELEGRAM_BACKOFF_BASE: float = 1.0
 # ── IPC ────────────────────────────────────────────────────────────────────────
 ENERGY_EMIT_INTERVAL_S: float = 0.1   # ~10 Hz energy events
 MODEL_LOAD_TIMEOUT_S: float = 120.0   # includes MLX Metal shader compile on cold start
-DEFAULT_ENGINE: str = "coreml"

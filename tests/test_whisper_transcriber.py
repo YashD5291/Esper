@@ -67,23 +67,18 @@ def _make_ctx(audio_q, result_q, proc):
 # ── ARCH-04: TranscriptionUpdate contract ─────────────────────────────────────
 
 def test_transcription_update_fields():
-    """ARCH-04: TranscriptionUpdate has all required new and backward-compat fields."""
+    """ARCH-04: TranscriptionUpdate has all required fields."""
     from src.transcriber import TranscriptionUpdate
 
     t = TranscriptionUpdate()
     field_names = {f.name for f in dc_fields(t)}
 
-    # New fields (per D-01)
+    # Required fields (per D-01)
     assert "text" in field_names, "Missing field: text"
     assert "finalized_text" in field_names, "Missing field: finalized_text"
     assert "sentences" in field_names, "Missing field: sentences"
     assert "no_speech_prob" in field_names, "Missing field: no_speech_prob"
     assert "duration_s" in field_names, "Missing field: duration_s"
-
-    # Backward-compat fields (for coreml_transcriber.py — removed in Phase 6)
-    assert "draft_text" in field_names, "Missing backward-compat field: draft_text"
-    assert "finalized_sentences" in field_names, "Missing backward-compat field: finalized_sentences"
-    assert "draft_sentences" in field_names, "Missing backward-compat field: draft_sentences"
 
     # Default values
     assert t.text == ""
@@ -91,25 +86,6 @@ def test_transcription_update_fields():
     assert t.sentences == []
     assert t.no_speech_prob == 0.0
     assert t.duration_s == 0.0
-    assert t.draft_text == ""
-    assert t.finalized_sentences == []
-    assert t.draft_sentences == []
-
-
-def test_transcription_update_backward_compat():
-    """ARCH-04: coreml_transcriber.py construction style still works."""
-    from src.transcriber import TranscriptionUpdate
-
-    t = TranscriptionUpdate(
-        finalized_text="hello world",
-        draft_text="draft",
-        finalized_sentences=[],
-        draft_sentences=[],
-    )
-    assert t.finalized_text == "hello world"
-    assert t.draft_text == "draft"
-    assert t.finalized_sentences == []
-    assert t.draft_sentences == []
 
 
 # ── config hallucination thresholds ───────────────────────────────────────────

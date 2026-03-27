@@ -128,11 +128,6 @@ def test_model_load_timeout_s():
     assert config.MODEL_LOAD_TIMEOUT_S == 120.0
 
 
-def test_default_engine():
-    config = get_config()
-    assert config.DEFAULT_ENGINE == "coreml"
-
-
 # ── Structural checks ─────────────────────────────────────────────────────────
 
 def test_no_internal_imports():
