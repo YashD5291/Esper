@@ -188,7 +188,7 @@ def main():
     if record_path is not None and record_chunks:
         audio = np.concatenate(record_chunks)
         sf.write(str(record_path), audio, config.SAMPLE_RATE)
-        duration = len(audio) / SAMPLE_RATE
+        duration = len(audio) / config.SAMPLE_RATE
         print(f"{GRAY}  Saved {duration:.1f}s of speech audio to {record_path}{RESET}")
 
     print(f"{GRAY}  Done.{RESET}\n")
