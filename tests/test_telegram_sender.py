@@ -6,6 +6,7 @@ directly. No _processed_chars tracking, no draft/streaming logic.
 
 from __future__ import annotations
 
+import inspect
 import queue
 import threading
 import time
@@ -13,6 +14,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from src import config
 from src.transcriber import TranscriptionUpdate
 from src.telegram_sender import TelegramSender
 
@@ -154,3 +156,118 @@ class TestPerUtteranceSend:
         finally:
             sender.stop()
             sender.wait(timeout=1.0)
+
+
+class TestHardening:
+    """Hardening tests: 429 handling, shutdown drain, timeout, no stream param."""
+
+    def test_429_respects_retry_after(self):
+        """429 response with retry_after sleeps exactly retry_after seconds (D-06)."""
+        resp_429 = MagicMock()
+        resp_429.status_code = 429
+        resp_429.json.return_value = {
+            "ok": False,
+            "error_code": 429,
+            "parameters": {"retry_after": 1},
+        }
+
+        resp_200 = MagicMock()
+        resp_200.status_code = 200
+
+        mock_client = MagicMock()
+        mock_client.post.side_effect = [resp_429, resp_200]
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            with patch("src.telegram_sender.time.sleep") as mock_sleep:
+                sender = _make_sender()
+                sender.on_update(TranscriptionUpdate(text="Hi"))
+                sender.stop()
+                sender.wait(timeout=15)
+
+        assert mock_client.post.call_count == 2, (
+            f"Expected 2 post calls (retry succeeded), got {mock_client.post.call_count}"
+        )
+        mock_sleep.assert_called_with(1)
+
+    def test_429_falls_back_to_backoff(self):
+        """429 response without parameters field falls back to exponential backoff (D-06)."""
+        resp_429 = MagicMock()
+        resp_429.status_code = 429
+        resp_429.json.return_value = {"ok": False, "error_code": 429}
+
+        resp_200 = MagicMock()
+        resp_200.status_code = 200
+
+        mock_client = MagicMock()
+        mock_client.post.side_effect = [resp_429, resp_200]
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            with patch("src.telegram_sender.time.sleep") as mock_sleep:
+                sender = _make_sender()
+                sender.on_update(TranscriptionUpdate(text="Hi"))
+                sender.stop()
+                sender.wait(timeout=15)
+
+        expected_sleep = config.TELEGRAM_BACKOFF_BASE * (2 ** 0)
+        mock_sleep.assert_called_with(expected_sleep)
+
+    def test_max_retries_drops_message(self):
+        """After max retries all fail, message is dropped and pipeline continues (D-07)."""
+        resp_500 = MagicMock()
+        resp_500.status_code = 500
+        resp_500.text = "Internal Server Error"
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = resp_500
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            with patch("src.telegram_sender.time.sleep"):
+                sender = _make_sender()
+                sender.on_update(TranscriptionUpdate(text="fail"))
+                sender.stop()
+                sender.wait(timeout=10)
+
+        assert mock_client.post.call_count == config.TELEGRAM_MAX_RETRIES, (
+            f"Expected {config.TELEGRAM_MAX_RETRIES} post calls, got {mock_client.post.call_count}"
+        )
+
+    def test_shutdown_drains_queue(self):
+        """stop() + wait(10s) sends all queued messages before exiting (INTG-02, D-04)."""
+        send_times = []
+
+        def slow_post(*args, **kwargs):
+            time.sleep(0.3)
+            resp = MagicMock()
+            resp.status_code = 200
+            return resp
+
+        mock_client = MagicMock()
+        mock_client.post.side_effect = slow_post
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            sender = _make_sender()
+            sender.on_update(TranscriptionUpdate(text="msg1"))
+            sender.on_update(TranscriptionUpdate(text="msg2"))
+            sender.on_update(TranscriptionUpdate(text="msg3"))
+            sender.stop()
+            sender.wait(timeout=10.0)
+
+        assert mock_client.post.call_count == 3, (
+            f"Expected 3 post calls (all messages drained), got {mock_client.post.call_count}"
+        )
+
+    def test_wait_default_timeout_is_10(self):
+        """TelegramSender.wait() default timeout must be 10.0 seconds (INTG-02, D-05)."""
+        sig = inspect.signature(TelegramSender.wait)
+        timeout_param = sig.parameters.get("timeout")
+        assert timeout_param is not None, "wait() must have a 'timeout' parameter"
+        assert timeout_param.default == 10.0, (
+            f"Expected wait() default timeout=10.0, got {timeout_param.default}"
+        )
+
+    def test_no_stream_param(self):
+        """TelegramSender.__init__ must not accept a 'stream' parameter (D-02)."""
+        sig = inspect.signature(TelegramSender.__init__)
+        assert "stream" not in sig.parameters, (
+            f"TelegramSender.__init__ must not have 'stream' parameter, found: {list(sig.parameters)}"
+        )
