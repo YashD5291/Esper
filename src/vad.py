@@ -10,13 +10,11 @@ import logging
 import math
 import queue
 import threading
-from typing import Optional
 
 import numpy as np
-import torch
-from silero_vad import load_silero_vad
 
 from . import config
+from .vad_model import SileroVadOnnx
 
 log = logging.getLogger(__name__)
 
@@ -39,7 +37,7 @@ class VadThread:
         self._audio_q = audio_q
         self._speech_q = speech_q
         self._stop = threading.Event()
-        self._thread: Optional[threading.Thread] = None
+        self._thread: threading.Thread | None = None
 
     def start(self) -> None:
         """Start the VAD daemon thread."""
@@ -57,9 +55,7 @@ class VadThread:
 
     def _run(self) -> None:
         """Main VAD loop — scores frames, emits utterances to speech_q."""
-        torch.set_num_threads(1)  # prevent MPS/MLX contention
-        model = load_silero_vad()
-        model.reset_states()
+        model = SileroVadOnnx(config.VAD_MODEL_PATH)
 
         # Derived constants — computed from config, not stored in config
         sil_frames = math.ceil(config.VAD_SILENCE_THRESHOLD_MS / _FRAME_MS)
@@ -108,8 +104,7 @@ class VadThread:
                     continue
 
                 # Score frame with Silero VAD
-                tensor = torch.from_numpy(frame.reshape(1, -1))
-                speech_prob = model(tensor, config.SAMPLE_RATE).item()
+                speech_prob = model(frame, config.SAMPLE_RATE)
 
                 if not triggered:
                     if speech_prob >= config.VAD_SPEECH_THRESHOLD:
