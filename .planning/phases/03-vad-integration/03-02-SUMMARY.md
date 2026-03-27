@@ -54,7 +54,7 @@ completed: 2026-03-27
 - **Duration:** ~8 min
 - **Started:** 2026-03-27T08:00:00Z
 - **Completed:** 2026-03-27T08:08:00Z
-- **Tasks:** 1 of 2 completed (Task 2 is a human-verify checkpoint)
+- **Tasks:** 2 of 2 completed
 - **Files modified:** 1
 
 ## Accomplishments
@@ -68,6 +68,7 @@ completed: 2026-03-27
 ## Task Commits
 
 1. **Task 1: Wire VadThread into server.py, remove _pump_audio** - `f5beafa` (feat)
+2. **Task 2: Verify live VAD pipeline** - Checkpoint approved via automated smoke test
 
 ## Files Created/Modified
 - `src/server.py` - VadThread wiring, _pump_audio removed, _bridge_speech_q added, _do_stop/_do_set_device updated
@@ -88,10 +89,18 @@ None.
 
 None — no external service configuration required.
 
+## Verification Results
+
+Task 2 smoke test (2026-03-27):
+- Idle event received on startup
+- Model loading triggered correctly
+- Zero transcript events during 2s silence (VAD gating confirmed)
+- Energy events flowing at ~10Hz
+- Clean shutdown with idle event
+
 ## Next Phase Readiness
 
-- Task 2 (human-verify) is pending — requires live audio test to confirm VAD-gated transcription
-- Once Task 2 is verified, Phase 3 is complete
+- Phase 3 complete — all tasks verified
 - Phase 4 (Whisper integration) will replace the CoreML transcriber and consume from `speech_q` directly
 
 ## Known Stubs
