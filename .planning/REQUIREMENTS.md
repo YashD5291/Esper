@@ -12,16 +12,16 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 - [x] **PIPE-01**: VAD detects speech boundaries using Silero VAD with configurable silence threshold
 - [x] **PIPE-02**: VAD applies 150-300ms silence padding before/after utterances to prevent word clipping
 - [x] **PIPE-03**: VAD rejects low-energy chunks below configurable noise floor
-- [ ] **PIPE-04**: Whisper large-v3-turbo transcribes VAD-gated utterances via mlx-whisper
-- [ ] **PIPE-05**: Whisper runs in isolated spawn-context subprocess for MLX thread safety
-- [ ] **PIPE-06**: Hallucination guard filters outputs using no_speech_prob and compression_ratio thresholds
+- [x] **PIPE-04**: Whisper large-v3-turbo transcribes VAD-gated utterances via mlx-whisper
+- [x] **PIPE-05**: Whisper runs in isolated spawn-context subprocess for MLX thread safety
+- [x] **PIPE-06**: Hallucination guard filters outputs using no_speech_prob and compression_ratio thresholds
 
 ### Architecture
 
 - [x] **ARCH-01**: Single config.py replaces .env + @AppStorage + CLI args as source of truth
 - [x] **ARCH-02**: IPC uses dedicated fd (--protocol-fd) instead of stdout redirect hack
-- [ ] **ARCH-03**: Cascading watchdog timeouts at per-utterance and process level
-- [ ] **ARCH-04**: TranscriptionUpdate dataclass defines clear contract between Whisper and all consumers
+- [x] **ARCH-03**: Cascading watchdog timeouts at per-utterance and process level
+- [x] **ARCH-04**: TranscriptionUpdate dataclass defines clear contract between Whisper and all consumers
 
 ### Integration
 
@@ -33,7 +33,7 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 - [ ] **CLEAN-01**: Parakeet CoreML models and transcriber code removed
 - [ ] **CLEAN-02**: Dead dependencies removed (parakeet-mlx, coremltools, scipy)
-- [ ] **CLEAN-03**: Model load timeout updated from 30s to 120s for Whisper cold Metal compilation
+- [x] **CLEAN-03**: Model load timeout updated from 30s to 120s for Whisper cold Metal compilation
 
 ## Future Requirements
 
@@ -67,12 +67,12 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 | PIPE-01 | Phase 3 | Complete |
 | PIPE-02 | Phase 3 | Complete |
 | PIPE-03 | Phase 3 | Complete |
-| PIPE-04 | Phase 4 | Pending |
-| PIPE-05 | Phase 4 | Pending |
-| PIPE-06 | Phase 4 | Pending |
-| ARCH-03 | Phase 4 | Pending |
-| ARCH-04 | Phase 4 | Pending |
-| CLEAN-03 | Phase 4 | Pending |
+| PIPE-04 | Phase 4 | Complete |
+| PIPE-05 | Phase 4 | Complete |
+| PIPE-06 | Phase 4 | Complete |
+| ARCH-03 | Phase 4 | Complete |
+| ARCH-04 | Phase 4 | Complete |
+| CLEAN-03 | Phase 4 | Complete |
 | INTG-01 | Phase 5 | Pending |
 | INTG-02 | Phase 5 | Pending |
 | CLEAN-01 | Phase 6 | Pending |
