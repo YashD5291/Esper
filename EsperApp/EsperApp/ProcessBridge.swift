@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 /// Spawns `python -m src.server` and manages JSON-line communication.
@@ -6,6 +7,7 @@ final class ProcessBridge: @unchecked Sendable {
     private var stdinPipe: Pipe?
     private var stdoutPipe: Pipe?
     private var stderrPipe: Pipe?
+    private var protocolPipe: Pipe?
     private var readThread: Thread?
 
     private var eventContinuation: AsyncStream<ServerEvent>.Continuation?
@@ -28,7 +30,6 @@ final class ProcessBridge: @unchecked Sendable {
 
         let proc = Process()
         proc.executableURL = URL(fileURLWithPath: pythonPath)
-        proc.arguments = ["-m", "src.server"]
         proc.currentDirectoryURL = URL(fileURLWithPath: projectDir)
 
         var env = ProcessInfo.processInfo.environment
@@ -45,6 +46,7 @@ final class ProcessBridge: @unchecked Sendable {
         let stdin = Pipe()
         let stdout = Pipe()
         let stderr = Pipe()
+        let protoPipe = Pipe()
 
         proc.standardInput = stdin
         proc.standardOutput = stdout
@@ -53,7 +55,24 @@ final class ProcessBridge: @unchecked Sendable {
         stdinPipe = stdin
         stdoutPipe = stdout
         stderrPipe = stderr
+        protocolPipe = protoPipe
         process = proc
+
+        // Clear CLOEXEC on write end so it survives exec into Python
+        let protoWriteFd = protoPipe.fileHandleForWriting.fileDescriptor
+        _ = Darwin.fcntl(protoWriteFd, F_SETFD, Darwin.fcntl(protoWriteFd, F_GETFD) & ~FD_CLOEXEC)
+
+        proc.arguments = ["-m", "src.server", "--protocol-fd", "\(protoWriteFd)"]
+
+        // Capture stray stdout output for logging (no longer the protocol channel)
+        stdout.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            if !data.isEmpty, let text = String(data: data, encoding: .utf8) {
+                for line in text.components(separatedBy: "\n") where !line.isEmpty {
+                    print("[Python stdout] \(line)")
+                }
+            }
+        }
 
         // Read stderr on a background queue (just log it)
         stderr.fileHandleForReading.readabilityHandler = { handle in
@@ -81,7 +100,9 @@ final class ProcessBridge: @unchecked Sendable {
         do {
             try proc.run()
             isRunning = true
-            startReading(stdout: stdout)
+            // Close write end in parent -- child owns it. Required for EOF propagation.
+            protoPipe.fileHandleForWriting.closeFile()
+            startReading(protocolPipe: protoPipe)
         } catch {
             eventContinuation?.yield(.error("Failed to launch Python: \(error.localizedDescription)"))
         }
@@ -109,18 +130,20 @@ final class ProcessBridge: @unchecked Sendable {
     func terminate() {
         userInitiatedStop = true
         stdinPipe?.fileHandleForWriting.closeFile()
+        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
         process?.terminate()
         process = nil
         stdinPipe = nil
         stdoutPipe = nil
         stderrPipe = nil
+        protocolPipe = nil
         isRunning = false
     }
 
     // MARK: - Reading
 
-    private func startReading(stdout: Pipe) {
-        let handle = stdout.fileHandleForReading
+    private func startReading(protocolPipe: Pipe) {
+        let handle = protocolPipe.fileHandleForReading
         let continuation = eventContinuation
         let thread = Thread {
             var buffer = Data()
