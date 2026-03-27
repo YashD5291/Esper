@@ -44,8 +44,10 @@ Plans:
   2. The `os.dup2(2, 1)` hack is absent from server.py
   3. No `print()` call anywhere in `src/` can corrupt the JSON protocol channel — all output goes through logging
   4. The ProcessBridge in the SwiftUI app is updated to open and read from the protocol fd rather than stdout
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — TDD: Replace os.dup2 hack with --protocol-fd argparse in server.py
+- [ ] 02-02-PLAN.md — Update ProcessBridge.swift for protocol pipe IPC + end-to-end verification
 
 ### Phase 3: VAD Integration
 **Goal**: Silero VAD owns the audio loop and emits complete utterance buffers to speech_q, so Whisper is never called on silence or sub-threshold fragments
@@ -97,8 +99,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Config Consolidation | 0/2 | Planning complete | - |
-| 2. IPC Cleanup | 0/? | Not started | - |
+| 1. Config Consolidation | 2/2 | Complete | 2026-03-26 |
+| 2. IPC Cleanup | 0/2 | Planning complete | - |
 | 3. VAD Integration | 0/? | Not started | - |
 | 4. Whisper Integration | 0/? | Not started | - |
 | 5. Telegram Hardening | 0/? | Not started | - |
