@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """Esper headless JSON server — bridges Python STT to the SwiftUI app.
 
-Communicates via newline-delimited JSON over stdin (commands) / stdout (events).
-All print() calls from existing modules are redirected to stderr so they
-never corrupt the protocol stream.
+Communicates via newline-delimited JSON. In SwiftUI mode, pass --protocol-fd N
+to write events to a dedicated file descriptor. In CLI mode (no flag), events
+go to stdout.
 
 Usage:
-    python -m src.server
+    python -m src.server                    # CLI mode (stdout)
+    python -m src.server --protocol-fd 5    # SwiftUI mode (fd 5)
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import logging
 import os
@@ -19,12 +21,36 @@ import sys
 import threading
 import time
 import traceback
+from typing import TextIO
 
-# ── Stdout isolation ────────────────────────────────────────────────
-# Must happen BEFORE any import that might call print().
-_proto_fd = os.dup(1)          # save real stdout file descriptor
-os.dup2(2, 1)                  # redirect fd 1 → stderr (catches C-level prints too)
-_proto_out = os.fdopen(_proto_fd, "w", buffering=1)  # line-buffered protocol writer
+import numpy as np
+import sounddevice as sd
+
+from . import config
+from .audio_capture import AudioCapture
+from .transcriber import TranscriptionUpdate
+
+
+def _parse_protocol_fd() -> int | None:
+    """Parse --protocol-fd from argv, returning the int fd or None."""
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--protocol-fd", type=int, default=None)
+    args, _ = parser.parse_known_args()
+    return args.protocol_fd
+
+
+_protocol_fd = _parse_protocol_fd()
+
+_proto_out: TextIO
+
+if _protocol_fd is not None:
+    try:
+        _proto_out = os.fdopen(_protocol_fd, "w", buffering=1)
+    except OSError as exc:
+        sys.stderr.write(f"FATAL: --protocol-fd {_protocol_fd} not accessible: {exc}\n")
+        sys.exit(1)
+else:
+    _proto_out = sys.stdout
 
 # ── Logging setup (to stderr) ──────────────────────────────────────
 logging.basicConfig(
@@ -36,7 +62,7 @@ log = logging.getLogger("esper.server")
 
 
 def _send(event: str, payload=None):
-    """Write one JSON event to the protocol stream (original stdout)."""
+    """Write one JSON event to the protocol stream."""
     obj = {"event": event}
     if payload is not None:
         obj["data"] = payload
@@ -50,15 +76,6 @@ def _send(event: str, payload=None):
 def _send_error(message: str):
     log.error("Sending error event: %s", message)
     _send("error", {"message": message})
-
-
-# ── Imports (after stdout redirect) ────────────────────────────────
-import numpy as np
-import sounddevice as sd
-
-from . import config
-from .audio_capture import AudioCapture
-from .transcriber import TranscriptionUpdate
 
 
 # ── State ──────────────────────────────────────────────────────────
