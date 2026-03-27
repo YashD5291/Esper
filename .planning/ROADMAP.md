@@ -96,10 +96,12 @@ Plans:
 **Depends on**: Phase 5
 **Requirements**: CLEAN-01, CLEAN-02
 **Success Criteria** (what must be TRUE):
-  1. `src/coreml_transcriber.py` and `src/transcriber.py` are deleted and no import anywhere references them
+  1. `src/coreml_transcriber.py` is deleted, `src/transcriber.py` backward-compat fields removed, and no import anywhere references coreml_transcriber
   2. `models/coreml/` directory and its contents are absent from the repository
   3. `parakeet-mlx`, `coremltools`, and the explicit `scipy` pin are removed from requirements.txt and the app installs and runs cleanly without them
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 06-01-PLAN.md — Delete dead Parakeet/CoreML files, remove backward-compat fields, clean dependencies
 
 ## Progress
 
@@ -113,4 +115,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. VAD Integration | 2/2 | Complete   | 2026-03-27 |
 | 4. Whisper Integration | 2/3 | In Progress|  |
 | 5. Telegram Hardening | 1/1 | Complete   | 2026-03-27 |
-| 6. Cleanup | 0/? | Not started | - |
+| 6. Cleanup | 0/1 | Not started | - |
