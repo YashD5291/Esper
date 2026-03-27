@@ -20,21 +20,18 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Create venv and install dependencies
         run: |
           python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
+          .venv/bin/pip install -r requirements.txt
+          .venv/bin/pip install huggingface_hub
 
       - name: Run tests
-        run: |
-          source .venv/bin/activate
-          pytest tests/ -v
+        run: .venv/bin/python -m pytest tests/ -v
 
       - name: Download Whisper model
         run: |
-          source .venv/bin/activate
-          python -c "
+          .venv/bin/python -c "
           from huggingface_hub import snapshot_download
           snapshot_download('mlx-community/whisper-large-v3-turbo', local_dir='models/whisper')
           "
