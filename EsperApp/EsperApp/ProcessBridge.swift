@@ -46,7 +46,6 @@ final class ProcessBridge: @unchecked Sendable {
         let stdin = Pipe()
         let stdout = Pipe()
         let stderr = Pipe()
-        let protoPipe = Pipe()
 
         proc.standardInput = stdin
         proc.standardOutput = stdout
@@ -55,31 +54,19 @@ final class ProcessBridge: @unchecked Sendable {
         stdinPipe = stdin
         stdoutPipe = stdout
         stderrPipe = stderr
-        protocolPipe = protoPipe
+        protocolPipe = stdout  // Protocol events come over stdout (all print() removed in Phase 2)
         process = proc
 
-        // Clear CLOEXEC on write end so it survives exec into Python
-        let protoWriteFd = protoPipe.fileHandleForWriting.fileDescriptor
-        _ = Darwin.fcntl(protoWriteFd, F_SETFD, Darwin.fcntl(protoWriteFd, F_GETFD) & ~FD_CLOEXEC)
+        // No --protocol-fd: Python falls back to stdout for protocol events.
+        // macOS 26+ POSIX_SPAWN_CLOEXEC_DEFAULT closes extra fds despite fcntl.
+        proc.arguments = ["-m", "src.server"]
 
-        proc.arguments = ["-m", "src.server", "--protocol-fd", "\(protoWriteFd)"]
-
-        // Capture stray stdout output for logging (no longer the protocol channel)
-        stdout.fileHandleForReading.readabilityHandler = { handle in
-            let data = handle.availableData
-            if !data.isEmpty, let text = String(data: data, encoding: .utf8) {
-                for line in text.components(separatedBy: "\n") where !line.isEmpty {
-                    print("[Python stdout] \(line)")
-                }
-            }
-        }
-
-        // Read stderr on a background queue (just log it)
+        // Read stderr on a background queue (Python logging)
         stderr.fileHandleForReading.readabilityHandler = { handle in
             let data = handle.availableData
             if !data.isEmpty, let text = String(data: data, encoding: .utf8) {
                 for line in text.components(separatedBy: "\n") where !line.isEmpty {
-                    print("[Python] \(line)")
+                    NSLog("[Python] %@", line)
                 }
             }
         }
@@ -100,9 +87,8 @@ final class ProcessBridge: @unchecked Sendable {
         do {
             try proc.run()
             isRunning = true
-            // Close write end in parent -- child owns it. Required for EOF propagation.
-            protoPipe.fileHandleForWriting.closeFile()
-            startReading(protocolPipe: protoPipe)
+            // Protocol events come over stdout — read from stdout pipe
+            startReading(protocolPipe: stdout)
         } catch {
             eventContinuation?.yield(.error("Failed to launch Python: \(error.localizedDescription)"))
         }

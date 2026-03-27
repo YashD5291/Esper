@@ -125,19 +125,22 @@ def _on_status(status_str: str):
 
 def _whisper_consumer():
     """Read utterances from speech_q and transcribe via WhisperTranscriber."""
+    log.info("Whisper consumer thread started")
     while not _stop_event.is_set():
         try:
             utterance = _speech_q.get(timeout=0.2)
         except _queue.Empty:
             continue
         if utterance is None:
+            log.info("Whisper consumer: got None sentinel, exiting")
             break
         if _transcriber is None or _transcriber.stopped:
+            log.info("Whisper consumer: transcriber gone/stopped, exiting")
             break
+        duration = len(utterance) / config.SAMPLE_RATE
+        log.info("Whisper consumer: got utterance %.2fs (%d samples)", duration, len(utterance))
         _send("status", "transcribing")  # D-02: processing indicator
-        result = _transcriber.transcribe_utterance(utterance)
-        if result is not None:
-            _on_update(result)
+        _transcriber.transcribe_utterance(utterance)  # on_update callback fires inside
         if not _transcriber.stopped:
             _send("status", "listening")  # D-02: back to listening
 

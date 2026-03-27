@@ -5,6 +5,10 @@ Every component imports from here. Mutation happens only at startup
 constructed.
 """
 
+import pathlib
+
+_PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
+
 # ── Audio ──────────────────────────────────────────────────────────────────────
 SAMPLE_RATE: int = 16000
 CHANNELS: int = 1
@@ -14,18 +18,18 @@ QUEUE_MAXSIZE: int = 300               # ~9.6s of buffered audio at 512 samples/
 
 # ── VAD (Phase 3) ──────────────────────────────────────────────────────────────
 VAD_FRAME_SIZE: int = 512              # samples at 16kHz = 32ms (hard Silero requirement)
-VAD_SPEECH_THRESHOLD: float = 0.5     # probability above which frame is speech
-VAD_SILENCE_THRESHOLD_MS: int = 500   # ms of silence to seal an utterance
-VAD_MIN_SPEECH_DURATION_MS: int = 500 # discard utterances shorter than this
-VAD_MIN_ENERGY: float = 0.01          # RMS floor; discard very quiet frames
+VAD_SPEECH_THRESHOLD: float = 0.3     # aggressive — catch soft/quick speech
+VAD_SILENCE_THRESHOLD_MS: int = 300   # seal utterances fast (300ms silence)
+VAD_MIN_SPEECH_DURATION_MS: int = 100 # catch even single-word utterances (~100ms)
+VAD_MIN_ENERGY: float = 0.003         # very low floor — don't reject quiet speech
 
 # ── Whisper (Phase 4) ──────────────────────────────────────────────────────────
-WHISPER_MODEL_REPO: str = "mlx-community/whisper-large-v3-turbo"
+WHISPER_MODEL_REPO: str = str(_PROJECT_ROOT / "models" / "whisper")
 WHISPER_LANGUAGE: str = "en"
 WHISPER_MAX_GENERATIONS_BEFORE_RESTART: int = 50
 WHISPER_SUBPROCESS_TIMEOUT_S: float = 15.0
-WHISPER_NO_SPEECH_THRESHOLD: float = 0.6
-WHISPER_COMPRESSION_RATIO_THRESHOLD: float = 2.4
+WHISPER_NO_SPEECH_THRESHOLD: float = 0.8   # only filter obvious non-speech
+WHISPER_COMPRESSION_RATIO_THRESHOLD: float = 3.0  # only filter extreme repetition
 
 # ── Telegram (set at runtime via start command / CLI args) ─────────────────────
 TELEGRAM_BOT_TOKEN: str = ""           # set at runtime via start command / CLI args

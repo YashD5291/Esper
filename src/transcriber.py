@@ -114,14 +114,8 @@ class WhisperTranscriber:
             RuntimeError: if the worker does not emit a ready sentinel within
                           config.MODEL_LOAD_TIMEOUT_S seconds (ARCH-03).
         """
-        model_cache_dir = (
-            pathlib.Path.home()
-            / ".cache"
-            / "huggingface"
-            / "hub"
-            / "models--mlx-community--whisper-large-v3-turbo"
-        )
-        if model_cache_dir.exists():
+        model_path = pathlib.Path(config.WHISPER_MODEL_REPO)
+        if model_path.is_dir() and (model_path / "weights.safetensors").exists():
             self._on_status("loading_model")
         else:
             self._on_status("downloading_model")

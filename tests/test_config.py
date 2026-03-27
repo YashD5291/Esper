@@ -76,7 +76,7 @@ def test_vad_min_energy():
 
 def test_whisper_model_repo():
     config = get_config()
-    assert config.WHISPER_MODEL_REPO == "mlx-community/whisper-large-v3-turbo"
+    assert config.WHISPER_MODEL_REPO.endswith("models/whisper")
 
 
 def test_whisper_language():

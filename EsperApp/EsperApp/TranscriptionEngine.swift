@@ -87,6 +87,17 @@ final class TranscriptionEngine {
         sentences = []
         errorMessage = nil
 
+        // If bridge isn't running yet, launch it and retry after it's ready
+        if !bridge.isRunning {
+            launch()
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(1))
+                guard let self, self.bridge.isRunning else { return }
+                self.bridge.send(cmd: "start", data: data)
+            }
+            return
+        }
+
         bridge.send(cmd: "start", data: data)
     }
 

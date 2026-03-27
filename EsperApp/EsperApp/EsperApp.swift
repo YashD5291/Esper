@@ -14,7 +14,11 @@ struct EsperApp: App {
 
         WindowGroup("Esper", id: "main") {
             MainWindowView(engine: engine)
-                .onAppear {
+                .task {
+                    // Launch here — @State is fully wired, events reach the real engine
+                    if !engine.bridge.isRunning {
+                        engine.launch()
+                    }
                     NSApp.activate(ignoringOtherApps: true)
                 }
         }
@@ -22,13 +26,6 @@ struct EsperApp: App {
 
         Settings {
             SettingsView(engine: engine)
-        }
-    }
-
-    init() {
-        DispatchQueue.main.async { [self] in
-            engine.launch()
-            openWindow(id: "main")
         }
     }
 }

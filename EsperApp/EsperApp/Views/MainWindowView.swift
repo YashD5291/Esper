@@ -48,6 +48,14 @@ struct MainWindowView: View {
                 }
                 .labelsHidden()
                 .fixedSize()
+
+                Button {
+                    engine.refreshDevices()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.borderless)
+                .help("Refresh audio devices")
             }
 
             Text("WHISPER")

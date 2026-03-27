@@ -70,6 +70,23 @@ def main():
         list_devices()
         sys.exit(0)
 
+    # -- Interactive device selection (when no --device given) --
+    if args.device is None:
+        import sounddevice as sd
+        input_devs = [(i, dev) for i, dev in enumerate(sd.query_devices())
+                      if dev["max_input_channels"] > 0]
+        print("\n── Audio Input Devices ──")
+        for i, dev in input_devs:
+            default = " (DEFAULT)" if i == sd.default.device[0] else ""
+            print(f"  [{i}] {dev['name']}{default}")
+        print()
+        choice = input("Input device index (Enter for default): ").strip()
+        if choice:
+            args.device = int(choice)
+        else:
+            args.device = sd.default.device[0]
+        print()
+
     # -- Telegram setup --
     telegram_sender = None
     if args.telegram:

@@ -167,13 +167,15 @@ class VadThread:
 
         if speech_frame_count >= min_frames:
             utterance = np.concatenate(speech_buf).astype(np.float32)
+            duration = len(utterance) / 16000
+            log.info("VAD: utterance sealed %.2fs (%d frames passed threshold)", duration, speech_frame_count)
             try:
                 self._speech_q.put_nowait(utterance)  # non-blocking (Pitfall 3)
             except queue.Full:
                 log.warning("speech_q full — utterance discarded")
         else:
-            log.debug(
-                "Utterance discarded: %d speech frames < %d minimum",
+            log.info(
+                "VAD: utterance discarded: %d speech frames < %d minimum",
                 speech_frame_count,
                 min_frames,
             )
