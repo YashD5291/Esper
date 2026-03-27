@@ -40,7 +40,7 @@ xcodebuild -project "$PROJECT_DIR/EsperApp/EsperApp.xcodeproj" \
     -derivedDataPath "$BUILD_DIR/derived" \
     MARKETING_VERSION="$VERSION" \
     CURRENT_PROJECT_VERSION="$(git rev-list --count HEAD)" \
-    clean build 2>&1 | tail -5
+    clean build
 
 # Find the built .app
 BUILT_APP=$(find "$BUILD_DIR/derived" -name "EsperApp.app" -type d | head -1)
