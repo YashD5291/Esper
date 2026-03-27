@@ -1,8 +1,5 @@
-parakeet-mlx
 sounddevice
 numpy
-scipy
-coremltools
 soundfile
 httpx
 python-dotenv
