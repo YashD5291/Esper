@@ -25,8 +25,8 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 ### Integration
 
-- [ ] **INTG-01**: Telegram sender works with new per-utterance TranscriptionUpdate contract
-- [ ] **INTG-02**: Telegram shutdown flush uses 10s timeout for API latency spikes
+- [x] **INTG-01**: Telegram sender works with new per-utterance TranscriptionUpdate contract
+- [x] **INTG-02**: Telegram shutdown flush uses 10s timeout for API latency spikes
 - [x] **INTG-03**: SwiftUI ProcessBridge updated for fd-based IPC protocol
 
 ### Cleanup
@@ -73,8 +73,8 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 | ARCH-03 | Phase 4 | Complete |
 | ARCH-04 | Phase 4 | Complete |
 | CLEAN-03 | Phase 4 | Complete |
-| INTG-01 | Phase 5 | Pending |
-| INTG-02 | Phase 5 | Pending |
+| INTG-01 | Phase 5 | Complete |
+| INTG-02 | Phase 5 | Complete |
 | CLEAN-01 | Phase 6 | Pending |
 | CLEAN-02 | Phase 6 | Pending |
 
