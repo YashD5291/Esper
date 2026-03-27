@@ -21,15 +21,13 @@ import signal
 import sys
 import threading
 import time
-import traceback
 from typing import TextIO
 
-import numpy as np
 import sounddevice as sd
 
 from . import config
 from .audio_capture import AudioCapture
-from .transcriber import TranscriptionUpdate
+from .transcriber import TranscriptionUpdate, WhisperTranscriber
 from .vad import VadThread
 
 
@@ -89,7 +87,7 @@ _speech_q: _queue.Queue | None = None
 _bridge_thread: threading.Thread | None = None
 _energy_thread: threading.Thread | None = None
 _stop_event = threading.Event()
-_engine_name: str = config.DEFAULT_ENGINE
+_engine_name: str = "whisper"
 
 
 def _list_devices():
@@ -111,19 +109,23 @@ def _list_devices():
 def _on_update(update: TranscriptionUpdate):
     """Fan-out callback: emit transcript event + forward to Telegram."""
     _send("transcript", {
+        "text": update.text,
         "finalized_text": update.finalized_text,
-        "draft_text": update.draft_text,
-        "finalized_sentences": [
-            {"text": s.text.strip(), "confidence": getattr(s, "confidence", 1.0)}
-            for s in update.finalized_sentences
-        ],
+        "sentences": update.sentences,
+        "no_speech_prob": update.no_speech_prob,
+        "duration_s": update.duration_s,
     })
     if _telegram_sender is not None:
         _telegram_sender.on_update(update)
 
 
-def _bridge_speech_q():
-    """Phase 3 bridge: relay complete utterances from speech_q to transcriber."""
+def _on_status(status_str: str):
+    """Forward WhisperTranscriber status events to protocol stream."""
+    _send("status", status_str)
+
+
+def _whisper_consumer():
+    """Read utterances from speech_q and transcribe via WhisperTranscriber."""
     while not _stop_event.is_set():
         try:
             utterance = _speech_q.get(timeout=0.2)
@@ -131,8 +133,14 @@ def _bridge_speech_q():
             continue
         if utterance is None:
             break
-        if _transcriber is not None:
-            _transcriber.push_audio(utterance)
+        if _transcriber is None or _transcriber.stopped:
+            break
+        _send("status", "transcribing")  # D-02: processing indicator
+        result = _transcriber.transcribe_utterance(utterance)
+        if result is not None:
+            _on_update(result)
+        if not _transcriber.stopped:
+            _send("status", "listening")  # D-02: back to listening
 
 
 def _emit_energy():
@@ -143,58 +151,20 @@ def _emit_energy():
         time.sleep(config.ENERGY_EMIT_INTERVAL_S)
 
 
-def _load_model_with_timeout(engine: str, data: dict):
-    """Load the STT model in a thread with a timeout. Returns (transcriber, load_time) or raises."""
-    result = [None]
-    error = [None]
-
-    def _load():
-        try:
-            if engine == "coreml":
-                from .coreml_transcriber import CoreMLTranscriber, load_coreml_models
-                models, vocab, load_time = load_coreml_models()
-                result[0] = CoreMLTranscriber(
-                    models, vocab,
-                    on_update=_on_update,
-                    buffer_seconds=data.get("buffer", 1.5),
-                )
-            else:
-                from .transcriber import StreamingTranscriber, load_model
-                model, load_time = load_model()
-                result[0] = StreamingTranscriber(
-                    model,
-                    on_update=_on_update,
-                    feed_interval=data.get("feed_interval", 0.4),
-                )
-            log.info("Model loaded in %.2fs (%s engine)", load_time, engine)
-        except Exception as exc:
-            error[0] = exc
-
-    thread = threading.Thread(target=_load, name="model-loader")
-    thread.start()
-    thread.join(timeout=config.MODEL_LOAD_TIMEOUT_S)
-
-    if thread.is_alive():
-        raise TimeoutError(f"Model loading timed out after {config.MODEL_LOAD_TIMEOUT_S}s")
-    if error[0] is not None:
-        raise error[0]
-    return result[0]
-
-
 def _do_start(data: dict):
-    """Handle the 'start' command: load model, start capture + transcriber."""
+    """Handle the 'start' command: spawn WhisperTranscriber, start capture + VAD."""
     global _capture, _transcriber, _telegram_sender, _vad_thread, _speech_q, _bridge_thread
     global _energy_thread, _stop_event, _engine_name
 
-    engine = data.get("engine", config.DEFAULT_ENGINE)
-    device = data.get("device")  # int or None
-    telegram_cfg = data.get("telegram")  # {bot_token, chat_id} or None
+    engine = data.get("engine", "whisper")  # Default changes from "coreml" to "whisper"
+    device = data.get("device")
+    telegram_cfg = data.get("telegram")
 
     _engine_name = engine
     _stop_event.clear()
     log.info("Starting: engine=%s, device=%s", engine, device)
 
-    # Telegram setup
+    # Telegram setup (unchanged)
     if telegram_cfg:
         bot_token = telegram_cfg.get("bot_token", "")
         chat_id = telegram_cfg.get("chat_id", "")
@@ -207,20 +177,19 @@ def _do_start(data: dict):
             _telegram_sender = TelegramSender(bot_token, chat_id, stream=stream)
             log.info("Telegram sender configured (stream=%s)", stream)
 
-    # Load model
-    _send("status", "loading_model")
+    # Create WhisperTranscriber — subprocess handles model loading and ready signaling
     try:
-        _transcriber = _load_model_with_timeout(engine, data)
+        _transcriber = WhisperTranscriber(on_update=_on_update, on_status=_on_status)
+        _transcriber.start()  # spawns subprocess, emits status events, waits for ready
     except Exception as exc:
-        _send_error(f"Failed to load model: {exc}")
-        log.error("Model load failed", exc_info=True)
-        # Clean up telegram if we started it
+        _send_error(f"Failed to start Whisper: {exc}")
+        log.error("Whisper start failed", exc_info=True)
         if _telegram_sender is not None:
             _telegram_sender.stop()
             _telegram_sender = None
         return
 
-    # Audio capture
+    # Audio capture (unchanged)
     try:
         _capture = AudioCapture(device=device)
         _capture.start()
@@ -228,7 +197,6 @@ def _do_start(data: dict):
     except Exception as exc:
         _send_error(f"Failed to start audio capture: {exc}")
         log.error("Audio capture failed", exc_info=True)
-        # Clean up model + telegram
         if _transcriber is not None:
             _transcriber.stop()
             _transcriber.wait(timeout=5.0)
@@ -238,15 +206,12 @@ def _do_start(data: dict):
             _telegram_sender = None
         return
 
-    # Start transcriber
-    _transcriber.start()
-
-    # VAD + speech bridge (per D-14)
+    # VAD + whisper consumer (replaces _bridge_speech_q)
     _speech_q = _queue.Queue(maxsize=10)
     _vad_thread = VadThread(audio_q=_capture._queue, speech_q=_speech_q)
     _vad_thread.start()
 
-    _bridge_thread = threading.Thread(target=_bridge_speech_q, daemon=True, name="speech-bridge")
+    _bridge_thread = threading.Thread(target=_whisper_consumer, daemon=True, name="whisper-consumer")
     _bridge_thread.start()
 
     _energy_thread = threading.Thread(target=_emit_energy, daemon=True, name="energy-emitter")
