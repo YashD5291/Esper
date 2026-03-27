@@ -7,6 +7,7 @@ recordings/
 dist/
 build/
 models/
+!models/silero_vad.onnx
 .history
 .DS_Store
 *.xcuserstate
