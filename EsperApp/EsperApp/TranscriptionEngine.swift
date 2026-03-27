@@ -41,16 +41,19 @@ final class TranscriptionEngine {
     // MARK: - Lifecycle
 
     func launch() {
+        NSLog("[Engine] launch() called")
         bridge.launch(
             pythonPath: settings.resolvedPythonPath,
             projectDir: settings.resolvedProjectDir
         )
+        NSLog("[Engine] bridge.launch() done, isRunning=%d", bridge.isRunning ? 1 : 0)
         startConsuming()
         // Request device list after launch
         let b = bridge
         Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(500))
             guard self != nil else { return }
+            NSLog("[Engine] sending list_devices")
             b.send(cmd: "list_devices")
         }
     }
@@ -145,8 +148,10 @@ final class TranscriptionEngine {
     }
 
     private func handle(_ event: ServerEvent) {
+        NSLog("[Engine] handle: %@", "\(event)")
         switch event {
         case .devices(let list):
+            NSLog("[Engine] got %d devices", list.count)
             devices = list
             if selectedDevice == nil {
                 selectedDevice = list.first(where: { $0.isDefault })?.index ?? list.first?.index
@@ -169,9 +174,6 @@ final class TranscriptionEngine {
 
         case .energy(let level):
             energyLevel = level
-
-        case .telegramSent:
-            break
 
         case .telegramTest(let success, let error):
             telegramTestResult = TelegramTestResult(success: success, error: error)

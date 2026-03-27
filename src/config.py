@@ -22,6 +22,8 @@ VAD_SPEECH_THRESHOLD: float = 0.3     # aggressive — catch soft/quick speech
 VAD_SILENCE_THRESHOLD_MS: int = 300   # seal utterances fast (300ms silence)
 VAD_MIN_SPEECH_DURATION_MS: int = 100 # catch even single-word utterances (~100ms)
 VAD_MIN_ENERGY: float = 0.003         # very low floor — don't reject quiet speech
+VAD_PRE_BUFFER_MS: int = 300          # speech onset context prepended to utterance
+VAD_POST_BUFFER_MS: int = 200         # silence context appended after speech ends
 
 # ── Whisper (Phase 4) ──────────────────────────────────────────────────────────
 WHISPER_MODEL_REPO: str = str(_PROJECT_ROOT / "models" / "whisper")

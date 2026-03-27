@@ -59,7 +59,6 @@ enum ServerEvent {
     case status(EngineStatus)
     case transcript(TranscriptionPayload)
     case energy(Double)
-    case telegramSent
     case telegramTest(Bool, String?)
     case crashed(Int32)
     case error(String)
@@ -113,9 +112,6 @@ enum ServerEvent {
             guard let d = payload as? [String: Any],
                   let level = d["level"] as? Double else { return nil }
             return .energy(level)
-
-        case "telegram_sent":
-            return .telegramSent
 
         case "telegram_test":
             guard let d = payload as? [String: Any],

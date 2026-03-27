@@ -62,10 +62,10 @@ class VadThread:
         model.reset_states()
 
         # Derived constants — computed from config, not stored in config
-        sil_frames = math.ceil(config.VAD_SILENCE_THRESHOLD_MS / _FRAME_MS)   # 500ms/32ms = 16
-        min_frames = math.ceil(config.VAD_MIN_SPEECH_DURATION_MS / _FRAME_MS)  # 500ms/32ms = 16
-        pre_frames = math.ceil(300 / _FRAME_MS)                                 # 300ms = 10 frames
-        post_frames = math.ceil(200 / _FRAME_MS)                                # 200ms = 7 frames
+        sil_frames = math.ceil(config.VAD_SILENCE_THRESHOLD_MS / _FRAME_MS)
+        min_frames = math.ceil(config.VAD_MIN_SPEECH_DURATION_MS / _FRAME_MS)
+        pre_frames = math.ceil(config.VAD_PRE_BUFFER_MS / _FRAME_MS)
+        post_frames = math.ceil(config.VAD_POST_BUFFER_MS / _FRAME_MS)
 
         # Rolling pre-buffer (maxlen ensures only last ~300ms is kept)
         prebuf: collections.deque = collections.deque(maxlen=pre_frames)
@@ -138,6 +138,10 @@ class VadThread:
 
         except Exception:
             log.error("Unexpected error in VadThread._run", exc_info=True)
+            try:
+                self._speech_q.put_nowait(None)
+            except queue.Full:
+                pass
 
     def _seal_utterance(
         self,

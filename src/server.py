@@ -61,14 +61,22 @@ logging.basicConfig(
 log = logging.getLogger("esper.server")
 
 
+_write_lock = threading.Lock()
+
+
 def _send(event: str, payload=None):
-    """Write one JSON event to the protocol stream."""
+    """Write one JSON event to the protocol stream.
+
+    Thread-safe: multiple threads (_whisper_consumer, _emit_energy, main)
+    may call _send concurrently. The lock ensures complete JSON lines.
+    """
     obj = {"event": event}
     if payload is not None:
         obj["data"] = payload
     try:
-        _proto_out.write(json.dumps(obj) + "\n")
-        _proto_out.flush()
+        with _write_lock:
+            _proto_out.write(json.dumps(obj) + "\n")
+            _proto_out.flush()
     except (BrokenPipeError, OSError):
         pass
 

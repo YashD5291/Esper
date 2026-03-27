@@ -94,8 +94,8 @@ def test_config_hallucination_thresholds():
     """config.py must have the hallucination filter thresholds."""
     assert hasattr(config, "WHISPER_NO_SPEECH_THRESHOLD"), "Missing WHISPER_NO_SPEECH_THRESHOLD"
     assert hasattr(config, "WHISPER_COMPRESSION_RATIO_THRESHOLD"), "Missing WHISPER_COMPRESSION_RATIO_THRESHOLD"
-    assert config.WHISPER_NO_SPEECH_THRESHOLD == 0.6
-    assert config.WHISPER_COMPRESSION_RATIO_THRESHOLD == 2.4
+    assert config.WHISPER_NO_SPEECH_THRESHOLD == 0.8
+    assert config.WHISPER_COMPRESSION_RATIO_THRESHOLD == 3.0
 
 
 # ── PIPE-05: spawn context ─────────────────────────────────────────────────────
@@ -158,7 +158,7 @@ def test_hallucination_filter_no_speech():
     from src.transcriber import WhisperTranscriber
 
     ready = {"ok": True, "ready": True}
-    bad_result = _make_good_result(no_speech_prob=0.8)
+    bad_result = _make_good_result(no_speech_prob=0.9)
 
     mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
@@ -180,11 +180,11 @@ def test_hallucination_filter_no_speech():
 
 
 def test_hallucination_filter_compression():
-    """PIPE-06: compression_ratio > 2.4 → transcribe_utterance returns None."""
+    """PIPE-06: compression_ratio > 3.0 → transcribe_utterance returns None."""
     from src.transcriber import WhisperTranscriber
 
     ready = {"ok": True, "ready": True}
-    bad_result = _make_good_result(compression_ratio=3.0)
+    bad_result = _make_good_result(compression_ratio=3.5)
 
     mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()

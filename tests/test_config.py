@@ -54,22 +54,22 @@ def test_vad_frame_size():
 
 def test_vad_speech_threshold():
     config = get_config()
-    assert config.VAD_SPEECH_THRESHOLD == 0.5
+    assert config.VAD_SPEECH_THRESHOLD == 0.3
 
 
 def test_vad_silence_threshold_ms():
     config = get_config()
-    assert config.VAD_SILENCE_THRESHOLD_MS == 500
+    assert config.VAD_SILENCE_THRESHOLD_MS == 300
 
 
 def test_vad_min_speech_duration_ms():
     config = get_config()
-    assert config.VAD_MIN_SPEECH_DURATION_MS == 500
+    assert config.VAD_MIN_SPEECH_DURATION_MS == 100
 
 
 def test_vad_min_energy():
     config = get_config()
-    assert config.VAD_MIN_ENERGY == 0.01
+    assert config.VAD_MIN_ENERGY == 0.003
 
 
 # ── Whisper section ───────────────────────────────────────────────────────────

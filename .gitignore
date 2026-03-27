@@ -11,3 +11,5 @@ models/
 .DS_Store
 *.xcuserstate
 xcuserdata/
+.pytest_cache/
+.claude/

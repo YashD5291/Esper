@@ -1,9 +1,9 @@
-sounddevice
-numpy
-soundfile
-httpx
-python-dotenv
-silero-vad
-torch
-torchaudio
+sounddevice==0.5.5
+numpy==2.3.5
+soundfile==0.13.1
+httpx==0.28.1
+python-dotenv==1.2.1
+silero-vad==6.2.1
+torch==2.11.0
+torchaudio==2.11.0
 mlx-whisper==0.4.3

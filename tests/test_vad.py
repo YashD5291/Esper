@@ -208,11 +208,11 @@ def test_low_energy_frames_rejected():
 # ── D-08 test ──────────────────────────────────────────────────────────────────
 
 def test_short_utterance_discarded():
-    """D-08: 5 speech frames (< 500ms = 16 frames minimum) + 20 silence-VAD frames.
+    """D-08: 2 speech frames (64ms < 100ms minimum) + 20 silence-VAD frames.
 
     Utterance is too short — must be discarded, speech_q stays empty.
     """
-    speech_frames_list = [speech_frame() for _ in range(5)]
+    speech_frames_list = [speech_frame() for _ in range(2)]
     non_speech_frames = [speech_frame() for _ in range(20)]
 
     model = MagicMock()
@@ -221,7 +221,7 @@ def test_short_utterance_discarded():
     call_count = [0]
     def side_effect(tensor, sample_rate):
         result = MagicMock()
-        if call_count[0] < 5:
+        if call_count[0] < 2:
             result.item.return_value = 0.9
         else:
             result.item.return_value = 0.1
@@ -234,5 +234,5 @@ def test_short_utterance_discarded():
     speech_q = run_vad(frames, model)
 
     assert speech_q.empty(), (
-        "Short utterance (5 frames < 16 frame minimum) must be discarded"
+        "Short utterance (2 frames < 4 frame minimum) must be discarded"
     )

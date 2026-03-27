@@ -90,6 +90,14 @@ final class ProcessBridge: @unchecked Sendable {
             // Protocol events come over stdout — read from stdout pipe
             startReading(protocolPipe: stdout)
         } catch {
+            stdin.fileHandleForWriting.closeFile()
+            stdout.fileHandleForReading.closeFile()
+            stderr.fileHandleForReading.closeFile()
+            stdinPipe = nil
+            stdoutPipe = nil
+            stderrPipe = nil
+            protocolPipe = nil
+            process = nil
             eventContinuation?.yield(.error("Failed to launch Python: \(error.localizedDescription)"))
         }
     }
@@ -117,6 +125,7 @@ final class ProcessBridge: @unchecked Sendable {
         userInitiatedStop = true
         stdinPipe?.fileHandleForWriting.closeFile()
         stdoutPipe?.fileHandleForReading.readabilityHandler = nil
+        stderrPipe?.fileHandleForReading.readabilityHandler = nil
         process?.terminate()
         process = nil
         stdinPipe = nil
@@ -132,26 +141,36 @@ final class ProcessBridge: @unchecked Sendable {
         let handle = protocolPipe.fileHandleForReading
         let continuation = eventContinuation
         let thread = Thread {
+            NSLog("[Bridge] Reader thread started on fd=%d", handle.fileDescriptor)
             var buffer = Data()
             let newline = UInt8(ascii: "\n")
 
             while true {
                 let data = handle.availableData
                 if data.isEmpty {
+                    NSLog("[Bridge] Reader: EOF")
                     break
                 }
+                NSLog("[Bridge] Reader: got %d bytes", data.count)
                 buffer.append(data)
 
                 while let newlineIndex = buffer.firstIndex(of: newline) {
                     let lineData = buffer[buffer.startIndex..<newlineIndex]
                     buffer = buffer[buffer.index(after: newlineIndex)...]
 
+                    if let line = String(data: Data(lineData), encoding: .utf8) {
+                        NSLog("[Bridge] Reader line: %@", line)
+                    }
                     if let event = ServerEvent.parse(json: Data(lineData)) {
+                        NSLog("[Bridge] Parsed event, yielding to stream")
                         continuation?.yield(event)
+                    } else if let line = String(data: Data(lineData), encoding: .utf8), !line.isEmpty {
+                        NSLog("[Bridge] Failed to parse event: %@", line)
                     }
                 }
             }
 
+            NSLog("[Bridge] Reader thread exiting")
             continuation?.finish()
         }
         thread.name = "process-bridge-reader"
