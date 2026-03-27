@@ -208,6 +208,19 @@ tests/                      71 tests (config, IPC, VAD, transcriber, cleanup)
 
 ---
 
+## Download
+
+Grab the latest release: [**Esper.dmg**](https://github.com/YashD5291/Esper/releases/latest)
+
+After installing, open Terminal and run:
+```
+xattr -cr /Applications/Esper.app
+```
+
+Then open Esper from Applications.
+
+---
+
 ## License
 
-Private project.
+[MIT License](LICENSE) -- Copyright (c) 2025 Yash Desai
