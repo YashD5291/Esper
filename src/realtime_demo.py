@@ -25,7 +25,8 @@ from pathlib import Path
 import numpy as np
 import soundfile as sf
 
-from .audio_capture import AudioCapture, SAMPLE_RATE, list_devices
+from . import config
+from .audio_capture import AudioCapture, list_devices
 from .transcriber import TranscriptionUpdate
 
 # ANSI helpers
@@ -108,6 +109,8 @@ def main():
         if not bot_token or not chat_id or "your-" in bot_token:
             print("Error: --telegram requires TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env")
             sys.exit(1)
+        config.TELEGRAM_BOT_TOKEN = bot_token
+        config.TELEGRAM_CHAT_ID = chat_id
         from .telegram_sender import TelegramSender
         telegram_sender = TelegramSender(bot_token, chat_id)
 
@@ -221,8 +224,8 @@ def main():
 
     if record_path is not None and record_chunks:
         audio = np.concatenate(record_chunks)
-        sf.write(str(record_path), audio, SAMPLE_RATE)
-        duration = len(audio) / SAMPLE_RATE
+        sf.write(str(record_path), audio, config.SAMPLE_RATE)
+        duration = len(audio) / config.SAMPLE_RATE
         print(f"{GRAY}  Saved {duration:.1f}s of audio to {record_path}{RESET}")
 
     print(f"{GRAY}  Done.{RESET}\n")

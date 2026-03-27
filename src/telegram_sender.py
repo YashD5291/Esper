@@ -16,13 +16,10 @@ import time
 
 import httpx
 
+from . import config
 from .transcriber import TranscriptionUpdate
 
 log = logging.getLogger(__name__)
-
-_MAX_RETRIES = 3
-_BACKOFF_BASE = 1.0
-_DRAFT_INTERVAL = 0.5  # min seconds between draft updates
 
 
 class TelegramSender:
@@ -110,7 +107,7 @@ class TelegramSender:
 
     def _send_draft(self, client: httpx.Client, text: str):
         now = time.monotonic()
-        if now - self._last_draft_t < _DRAFT_INTERVAL:
+        if now - self._last_draft_t < config.TELEGRAM_DRAFT_INTERVAL:
             return
         self._last_draft_t = now
         try:
@@ -130,7 +127,7 @@ class TelegramSender:
             log.warning("Draft send failed: %s", exc)
 
     def _send_message(self, client: httpx.Client, text: str):
-        for attempt in range(_MAX_RETRIES):
+        for attempt in range(config.TELEGRAM_MAX_RETRIES):
             try:
                 resp = client.post(
                     f"{self._base_url}/sendMessage",
@@ -146,8 +143,8 @@ class TelegramSender:
                 log.warning(
                     "Telegram send error (attempt %d): %s", attempt + 1, exc
                 )
-            time.sleep(_BACKOFF_BASE * (2**attempt))
-        log.error("Failed to send after %d attempts: %s", _MAX_RETRIES, text[:60])
+            time.sleep(config.TELEGRAM_BACKOFF_BASE * (2**attempt))
+        log.error("Failed to send after %d attempts: %s", config.TELEGRAM_MAX_RETRIES, text[:60])
 
     # -- lifecycle --
 

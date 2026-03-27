@@ -8,22 +8,18 @@ import threading
 import numpy as np
 import sounddevice as sd
 
-log = logging.getLogger(__name__)
+from . import config
 
-SAMPLE_RATE = 16000
-CHANNELS = 1
-CHUNK_DURATION = 0.1  # seconds per callback chunk
-CHUNK_SAMPLES = int(SAMPLE_RATE * CHUNK_DURATION)  # 1600 samples
-QUEUE_MAXSIZE = 300  # ~30 seconds of buffered audio
+log = logging.getLogger(__name__)
 
 
 def list_devices():
     """Print available audio input devices."""
-    print("\nAvailable audio input devices:")
+    log.info("Available audio input devices:")
     for i, dev in enumerate(sd.query_devices()):
         if dev["max_input_channels"] > 0:
             default = " (DEFAULT)" if i == sd.default.device[0] else ""
-            print(f"  [{i}] {dev['name']}{default}")
+            log.info("  [%d] %s%s", i, dev['name'], default)
 
 
 def find_real_mic() -> int | None:
@@ -61,7 +57,7 @@ class AudioCapture:
 
     def __init__(self, device: int | None = None):
         self.device = auto_select_device(device)
-        self._queue: queue.Queue[np.ndarray | None] = queue.Queue(maxsize=QUEUE_MAXSIZE)
+        self._queue: queue.Queue[np.ndarray | None] = queue.Queue(maxsize=config.QUEUE_MAXSIZE)
         self._stream: sd.InputStream | None = None
         self._energy: float = 0.0
         self._lock = threading.Lock()
@@ -72,13 +68,13 @@ class AudioCapture:
         dev_idx = self.device if self.device is not None else sd.default.device[0]
         dev_info = sd.query_devices(dev_idx)
         dev_name = dev_info["name"]
-        print(f"  Device: [{dev_idx}] {dev_name}")
+        log.info("Audio capture starting on device [%d] %s", dev_idx, dev_name)
 
         self._stream = sd.InputStream(
-            samplerate=SAMPLE_RATE,
-            channels=CHANNELS,
+            samplerate=config.SAMPLE_RATE,
+            channels=config.CHANNELS,
             dtype="float32",
-            blocksize=CHUNK_SAMPLES,
+            blocksize=config.CHUNK_SAMPLES,
             device=self.device,
             callback=self._callback,
         )
