@@ -27,7 +27,7 @@ Real-time, accurate transcription of accented English speech — if the transcri
 
 <!-- Current scope. Building toward these in v2.0. -->
 
-- [ ] Silero VAD for speech boundary detection
+- [x] Silero VAD for speech boundary detection — Validated in Phase 3: VAD Integration
 - [ ] Whisper large-v3-turbo via mlx-whisper (Indian accent support)
 - [x] Single config.py (consolidate .env + @AppStorage + CLI args) — Validated in Phase 1: Config Consolidation
 - [x] Clean IPC protocol (remove stdout fd redirect hack) — Validated in Phase 2: IPC Cleanup
@@ -76,7 +76,7 @@ Real-time, accurate transcription of accented English speech — if the transcri
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Whisper large-v3-turbo over Parakeet | Better Indian accent recognition, good speed/accuracy tradeoff on MLX | -- Pending |
-| Silero VAD from The Professor | Proven stable (50+ generations zero hangs), lightweight | -- Pending |
+| Silero VAD from The Professor | Proven stable (50+ generations zero hangs), lightweight | Validated — Phase 3 |
 | Single config.py pattern | The Professor's pattern works well, eliminates config fragmentation | Validated — Phase 1 |
 
 ## Evolution
@@ -97,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 2: IPC Cleanup complete*
+*Last updated: 2026-03-27 after Phase 3: VAD Integration complete*
