@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md — WhisperTranscriber implementation
-last_updated: "2026-03-27T08:08:06.923Z"
+stopped_at: Completed 04-03-PLAN.md — Swift app Whisper compatibility
+last_updated: "2026-03-27T08:23:00.789Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 ## Current Position
 
 Phase: 04 (whisper-integration) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-27
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-vad-integration P01 | 7min | 2 tasks | 5 files |
 | Phase 03-vad-integration P02 | 8min | 1 tasks | 1 files |
 | Phase 04-whisper-integration P01 | 8min | 1 tasks | 5 files |
+| Phase 04-whisper-integration P03 | 6min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Recent decisions affecting current work:
 - [Phase 03-vad-integration]: _do_set_device() stops VadThread before stopping old AudioCapture — prevents reading from dead queue during hot-swap
 - [Phase 04-whisper-integration]: Use multiprocessing.Queue for result_q (not SimpleQueue) — Queue supports get(timeout=...) needed for 15s watchdog; SimpleQueue does not
 - [Phase 04-whisper-integration]: Patch src.transcriber.multiprocessing.get_context at module level in tests — _spawn_worker called from both start() and _on_failure(); patch must cover full test scope
+- [Phase 04-whisper-integration]: StatusBadge exhaustive switch fixed as part of Task 2 (Rule 1 deviation — would not compile)
+- [Phase 04-whisper-integration]: isLoading computed property pattern chosen over repeating switch in each view
 
 ### Pending Todos
 
@@ -100,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T08:08:06.919Z
-Stopped at: Completed 04-01-PLAN.md — WhisperTranscriber implementation
+Last session: 2026-03-27T08:23:00.786Z
+Stopped at: Completed 04-03-PLAN.md — Swift app Whisper compatibility
 Resume file: None
