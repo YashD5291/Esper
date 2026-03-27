@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 1: Config Consolidation** - Single config.py replaces .env + @AppStorage + CLI args
 - [x] **Phase 2: IPC Cleanup** - Replace stdout fd redirect hack with --protocol-fd argument (completed 2026-03-27)
 - [x] **Phase 3: VAD Integration** - Silero VAD provides utterance boundaries that gate Whisper (completed 2026-03-27)
-- [ ] **Phase 4: Whisper Integration** - Whisper large-v3-turbo runs in isolated spawn subprocess
+- [x] **Phase 4: Whisper Integration** - Whisper large-v3-turbo runs in isolated spawn subprocess (completed 2026-03-27)
 - [ ] **Phase 5: Telegram Hardening** - TranscriptionUpdate contract locked, Telegram lifecycle fixed
 - [ ] **Phase 6: Cleanup** - Remove Parakeet code, CoreML models, and dead dependencies
 
@@ -73,10 +73,10 @@ Plans:
   3. A Whisper inference that hangs is killed and reported as an error within 15 seconds — the pipeline continues processing new utterances
   4. Whisper output with no_speech_prob above threshold is silently discarded and does not reach consumers
   5. The model load on cold start (first MLX shader compilation) completes within 120 seconds without a timeout error
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 04-01-PLAN.md — TDD: TranscriptionUpdate contract + WhisperTranscriber engine + whisper_worker subprocess
-- [ ] 04-02-PLAN.md — Wire WhisperTranscriber into server.py + update Python consumers (telegram, CLI)
+- [x] 04-02-PLAN.md — Wire WhisperTranscriber into server.py + update Python consumers (telegram, CLI)
 - [x] 04-03-PLAN.md — Update SwiftUI app for per-utterance transcript shape + new status events
 
 ### Phase 5: Telegram Hardening
