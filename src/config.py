@@ -24,6 +24,7 @@ VAD_MIN_SPEECH_DURATION_MS: int = 100 # catch even single-word utterances (~100m
 VAD_MIN_ENERGY: float = 0.003         # very low floor — don't reject quiet speech
 VAD_PRE_BUFFER_MS: int = 300          # speech onset context prepended to utterance
 VAD_POST_BUFFER_MS: int = 200         # silence context appended after speech ends
+VAD_MODEL_PATH: str = str(_PROJECT_ROOT / "models" / "silero_vad.onnx")
 
 # ── Whisper (Phase 4) ──────────────────────────────────────────────────────────
 WHISPER_MODEL_REPO: str = str(_PROJECT_ROOT / "models" / "whisper")
