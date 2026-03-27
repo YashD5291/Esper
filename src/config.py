@@ -24,6 +24,8 @@ WHISPER_MODEL_REPO: str = "mlx-community/whisper-large-v3-turbo"
 WHISPER_LANGUAGE: str = "en"
 WHISPER_MAX_GENERATIONS_BEFORE_RESTART: int = 50
 WHISPER_SUBPROCESS_TIMEOUT_S: float = 15.0
+WHISPER_NO_SPEECH_THRESHOLD: float = 0.6
+WHISPER_COMPRESSION_RATIO_THRESHOLD: float = 2.4
 
 # ── Telegram (set at runtime via start command / CLI args) ─────────────────────
 TELEGRAM_BOT_TOKEN: str = ""           # set at runtime via start command / CLI args

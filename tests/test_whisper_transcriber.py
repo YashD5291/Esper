@@ -16,7 +16,7 @@ import pathlib
 import queue
 import sys
 from dataclasses import fields as dc_fields
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 
@@ -48,45 +48,20 @@ def _make_good_result(text: str = " Hello world.", no_speech_prob: float = 0.1,
     }
 
 
-def _make_transcriber(result_q_items: list | None = None, *, on_update=None, on_status=None):
-    """Build a WhisperTranscriber with fully mocked subprocess infrastructure.
+def _make_mock_proc():
+    """Return a mock subprocess Process."""
+    p = MagicMock()
+    p.is_alive.return_value = True
+    return p
 
-    Patches multiprocessing.get_context so no real process is spawned.
-    Pre-loads result_q with items from result_q_items list (if provided).
-    """
-    from src.transcriber import WhisperTranscriber
 
-    updates: list = []
-    statuses: list = []
-    if on_update is None:
-        on_update = updates.append
-    if on_status is None:
-        on_status = statuses.append
-
-    mock_audio_q = MagicMock()
-    mock_result_q = MagicMock()
-
-    if result_q_items is not None:
-        # Simulate queue.get(timeout=...) returning items in order, then raising Empty
-        side_effects: list = list(result_q_items) + [queue.Empty()]
-        mock_result_q.get.side_effect = side_effects
-
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
-
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
-
-    return (
-        WhisperTranscriber(on_update=on_update, on_status=on_status),
-        mock_ctx,
-        mock_audio_q,
-        mock_result_q,
-        mock_proc,
-        updates,
-        statuses,
-    )
+def _make_ctx(audio_q, result_q, proc):
+    """Return a mock multiprocessing context."""
+    ctx = MagicMock()
+    ctx.SimpleQueue.return_value = audio_q
+    ctx.Queue.return_value = result_q
+    ctx.Process.return_value = proc
+    return ctx
 
 
 # ── ARCH-04: TranscriptionUpdate contract ─────────────────────────────────────
@@ -153,21 +128,15 @@ def test_spawn_context():
     """PIPE-05: _spawn_worker uses mp.get_context('spawn'), not fork."""
     from src.transcriber import WhisperTranscriber
 
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
-
-    # Capture the ready sentinel on result_q
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
     mock_result_q.get.return_value = {"ok": True, "ready": True}
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx) as mock_get_ctx:
-        # Check ~/.cache for model to avoid waiting
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx) as mock_get_ctx:
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
 
@@ -180,27 +149,24 @@ def test_transcribe_returns_update():
     """PIPE-04: transcribe_utterance returns a TranscriptionUpdate on success."""
     from src.transcriber import TranscriptionUpdate, WhisperTranscriber
 
+    ready = {"ok": True, "ready": True}
     good_result = _make_good_result(" Hello world.")
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
-    # First call is for start() ready sentinel, second is for the utterance
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, good_result]
+    mock_result_q.get.side_effect = [ready, good_result]
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     updates: list = []
     wt = WhisperTranscriber(on_update=updates.append, on_status=MagicMock())
 
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    result = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            result = wt.transcribe_utterance(audio)
 
     assert result is not None, "Expected TranscriptionUpdate, got None"
     assert isinstance(result, TranscriptionUpdate)
@@ -215,25 +181,23 @@ def test_hallucination_filter_no_speech():
     """PIPE-06: no_speech_prob > 0.6 → transcribe_utterance returns None."""
     from src.transcriber import WhisperTranscriber
 
+    ready = {"ok": True, "ready": True}
     bad_result = _make_good_result(no_speech_prob=0.8)
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, bad_result]
+    mock_result_q.get.side_effect = [ready, bad_result]
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     updates: list = []
     wt = WhisperTranscriber(on_update=updates.append, on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    result = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            result = wt.transcribe_utterance(audio)
 
     assert result is None, "High no_speech_prob should be filtered"
     assert len(updates) == 0, "No update should be emitted for hallucination"
@@ -243,25 +207,23 @@ def test_hallucination_filter_compression():
     """PIPE-06: compression_ratio > 2.4 → transcribe_utterance returns None."""
     from src.transcriber import WhisperTranscriber
 
+    ready = {"ok": True, "ready": True}
     bad_result = _make_good_result(compression_ratio=3.0)
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, bad_result]
+    mock_result_q.get.side_effect = [ready, bad_result]
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     updates: list = []
     wt = WhisperTranscriber(on_update=updates.append, on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    result = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            result = wt.transcribe_utterance(audio)
 
     assert result is None, "High compression_ratio should be filtered"
 
@@ -270,25 +232,23 @@ def test_hallucination_filter_empty_text():
     """PIPE-06: empty text → transcribe_utterance returns None."""
     from src.transcriber import WhisperTranscriber
 
+    ready = {"ok": True, "ready": True}
     empty_result = _make_good_result(text="")
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, empty_result]
+    mock_result_q.get.side_effect = [ready, empty_result]
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     updates: list = []
     wt = WhisperTranscriber(on_update=updates.append, on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    result = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            result = wt.transcribe_utterance(audio)
 
     assert result is None, "Empty text should be filtered"
 
@@ -297,25 +257,23 @@ def test_hallucination_filter_passes_good_result():
     """PIPE-06: valid result (low no_speech_prob, normal compression, non-empty) passes through."""
     from src.transcriber import WhisperTranscriber
 
+    ready = {"ok": True, "ready": True}
     good_result = _make_good_result(text=" hello", no_speech_prob=0.2, compression_ratio=1.5)
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, good_result]
+    mock_result_q.get.side_effect = [ready, good_result]
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     updates: list = []
     wt = WhisperTranscriber(on_update=updates.append, on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    result = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            result = wt.transcribe_utterance(audio)
 
     assert result is not None, "Good result should pass the hallucination filter"
     assert result.text == "hello"
@@ -327,27 +285,32 @@ def test_watchdog_timeout():
     """ARCH-03: result_q.get() timeout → worker killed, transcribe_utterance returns None."""
     from src.transcriber import WhisperTranscriber
 
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+    ready = {"ok": True, "ready": True}
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
-    mock_result_q = MagicMock()
-    # Ready sentinel succeeds; utterance call times out
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, queue.Empty()]
+
+    # First result_q used for initial start + first utterance (times out)
+    mock_result_q_1 = MagicMock()
+    mock_result_q_1.get.side_effect = [ready, queue.Empty()]
+
+    # Second result_q for the restart after timeout
+    mock_result_q_2 = MagicMock()
+    mock_result_q_2.get.return_value = ready
 
     mock_ctx = MagicMock()
-    # Provide two rounds of SimpleQueue (initial start + respawn after crash)
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q,
-                                         MagicMock(), MagicMock()]
+    # Each _spawn_worker call gets a new audio_q + result_q pair
+    mock_ctx.SimpleQueue.return_value = mock_audio_q
+    mock_ctx.Queue.side_effect = [mock_result_q_1, mock_result_q_2]
     mock_ctx.Process.return_value = mock_proc
 
     statuses: list = []
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=statuses.append)
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    result = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            result = wt.transcribe_utterance(audio)
 
     assert result is None, "Timeout should return None"
     mock_proc.kill.assert_called()
@@ -357,25 +320,29 @@ def test_watchdog_timeout_emits_error_event():
     """ARCH-03 + D-06: timeout path emits on_status('error') before failure handling."""
     from src.transcriber import WhisperTranscriber
 
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+    ready = {"ok": True, "ready": True}
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
-    mock_result_q = MagicMock()
-    mock_result_q.get.side_effect = [{"ok": True, "ready": True}, queue.Empty()]
+
+    mock_result_q_1 = MagicMock()
+    mock_result_q_1.get.side_effect = [ready, queue.Empty()]
+
+    mock_result_q_2 = MagicMock()
+    mock_result_q_2.get.return_value = ready
 
     mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q,
-                                         MagicMock(), MagicMock()]
+    mock_ctx.SimpleQueue.return_value = mock_audio_q
+    mock_ctx.Queue.side_effect = [mock_result_q_1, mock_result_q_2]
     mock_ctx.Process.return_value = mock_proc
 
     statuses: list = []
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=statuses.append)
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            wt.transcribe_utterance(audio)
 
     assert "error" in statuses, f"Expected 'error' status event, got: {statuses}"
     # 'error' must appear before 'crashed' (if any)
@@ -389,21 +356,18 @@ def test_model_load_timeout():
     """ARCH-03: if worker never sends ready sentinel, start() raises RuntimeError."""
     from src.transcriber import WhisperTranscriber
 
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
     # Simulate timeout waiting for ready sentinel
     mock_result_q.get.side_effect = queue.Empty()
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
 
     import pytest
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             with pytest.raises((RuntimeError, TimeoutError)):
                 wt.start()
@@ -415,66 +379,38 @@ def test_crash_restart():
     """ARCH-03: consecutive worker failures up to 3 → stopped=True after 3rd."""
     from src.transcriber import WhisperTranscriber
 
-    # We'll track how many times Process is created (each restart = new process)
-    procs_created = []
-
-    def make_mock_proc():
-        p = MagicMock()
-        p.is_alive.return_value = True
-        procs_created.append(p)
-        return p
-
     ready = {"ok": True, "ready": True}
-    # Four ready sentinels (one per spawn: initial + 2 restarts, then crashed on 3rd failure)
-    # Four utterances all fail with queue.Empty
-    ready_sentinel_count = [0]
 
+    # We need enough result_qs:
+    # - start() uses rq_1: returns ready
+    # - utterance 1 → queue.Empty on rq_1 → _on_failure → _spawn_worker → rq_2 returns ready
+    # - utterance 2 → queue.Empty on rq_2 → _on_failure → _spawn_worker → rq_3 returns ready
+    # - utterance 3 → queue.Empty on rq_3 → _on_failure → crash_count=3, stopped=True
+
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
 
-    def make_result_q():
-        rq = MagicMock()
-        call_count = [0]
+    rq_1 = MagicMock()
+    rq_1.get.side_effect = [ready, queue.Empty()]
 
-        def get_side_effect(**kwargs):
-            call_count[0] += 1
-            if call_count[0] == 1:
-                # First call per queue: ready sentinel
-                return ready
-            # Subsequent calls: timeout
-            raise queue.Empty()
+    rq_2 = MagicMock()
+    rq_2.get.side_effect = [ready, queue.Empty()]
 
-        rq.get.side_effect = lambda **kwargs: get_side_effect(**kwargs)
-        return rq
+    rq_3 = MagicMock()
+    rq_3.get.side_effect = [ready, queue.Empty()]
 
     mock_ctx = MagicMock()
-
-    # Provide enough SimpleQueues for multiple spawns
-    queues_provided = [MagicMock() for _ in range(20)]
-    result_qs = []
-    audio_qs = []
-
-    def make_simple_q():
-        # Alternate: audio_q, result_q, audio_q, result_q, ...
-        if len(audio_qs) <= len(result_qs):
-            q = MagicMock()
-            audio_qs.append(q)
-            return q
-        else:
-            rq = make_result_q()
-            result_qs.append(rq)
-            return rq
-
-    mock_ctx.SimpleQueue.side_effect = make_simple_q
-    mock_ctx.Process.side_effect = lambda **kwargs: make_mock_proc()
+    mock_ctx.SimpleQueue.return_value = mock_audio_q
+    mock_ctx.Queue.side_effect = [rq_1, rq_2, rq_3]
+    mock_ctx.Process.return_value = mock_proc
 
     statuses: list = []
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=statuses.append)
 
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
             audio = np.zeros(16000, dtype=np.float32)
-            # Each call fails with timeout → increments crash_count
             wt.transcribe_utterance(audio)  # crash 1 → restart
             wt.transcribe_utterance(audio)  # crash 2 → restart
             wt.transcribe_utterance(audio)  # crash 3 → stopped
@@ -491,54 +427,40 @@ def test_crash_counter_reset():
     good = _make_good_result(" Good.")
     good2 = _make_good_result(" Also good.")
 
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
-    mock_result_q = MagicMock()
 
-    # Sequence: ready, fail, ready (restart), succeed, fail, ready (restart), succeed
-    # After failure+success: crash_count should be 0; second failure should not crash
-    mock_result_q.get.side_effect = [
-        ready,          # start() sentinel
-        queue.Empty(),  # first utterance fails (crash_count → 1)
-        ready,          # restart ready sentinel
-        good,           # second utterance succeeds (crash_count → 0)
-        queue.Empty(),  # third utterance fails (crash_count → 1, not 2)
-        ready,          # restart ready sentinel
-        good2,          # fourth utterance succeeds
-    ]
+    # Sequence:
+    # start()       rq_1: ready
+    # utterance 1   rq_1: Empty → crash_count=1 → restart, rq_2: ready
+    # utterance 2   rq_2: good  → crash_count=0
+    # utterance 3   rq_2: Empty → crash_count=1 (not 2) → restart, rq_3: ready
+    # utterance 4   rq_3: good  → crash_count=0
+
+    rq_1 = MagicMock()
+    rq_1.get.side_effect = [ready, queue.Empty()]
+
+    rq_2 = MagicMock()
+    rq_2.get.side_effect = [ready, good, queue.Empty()]
+
+    rq_3 = MagicMock()
+    rq_3.get.side_effect = [ready, good2]
 
     mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = lambda: mock_audio_q if not mock_ctx._result_q_given else mock_result_q
-
-    # Simpler approach: just return mock_result_q always
-    audio_qs_given = [0]
-    result_qs_given = [0]
-
-    def sq_factory():
-        # Odd calls → audio_q, even calls → result_q
-        total = audio_qs_given[0] + result_qs_given[0]
-        if total % 2 == 0:
-            audio_qs_given[0] += 1
-            return mock_audio_q
-        else:
-            result_qs_given[0] += 1
-            return mock_result_q
-
-    mock_ctx.SimpleQueue.side_effect = sq_factory
+    mock_ctx.SimpleQueue.return_value = mock_audio_q
+    mock_ctx.Queue.side_effect = [rq_1, rq_2, rq_3]
     mock_ctx.Process.return_value = mock_proc
 
     statuses: list = []
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=statuses.append)
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    wt.transcribe_utterance(audio)  # fails, crash_count=1, restart
-    wt.transcribe_utterance(audio)  # succeeds, crash_count=0
-    wt.transcribe_utterance(audio)  # fails, crash_count=1 (not 2)
-    wt.transcribe_utterance(audio)  # succeeds, crash_count=0
+            audio = np.zeros(16000, dtype=np.float32)
+            wt.transcribe_utterance(audio)  # fails, crash_count=1, restart
+            wt.transcribe_utterance(audio)  # succeeds, crash_count=0
+            wt.transcribe_utterance(audio)  # fails, crash_count=1 (not 2)
+            wt.transcribe_utterance(audio)  # succeeds, crash_count=0
 
     assert not wt.stopped, "Should not be stopped — crash counter should have reset"
     assert "crashed" not in statuses, f"Unexpected 'crashed' event: {statuses}"
@@ -552,46 +474,46 @@ def test_generation_restart():
 
     max_gen = config.WHISPER_MAX_GENERATIONS_BEFORE_RESTART  # 50
 
-    procs = []
-
-    def make_proc(**kwargs):
-        p = MagicMock()
-        p.is_alive.return_value = True
-        procs.append(p)
-        return p
-
     ready = {"ok": True, "ready": True}
     good = _make_good_result(" x.")
 
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
-    mock_result_q = MagicMock()
-    # ready + max_gen successful results + ready (after restart)
-    mock_result_q.get.side_effect = [ready] + [good] * (max_gen + 1) + [ready]
+
+    # rq_1: ready + max_gen successful results
+    # rq_2: ready (after recycle)
+    # rq_1 also handles the (max_gen+1)th call which triggers recycle
+    # After recycle, rq_2 handles ready sentinel
+    rq_1 = MagicMock()
+    rq_1.get.side_effect = [ready] + [good] * max_gen
+
+    rq_2 = MagicMock()
+    rq_2.get.side_effect = [ready, good]  # ready for recycle + one more utterance
 
     mock_ctx = MagicMock()
-    total_sq_calls = [0]
+    mock_ctx.SimpleQueue.return_value = mock_audio_q
+    mock_ctx.Queue.side_effect = [rq_1, rq_2]
 
-    def sq_factory():
-        total_sq_calls[0] += 1
-        if total_sq_calls[0] % 2 == 1:
-            return mock_audio_q
-        return mock_result_q
+    procs_created = []
+    def make_proc(**kwargs):
+        p = _make_mock_proc()
+        procs_created.append(p)
+        return p
 
-    mock_ctx.SimpleQueue.side_effect = sq_factory
     mock_ctx.Process.side_effect = make_proc
 
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
+            audio = np.zeros(16000, dtype=np.float32)
+            # max_gen utterances → triggers recycle on the max_gen-th
+            for _ in range(max_gen):
+                wt.transcribe_utterance(audio)
 
-    audio = np.zeros(16000, dtype=np.float32)
-    for _ in range(max_gen + 1):
-        wt.transcribe_utterance(audio)
-
-    # Should have spawned 2 processes: initial + recycle after max_gen
-    assert len(procs) >= 2, (
-        f"Expected subprocess recycle after {max_gen} generations, got {len(procs)} procs"
+    # Should have spawned 2 processes: initial + recycle
+    assert len(procs_created) >= 2, (
+        f"Expected subprocess recycle after {max_gen} generations, got {len(procs_created)} procs"
     )
 
 
@@ -605,25 +527,21 @@ def test_session_accumulator():
     result1 = _make_good_result(" First sentence.")
     result2 = _make_good_result(" Second sentence.")
 
-    mock_proc = MagicMock()
-    mock_proc.is_alive.return_value = True
+    mock_proc = _make_mock_proc()
     mock_audio_q = MagicMock()
     mock_result_q = MagicMock()
     mock_result_q.get.side_effect = [ready, result1, result2]
 
-    mock_ctx = MagicMock()
-    mock_ctx.SimpleQueue.side_effect = [mock_audio_q, mock_result_q]
-    mock_ctx.Process.return_value = mock_proc
+    mock_ctx = _make_ctx(mock_audio_q, mock_result_q, mock_proc)
 
     updates: list = []
     wt = WhisperTranscriber(on_update=updates.append, on_status=MagicMock())
-    with patch("multiprocessing.get_context", return_value=mock_ctx):
+    with patch("src.transcriber.multiprocessing.get_context", return_value=mock_ctx):
         with patch("pathlib.Path.exists", return_value=True):
             wt.start()
-
-    audio = np.zeros(16000, dtype=np.float32)
-    r1 = wt.transcribe_utterance(audio)
-    r2 = wt.transcribe_utterance(audio)
+            audio = np.zeros(16000, dtype=np.float32)
+            r1 = wt.transcribe_utterance(audio)
+            r2 = wt.transcribe_utterance(audio)
 
     assert r1 is not None
     assert r2 is not None

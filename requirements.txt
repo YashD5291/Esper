@@ -9,3 +9,4 @@ python-dotenv
 silero-vad
 torch
 torchaudio
+mlx-whisper==0.4.3
