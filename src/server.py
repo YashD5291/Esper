@@ -16,6 +16,7 @@ import argparse
 import json
 import logging
 import os
+import queue as _queue
 import signal
 import sys
 import threading
@@ -29,6 +30,7 @@ import sounddevice as sd
 from . import config
 from .audio_capture import AudioCapture
 from .transcriber import TranscriptionUpdate
+from .vad import VadThread
 
 
 def _parse_protocol_fd() -> int | None:
@@ -82,7 +84,9 @@ def _send_error(message: str):
 _capture: AudioCapture | None = None
 _transcriber = None
 _telegram_sender = None
-_pump_thread: threading.Thread | None = None
+_vad_thread: VadThread | None = None
+_speech_q: _queue.Queue | None = None
+_bridge_thread: threading.Thread | None = None
 _energy_thread: threading.Thread | None = None
 _stop_event = threading.Event()
 _engine_name: str = config.DEFAULT_ENGINE
@@ -118,22 +122,17 @@ def _on_update(update: TranscriptionUpdate):
         _telegram_sender.on_update(update)
 
 
-def _pump_audio():
-    """Pump audio chunks from capture → transcriber until stopped."""
-    global _capture, _transcriber
+def _bridge_speech_q():
+    """Phase 3 bridge: relay complete utterances from speech_q to transcriber."""
     while not _stop_event.is_set():
-        if _capture is None:
-            break
         try:
-            chunk = _capture.get_chunk(timeout=0.2)
-        except Exception as exc:
-            log.error("Audio pump error: %s", exc, exc_info=True)
-            _send_error(f"Audio stream error: {exc}")
+            utterance = _speech_q.get(timeout=0.2)
+        except _queue.Empty:
+            continue
+        if utterance is None:
             break
-        if chunk is None:
-            break
-        if len(chunk) > 0 and _transcriber is not None:
-            _transcriber.push_audio(chunk)
+        if _transcriber is not None:
+            _transcriber.push_audio(utterance)
 
 
 def _emit_energy():
@@ -184,8 +183,8 @@ def _load_model_with_timeout(engine: str, data: dict):
 
 def _do_start(data: dict):
     """Handle the 'start' command: load model, start capture + transcriber."""
-    global _capture, _transcriber, _telegram_sender, _pump_thread, _energy_thread
-    global _stop_event, _engine_name
+    global _capture, _transcriber, _telegram_sender, _vad_thread, _speech_q, _bridge_thread
+    global _energy_thread, _stop_event, _engine_name
 
     engine = data.get("engine", config.DEFAULT_ENGINE)
     device = data.get("device")  # int or None
@@ -242,9 +241,13 @@ def _do_start(data: dict):
     # Start transcriber
     _transcriber.start()
 
-    # Pump and energy threads
-    _pump_thread = threading.Thread(target=_pump_audio, daemon=True, name="audio-pump")
-    _pump_thread.start()
+    # VAD + speech bridge (per D-14)
+    _speech_q = _queue.Queue(maxsize=10)
+    _vad_thread = VadThread(audio_q=_capture._queue, speech_q=_speech_q)
+    _vad_thread.start()
+
+    _bridge_thread = threading.Thread(target=_bridge_speech_q, daemon=True, name="speech-bridge")
+    _bridge_thread.start()
 
     _energy_thread = threading.Thread(target=_emit_energy, daemon=True, name="energy-emitter")
     _energy_thread.start()
@@ -255,7 +258,8 @@ def _do_start(data: dict):
 
 def _do_stop():
     """Handle the 'stop' command: shut down capture + transcriber + telegram."""
-    global _capture, _transcriber, _telegram_sender, _pump_thread, _energy_thread
+    global _capture, _transcriber, _telegram_sender, _vad_thread, _speech_q
+    global _bridge_thread, _energy_thread
 
     log.info("Stopping")
     _stop_event.set()
@@ -263,6 +267,11 @@ def _do_stop():
     if _capture is not None:
         _capture.stop()
         _capture = None
+
+    if _vad_thread is not None:
+        _vad_thread.stop()
+        _vad_thread.wait(timeout=5.0)
+        _vad_thread = None
 
     if _transcriber is not None:
         _transcriber.stop()
@@ -274,13 +283,15 @@ def _do_stop():
         _telegram_sender.wait(timeout=5.0)
         _telegram_sender = None
 
-    if _pump_thread is not None:
-        _pump_thread.join(timeout=2.0)
-        _pump_thread = None
+    if _bridge_thread is not None:
+        _bridge_thread.join(timeout=2.0)
+        _bridge_thread = None
 
     if _energy_thread is not None:
         _energy_thread.join(timeout=2.0)
         _energy_thread = None
+
+    _speech_q = None
 
     _send("status", "idle")
     log.info("Stopped")
@@ -288,15 +299,23 @@ def _do_stop():
 
 def _do_set_device(data: dict):
     """Handle 'set_device' — hot-swap audio input without full restart."""
-    global _capture
+    global _capture, _vad_thread
     device = data.get("device")
     if device is None:
         _send_error("set_device requires a 'device' field")
         return
     if _capture is not None:
+        # Stop VAD (reads from old capture queue)
+        if _vad_thread is not None:
+            _vad_thread.stop()
+            _vad_thread.wait(timeout=2.0)
         _capture.stop()
         _capture = AudioCapture(device=device)
         _capture.start()
+        # Restart VAD with new capture queue
+        if _speech_q is not None:
+            _vad_thread = VadThread(audio_q=_capture._queue, speech_q=_speech_q)
+            _vad_thread.start()
         log.info("Switched audio device to %s", device)
         _send("status", "listening")
     else:
