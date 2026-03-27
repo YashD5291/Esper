@@ -73,7 +73,11 @@ Plans:
   3. A Whisper inference that hangs is killed and reported as an error within 15 seconds — the pipeline continues processing new utterances
   4. Whisper output with no_speech_prob above threshold is silently discarded and does not reach consumers
   5. The model load on cold start (first MLX shader compilation) completes within 120 seconds without a timeout error
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 04-01-PLAN.md — TDD: TranscriptionUpdate contract + WhisperTranscriber engine + whisper_worker subprocess
+- [ ] 04-02-PLAN.md — Wire WhisperTranscriber into server.py + update Python consumers (telegram, CLI)
+- [ ] 04-03-PLAN.md — Update SwiftUI app for per-utterance transcript shape + new status events
 
 ### Phase 5: Telegram Hardening
 **Goal**: Telegram integration works reliably with the new per-utterance TranscriptionUpdate contract and flushes cleanly on session stop
@@ -105,6 +109,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Config Consolidation | 2/2 | Complete | 2026-03-26 |
 | 2. IPC Cleanup | 2/2 | Complete   | 2026-03-27 |
 | 3. VAD Integration | 2/2 | Complete   | 2026-03-27 |
-| 4. Whisper Integration | 0/? | Not started | - |
+| 4. Whisper Integration | 0/3 | Not started | - |
 | 5. Telegram Hardening | 0/? | Not started | - |
 | 6. Cleanup | 0/? | Not started | - |
