@@ -30,7 +30,7 @@ Real-time, accurate transcription of accented English speech — if the transcri
 - [ ] Silero VAD for speech boundary detection
 - [ ] Whisper large-v3-turbo via mlx-whisper (Indian accent support)
 - [x] Single config.py (consolidate .env + @AppStorage + CLI args) — Validated in Phase 1: Config Consolidation
-- [ ] Clean IPC protocol (remove stdout fd redirect hack)
+- [x] Clean IPC protocol (remove stdout fd redirect hack) — Validated in Phase 2: IPC Cleanup
 - [ ] Defensive error handling (watchdog timeouts, graceful fallbacks)
 - [ ] Proper Telegram lifecycle (not bolted-on)
 
@@ -97,4 +97,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-27 after Phase 1: Config Consolidation complete*
+*Last updated: 2026-03-27 after Phase 2: IPC Cleanup complete*
