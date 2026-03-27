@@ -41,6 +41,16 @@ final class ProcessBridge: @unchecked Sendable {
         } else {
             env["PATH"] = venvBin
         }
+        // When running from app bundle, set Python paths for embedded runtime
+        if let resourcePath = Bundle.main.resourcePath {
+            let sitePackages = (resourcePath as NSString).appendingPathComponent("site-packages")
+            if FileManager.default.fileExists(atPath: sitePackages) {
+                // Bundled mode: tell Python where to find packages and source
+                let pythonHome = (resourcePath as NSString).appendingPathComponent("python")
+                env["PYTHONHOME"] = pythonHome
+                env["PYTHONPATH"] = "\(sitePackages):\(resourcePath)"
+            }
+        }
         proc.environment = env
 
         let stdin = Pipe()

@@ -23,13 +23,27 @@ final class AppSettings {
 
     var resolvedPythonPath: String {
         if !pythonPath.isEmpty { return pythonPath }
-        // Default: venv Python in the project directory
+        // Bundled app: python inside Resources
+        if let bundled = Bundle.main.resourcePath {
+            let bundledPython = (bundled as NSString).appendingPathComponent("python/bin/python3")
+            if FileManager.default.fileExists(atPath: bundledPython) {
+                return bundledPython
+            }
+        }
+        // Dev fallback: venv in project directory
         return (resolvedProjectDir as NSString).appendingPathComponent(".venv/bin/python3")
     }
 
     var resolvedProjectDir: String {
         if !projectDir.isEmpty { return projectDir }
-        // Default: ~/Codebase/Fun/Esper (the project's known location)
+        // Bundled app: src/ and models/ inside Resources
+        if let bundled = Bundle.main.resourcePath {
+            let bundledSrc = (bundled as NSString).appendingPathComponent("src")
+            if FileManager.default.fileExists(atPath: bundledSrc) {
+                return bundled
+            }
+        }
+        // Dev fallback
         return (NSHomeDirectory() as NSString).appendingPathComponent("Codebase/Fun/Esper")
     }
 }
