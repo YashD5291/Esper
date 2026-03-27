@@ -106,11 +106,6 @@ def test_telegram_chat_id_default_empty():
     assert config.TELEGRAM_CHAT_ID == ""
 
 
-def test_telegram_stream_default_true():
-    config = get_config()
-    assert config.TELEGRAM_STREAM is True
-
-
 def test_telegram_max_retries():
     config = get_config()
     assert config.TELEGRAM_MAX_RETRIES == 3
@@ -119,11 +114,6 @@ def test_telegram_max_retries():
 def test_telegram_backoff_base():
     config = get_config()
     assert config.TELEGRAM_BACKOFF_BASE == 1.0
-
-
-def test_telegram_draft_interval():
-    config = get_config()
-    assert config.TELEGRAM_DRAFT_INTERVAL == 0.5
 
 
 # ── IPC section ───────────────────────────────────────────────────────────────

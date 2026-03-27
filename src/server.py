@@ -170,12 +170,10 @@ def _do_start(data: dict):
         chat_id = telegram_cfg.get("chat_id", "")
         if bot_token and chat_id:
             from .telegram_sender import TelegramSender
-            stream = telegram_cfg.get("stream", True)
             config.TELEGRAM_BOT_TOKEN = bot_token
             config.TELEGRAM_CHAT_ID = chat_id
-            config.TELEGRAM_STREAM = stream
-            _telegram_sender = TelegramSender(bot_token, chat_id, stream=stream)
-            log.info("Telegram sender configured (stream=%s)", stream)
+            _telegram_sender = TelegramSender(bot_token, chat_id)
+            log.info("Telegram sender configured")
 
     # Create WhisperTranscriber — subprocess handles model loading and ready signaling
     try:
@@ -245,7 +243,7 @@ def _do_stop():
 
     if _telegram_sender is not None:
         _telegram_sender.stop()
-        _telegram_sender.wait(timeout=5.0)
+        _telegram_sender.wait(timeout=10.0)
         _telegram_sender = None
 
     if _bridge_thread is not None:

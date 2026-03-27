@@ -30,10 +30,8 @@ WHISPER_COMPRESSION_RATIO_THRESHOLD: float = 2.4
 # ── Telegram (set at runtime via start command / CLI args) ─────────────────────
 TELEGRAM_BOT_TOKEN: str = ""           # set at runtime via start command / CLI args
 TELEGRAM_CHAT_ID: str = ""
-TELEGRAM_STREAM: bool = True
 TELEGRAM_MAX_RETRIES: int = 3
 TELEGRAM_BACKOFF_BASE: float = 1.0
-TELEGRAM_DRAFT_INTERVAL: float = 0.5  # min seconds between draft updates
 
 # ── IPC ────────────────────────────────────────────────────────────────────────
 ENERGY_EMIT_INTERVAL_S: float = 0.1   # ~10 Hz energy events
