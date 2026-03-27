@@ -8,9 +8,9 @@ constructed.
 # ── Audio ──────────────────────────────────────────────────────────────────────
 SAMPLE_RATE: int = 16000
 CHANNELS: int = 1
-CHUNK_DURATION: float = 0.1            # seconds per sounddevice callback chunk
-CHUNK_SAMPLES: int = int(SAMPLE_RATE * CHUNK_DURATION)  # 1600 samples
-QUEUE_MAXSIZE: int = 300               # ~30s of buffered audio
+CHUNK_DURATION: float = 0.032          # 512 / 16000 = 32ms (hard Silero VAD requirement)
+CHUNK_SAMPLES: int = int(SAMPLE_RATE * CHUNK_DURATION)  # 512 samples at 16kHz = 32ms
+QUEUE_MAXSIZE: int = 300               # ~9.6s of buffered audio at 512 samples/frame
 
 # ── VAD (Phase 3) ──────────────────────────────────────────────────────────────
 VAD_FRAME_SIZE: int = 512              # samples at 16kHz = 32ms (hard Silero requirement)

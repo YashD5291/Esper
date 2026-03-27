@@ -6,3 +6,6 @@ coremltools
 soundfile
 httpx
 python-dotenv
+silero-vad
+torch
+torchaudio

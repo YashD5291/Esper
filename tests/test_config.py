@@ -32,12 +32,12 @@ def test_channels():
 
 def test_chunk_duration():
     config = get_config()
-    assert config.CHUNK_DURATION == 0.1
+    assert config.CHUNK_DURATION == 0.032
 
 
 def test_chunk_samples():
     config = get_config()
-    assert config.CHUNK_SAMPLES == 1600
+    assert config.CHUNK_SAMPLES == 512
 
 
 def test_queue_maxsize():
