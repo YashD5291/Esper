@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-stopped_at: Phase 04 whisper-integration complete — all plans executed, verified, gap fixed
-last_updated: "2026-03-27T11:37:08.250Z"
-last_activity: 2026-03-27 -- Phase 05 execution started
+status: verifying
+stopped_at: Completed 05-telegram-hardening-01-PLAN.md
+last_updated: "2026-03-27T11:45:33.137Z"
+last_activity: 2026-03-27
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 
 Phase: 05 (telegram-hardening) — EXECUTING
 Plan: 1 of 1
-Status: Executing Phase 05
-Last activity: 2026-03-27 -- Phase 05 execution started
+Status: Phase complete — ready for verification
+Last activity: 2026-03-27
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04-whisper-integration P01 | 8min | 1 tasks | 5 files |
 | Phase 04-whisper-integration P02 | 18min | 3 tasks | 4 files |
 | Phase 04-whisper-integration P03 | 6min | 2 tasks | 7 files |
+| Phase 05-telegram-hardening P01 | 5min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,8 @@ Recent decisions affecting current work:
 - [Phase 04-whisper-integration]: realtime_demo --record saves speech-only utterances from speech_q, not full raw audio stream
 - [Phase 04-whisper-integration]: StatusBadge exhaustive switch fixed as part of Task 2 (Rule 1 deviation — would not compile)
 - [Phase 04-whisper-integration]: isLoading computed property pattern chosen over repeating switch in each view
+- [Phase 05-telegram-hardening]: 429 retry_after parsed from JSON body.parameters.retry_after; falls back to exponential backoff when absent
+- [Phase 05-telegram-hardening]: stream parameter removed from TelegramSender.__init__ — D-02 cleanup deferred from Phase 4
 
 ### Pending Todos
 
@@ -107,6 +110,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T11:36:56.102Z
-Stopped at: Phase 04 whisper-integration complete — all plans executed, verified, gap fixed
-Resume file: .planning/phases/04-whisper-integration/04-VERIFICATION.md
+Last session: 2026-03-27T11:45:33.134Z
+Stopped at: Completed 05-telegram-hardening-01-PLAN.md
+Resume file: None

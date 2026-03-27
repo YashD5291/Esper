@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: IPC Cleanup** - Replace stdout fd redirect hack with --protocol-fd argument (completed 2026-03-27)
 - [x] **Phase 3: VAD Integration** - Silero VAD provides utterance boundaries that gate Whisper (completed 2026-03-27)
 - [x] **Phase 4: Whisper Integration** - Whisper large-v3-turbo runs in isolated spawn subprocess (completed 2026-03-27)
-- [ ] **Phase 5: Telegram Hardening** - TranscriptionUpdate contract locked, Telegram lifecycle fixed
+- [x] **Phase 5: Telegram Hardening** - TranscriptionUpdate contract locked, Telegram lifecycle fixed (completed 2026-03-27)
 - [ ] **Phase 6: Cleanup** - Remove Parakeet code, CoreML models, and dead dependencies
 
 ## Phase Details
@@ -87,9 +87,9 @@ Plans:
   1. Two sequential utterances both appear in Telegram — the second utterance is not silently swallowed by stale _processed_chars state from the first
   2. Stopping the pipeline flushes any buffered draft to Telegram within 10 seconds even under API latency spikes
   3. A Telegram 429 rate-limit response is handled without crashing the pipeline — subsequent messages are retried
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 05-01-PLAN.md — TDD: Rewrite TelegramSender for per-utterance model + 429 handling + dead config cleanup
+- [x] 05-01-PLAN.md — TDD: Rewrite TelegramSender for per-utterance model + 429 handling + dead config cleanup
 
 ### Phase 6: Cleanup
 **Goal**: All Parakeet code, CoreML model artifacts, and dead dependencies are removed, leaving the codebase consistent with the v2.0 architecture
@@ -112,5 +112,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. IPC Cleanup | 2/2 | Complete   | 2026-03-27 |
 | 3. VAD Integration | 2/2 | Complete   | 2026-03-27 |
 | 4. Whisper Integration | 2/3 | In Progress|  |
-| 5. Telegram Hardening | 0/1 | Not started | - |
+| 5. Telegram Hardening | 1/1 | Complete   | 2026-03-27 |
 | 6. Cleanup | 0/? | Not started | - |
