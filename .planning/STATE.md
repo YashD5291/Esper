@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md
-last_updated: "2026-03-27T05:50:29.782Z"
+stopped_at: "Checkpoint: Task 2 human-verify in 02-02-PLAN.md"
+last_updated: "2026-03-27T06:05:05.282Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 6
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
   percent: 0
 ---
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-config-consolidation P01 | 6min | 2 tasks | 5 files |
 | Phase 01-config-consolidation P02 | 4min | 2 tasks | 3 files |
 | Phase 02-ipc-cleanup P01 | 3min | 1 tasks | 2 files |
+| Phase 02-ipc-cleanup P02 | 15min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 01-config-consolidation]: Entry-point mutation pattern: server._do_start and realtime_demo.main mutate config.* before constructing dependent objects
 - [Phase 02-ipc-cleanup]: sys.stderr.write() used for FATAL fd error instead of print() to pass AST-based no-bare-print test
 - [Phase 02-ipc-cleanup]: parse_known_args() in argparse for --protocol-fd to avoid conflicts with future top-level args
+- [Phase 02-ipc-cleanup]: CLOEXEC explicitly cleared via Darwin.fcntl before proc.run() -- defensive for fd inheritance through exec
+- [Phase 02-ipc-cleanup]: Write end of protocol pipe closed in parent after proc.run() -- required for EOF propagation to reader thread when Python exits
+- [Phase 02-ipc-cleanup]: ProcessBridge.swift Models/ files were gitignored by case-insensitive match with models/ in .gitignore -- fixed with git add --force
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T05:50:29.779Z
-Stopped at: Completed 02-01-PLAN.md
+Last session: 2026-03-27T06:04:43.500Z
+Stopped at: Checkpoint: Task 2 human-verify in 02-02-PLAN.md
 Resume file: None

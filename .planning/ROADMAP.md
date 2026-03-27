@@ -13,7 +13,7 @@ v2.0 Pipeline Overhaul rebuilds Esper's transcription stack from scratch: a cons
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Config Consolidation** - Single config.py replaces .env + @AppStorage + CLI args
-- [ ] **Phase 2: IPC Cleanup** - Replace stdout fd redirect hack with --protocol-fd argument
+- [x] **Phase 2: IPC Cleanup** - Replace stdout fd redirect hack with --protocol-fd argument (completed 2026-03-27)
 - [ ] **Phase 3: VAD Integration** - Silero VAD provides utterance boundaries that gate Whisper
 - [ ] **Phase 4: Whisper Integration** - Whisper large-v3-turbo runs in isolated spawn subprocess
 - [ ] **Phase 5: Telegram Hardening** - TranscriptionUpdate contract locked, Telegram lifecycle fixed
@@ -44,10 +44,10 @@ Plans:
   2. The `os.dup2(2, 1)` hack is absent from server.py
   3. No `print()` call anywhere in `src/` can corrupt the JSON protocol channel — all output goes through logging
   4. The ProcessBridge in the SwiftUI app is updated to open and read from the protocol fd rather than stdout
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 02-01-PLAN.md — TDD: Replace os.dup2 hack with --protocol-fd argparse in server.py
-- [ ] 02-02-PLAN.md — Update ProcessBridge.swift for protocol pipe IPC + end-to-end verification
+- [x] 02-02-PLAN.md — Update ProcessBridge.swift for protocol pipe IPC + end-to-end verification
 
 ### Phase 3: VAD Integration
 **Goal**: Silero VAD owns the audio loop and emits complete utterance buffers to speech_q, so Whisper is never called on silence or sub-threshold fragments
@@ -100,7 +100,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Config Consolidation | 2/2 | Complete | 2026-03-26 |
-| 2. IPC Cleanup | 1/2 | In Progress|  |
+| 2. IPC Cleanup | 2/2 | Complete   | 2026-03-27 |
 | 3. VAD Integration | 0/? | Not started | - |
 | 4. Whisper Integration | 0/? | Not started | - |
 | 5. Telegram Hardening | 0/? | Not started | - |
