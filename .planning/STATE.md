@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 05-telegram-hardening 05-01-PLAN.md
-last_updated: "2026-03-27T11:53:47.862Z"
+stopped_at: Completed 06-cleanup 06-01-PLAN.md
+last_updated: "2026-03-27T14:05:22.436Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 10
-  completed_plans: 10
+  completed_phases: 6
+  total_plans: 11
+  completed_plans: 11
   percent: 0
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-27)
 
 **Core value:** Real-time, accurate transcription of accented English speech
-**Current focus:** Phase 05 — telegram-hardening
+**Current focus:** Phase 06 — cleanup
 
 ## Current Position
 
-Phase: 06
-Plan: Not started
+Phase: 06 (cleanup) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-03-27
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 04-whisper-integration P03 | 6min | 2 tasks | 7 files |
 | Phase 05-telegram-hardening P01 | 5min | 2 tasks | 5 files |
 | Phase 05-telegram-hardening P01 | 5min | 2 tasks | 5 files |
+| Phase 06-cleanup P01 | 5min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,8 @@ Recent decisions affecting current work:
 - [Phase 05-telegram-hardening]: wait() default timeout set to 10.0s enabling 10s shutdown drain window (D-05, INTG-02)
 - [Phase 05-telegram-hardening]: stream parameter removed from TelegramSender.__init__ — D-02 cleanup deferred from Phase 4
 - [Phase 05-telegram-hardening]: TELEGRAM_STREAM and TELEGRAM_DRAFT_INTERVAL removed from config.py — dead constants
+- [Phase 06-cleanup]: requirements.txt cleaned in Task 1 commit (TDD assertions required it to pass the verify step)
+- [Phase 06-cleanup]: models/coreml/ was gitignored (models/ in .gitignore) — removed from disk only, no git rm
 
 ### Pending Todos
 
@@ -115,6 +118,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T11:46:55.264Z
-Stopped at: Completed 05-telegram-hardening 05-01-PLAN.md
+Last session: 2026-03-27T14:05:22.433Z
+Stopped at: Completed 06-cleanup 06-01-PLAN.md
 Resume file: None

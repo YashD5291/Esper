@@ -31,8 +31,8 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 ### Cleanup
 
-- [ ] **CLEAN-01**: Parakeet CoreML models and transcriber code removed
-- [ ] **CLEAN-02**: Dead dependencies removed (parakeet-mlx, coremltools, scipy)
+- [x] **CLEAN-01**: Parakeet CoreML models and transcriber code removed
+- [x] **CLEAN-02**: Dead dependencies removed (parakeet-mlx, coremltools, scipy)
 - [x] **CLEAN-03**: Model load timeout updated from 30s to 120s for Whisper cold Metal compilation
 
 ## Future Requirements
@@ -75,8 +75,8 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 | CLEAN-03 | Phase 4 | Complete |
 | INTG-01 | Phase 5 | Complete |
 | INTG-02 | Phase 5 | Complete |
-| CLEAN-01 | Phase 6 | Pending |
-| CLEAN-02 | Phase 6 | Pending |
+| CLEAN-01 | Phase 6 | Complete |
+| CLEAN-02 | Phase 6 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 16 total

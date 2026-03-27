@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: VAD Integration** - Silero VAD provides utterance boundaries that gate Whisper (completed 2026-03-27)
 - [x] **Phase 4: Whisper Integration** - Whisper large-v3-turbo runs in isolated spawn subprocess (completed 2026-03-27)
 - [x] **Phase 5: Telegram Hardening** - TranscriptionUpdate contract locked, Telegram lifecycle fixed (completed 2026-03-27)
-- [ ] **Phase 6: Cleanup** - Remove Parakeet code, CoreML models, and dead dependencies
+- [x] **Phase 6: Cleanup** - Remove Parakeet code, CoreML models, and dead dependencies (completed 2026-03-27)
 
 ## Phase Details
 
@@ -99,9 +99,9 @@ Plans:
   1. `src/coreml_transcriber.py` is deleted, `src/transcriber.py` backward-compat fields removed, and no import anywhere references coreml_transcriber
   2. `models/coreml/` directory and its contents are absent from the repository
   3. `parakeet-mlx`, `coremltools`, and the explicit `scipy` pin are removed from requirements.txt and the app installs and runs cleanly without them
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 06-01-PLAN.md — Delete dead Parakeet/CoreML files, remove backward-compat fields, clean dependencies
+- [x] 06-01-PLAN.md — Delete dead Parakeet/CoreML files, remove backward-compat fields, clean dependencies
 
 ## Progress
 
@@ -115,4 +115,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 3. VAD Integration | 2/2 | Complete   | 2026-03-27 |
 | 4. Whisper Integration | 2/3 | In Progress|  |
 | 5. Telegram Hardening | 1/1 | Complete   | 2026-03-27 |
-| 6. Cleanup | 0/1 | Not started | - |
+| 6. Cleanup | 1/1 | Complete   | 2026-03-27 |
