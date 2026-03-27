@@ -29,10 +29,9 @@ class TelegramSender:
     utterance is sent as a separate Telegram message.
     """
 
-    def __init__(self, bot_token: str, chat_id: str, *, stream: bool = True):
+    def __init__(self, bot_token: str, chat_id: str) -> None:
         self._base_url = f"https://api.telegram.org/bot{bot_token}"
         self._chat_id = chat_id
-        # stream parameter kept for API compat — all sends are per-utterance now
         self._queue: queue.Queue[str | None] = queue.Queue()
         self._thread = threading.Thread(target=self._loop, daemon=True, name="telegram-sender")
         self._thread.start()
@@ -68,6 +67,19 @@ class TelegramSender:
                 if resp.status_code == 200:
                     log.debug("Sent: %s", text[:40])
                     return
+                if resp.status_code == 429:
+                    try:
+                        body = resp.json()
+                        retry_after = body.get("parameters", {}).get("retry_after")
+                    except (ValueError, KeyError):
+                        retry_after = None
+                    wait_time = retry_after or _BACKOFF_BASE * (2 ** attempt)
+                    log.warning(
+                        "Telegram 429: retry after %ss (attempt %d)",
+                        wait_time, attempt + 1,
+                    )
+                    time.sleep(wait_time)
+                    continue
                 log.warning(
                     "Telegram API %d: %s", resp.status_code, resp.text[:200]
                 )
@@ -84,5 +96,5 @@ class TelegramSender:
         """Signal the background thread to drain and exit."""
         self._queue.put(None)
 
-    def wait(self, timeout: float = 5.0):
+    def wait(self, timeout: float = 10.0) -> None:
         self._thread.join(timeout=timeout)
