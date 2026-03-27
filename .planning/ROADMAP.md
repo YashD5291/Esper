@@ -87,7 +87,9 @@ Plans:
   1. Two sequential utterances both appear in Telegram — the second utterance is not silently swallowed by stale _processed_chars state from the first
   2. Stopping the pipeline flushes any buffered draft to Telegram within 10 seconds even under API latency spikes
   3. A Telegram 429 rate-limit response is handled without crashing the pipeline — subsequent messages are retried
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 05-01-PLAN.md — TDD: Rewrite TelegramSender for per-utterance model + 429 handling + dead config cleanup
 
 ### Phase 6: Cleanup
 **Goal**: All Parakeet code, CoreML model artifacts, and dead dependencies are removed, leaving the codebase consistent with the v2.0 architecture
@@ -110,5 +112,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. IPC Cleanup | 2/2 | Complete   | 2026-03-27 |
 | 3. VAD Integration | 2/2 | Complete   | 2026-03-27 |
 | 4. Whisper Integration | 0/3 | Not started | - |
-| 5. Telegram Hardening | 0/? | Not started | - |
+| 5. Telegram Hardening | 0/1 | Not started | - |
 | 6. Cleanup | 0/? | Not started | - |
