@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-03-27T06:55:09.761Z"
-last_activity: 2026-03-27 -- Phase 03 execution started
+stopped_at: Completed 03-vad-integration 03-01-PLAN.md
+last_updated: "2026-03-27T07:03:26.457Z"
+last_activity: 2026-03-27
 progress:
   total_phases: 6
   completed_phases: 2
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 0
 ---
 
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 ## Current Position
 
 Phase: 03 (vad-integration) — EXECUTING
-Plan: 1 of 2
-Status: Executing Phase 03
-Last activity: 2026-03-27 -- Phase 03 execution started
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-03-27
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -56,6 +56,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01-config-consolidation P02 | 4min | 2 tasks | 3 files |
 | Phase 02-ipc-cleanup P01 | 3min | 1 tasks | 2 files |
 | Phase 02-ipc-cleanup P02 | 15min | 1 tasks | 3 files |
+| Phase 03-vad-integration P01 | 7min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 02-ipc-cleanup]: CLOEXEC explicitly cleared via Darwin.fcntl before proc.run() -- defensive for fd inheritance through exec
 - [Phase 02-ipc-cleanup]: Write end of protocol pipe closed in parent after proc.run() -- required for EOF propagation to reader thread when Python exits
 - [Phase 02-ipc-cleanup]: ProcessBridge.swift Models/ files were gitignored by case-insensitive match with models/ in .gitignore -- fixed with git add --force
+- [Phase 03-vad-integration]: speech_frame_count tracked separately from speech_buf length for D-08 min-duration check — silence frames in buffer would inflate count and pass short utterances through
+- [Phase 03-vad-integration]: prebuf.append(frame) placed before energy gate — ensures low-energy frames are available in pre-buffer when speech onset detected (Pitfall 1 prevention)
 
 ### Pending Todos
 
@@ -91,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T06:55:09.758Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-whisper-integration/04-CONTEXT.md
+Last session: 2026-03-27T07:03:26.454Z
+Stopped at: Completed 03-vad-integration 03-01-PLAN.md
+Resume file: None

@@ -9,9 +9,9 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 
 ### Pipeline
 
-- [ ] **PIPE-01**: VAD detects speech boundaries using Silero VAD with configurable silence threshold
-- [ ] **PIPE-02**: VAD applies 150-300ms silence padding before/after utterances to prevent word clipping
-- [ ] **PIPE-03**: VAD rejects low-energy chunks below configurable noise floor
+- [x] **PIPE-01**: VAD detects speech boundaries using Silero VAD with configurable silence threshold
+- [x] **PIPE-02**: VAD applies 150-300ms silence padding before/after utterances to prevent word clipping
+- [x] **PIPE-03**: VAD rejects low-energy chunks below configurable noise floor
 - [ ] **PIPE-04**: Whisper large-v3-turbo transcribes VAD-gated utterances via mlx-whisper
 - [ ] **PIPE-05**: Whisper runs in isolated spawn-context subprocess for MLX thread safety
 - [ ] **PIPE-06**: Hallucination guard filters outputs using no_speech_prob and compression_ratio thresholds
@@ -64,9 +64,9 @@ Requirements for pipeline overhaul. Each maps to roadmap phases.
 | ARCH-01 | Phase 1 | Complete |
 | ARCH-02 | Phase 2 | Complete |
 | INTG-03 | Phase 2 | Complete |
-| PIPE-01 | Phase 3 | Pending |
-| PIPE-02 | Phase 3 | Pending |
-| PIPE-03 | Phase 3 | Pending |
+| PIPE-01 | Phase 3 | Complete |
+| PIPE-02 | Phase 3 | Complete |
+| PIPE-03 | Phase 3 | Complete |
 | PIPE-04 | Phase 4 | Pending |
 | PIPE-05 | Phase 4 | Pending |
 | PIPE-06 | Phase 4 | Pending |

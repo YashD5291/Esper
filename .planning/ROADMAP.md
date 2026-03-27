@@ -58,9 +58,9 @@ Plans:
   2. Each utterance emitted to speech_q includes a 300-500ms pre-buffer so the first phoneme of a sentence is not clipped
   3. Low-energy ambient noise chunks are rejected before they reach speech_q
   4. AudioCapture uses 512-sample blocks (required by Silero VADIterator) and Silero runs on CPU, not MPS
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 Plans:
-- [ ] 03-01-PLAN.md — TDD: VadThread implementation (config update, tests, Silero state machine)
+- [x] 03-01-PLAN.md — TDD: VadThread implementation (config update, tests, Silero state machine)
 - [ ] 03-02-PLAN.md — Wire VadThread into server.py, replace _pump_audio, live verification
 
 ### Phase 4: Whisper Integration
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Config Consolidation | 2/2 | Complete | 2026-03-26 |
 | 2. IPC Cleanup | 2/2 | Complete   | 2026-03-27 |
-| 3. VAD Integration | 0/2 | Not started | - |
+| 3. VAD Integration | 1/2 | In Progress|  |
 | 4. Whisper Integration | 0/? | Not started | - |
 | 5. Telegram Hardening | 0/? | Not started | - |
 | 6. Cleanup | 0/? | Not started | - |
