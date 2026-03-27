@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-vad-integration 03-01-PLAN.md
-last_updated: "2026-03-27T07:03:26.457Z"
+status: verifying
+stopped_at: "Checkpoint: Task 2 human-verify — 03-02-PLAN.md awaiting live audio test"
+last_updated: "2026-03-27T07:11:27.497Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 6
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
   percent: 0
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-27)
 
 Phase: 03 (vad-integration) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-03-27
 
 Progress: [░░░░░░░░░░] 0%
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02-ipc-cleanup P01 | 3min | 1 tasks | 2 files |
 | Phase 02-ipc-cleanup P02 | 15min | 1 tasks | 3 files |
 | Phase 03-vad-integration P01 | 7min | 2 tasks | 5 files |
+| Phase 03-vad-integration P02 | 8min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,8 @@ Recent decisions affecting current work:
 - [Phase 02-ipc-cleanup]: ProcessBridge.swift Models/ files were gitignored by case-insensitive match with models/ in .gitignore -- fixed with git add --force
 - [Phase 03-vad-integration]: speech_frame_count tracked separately from speech_buf length for D-08 min-duration check — silence frames in buffer would inflate count and pass short utterances through
 - [Phase 03-vad-integration]: prebuf.append(frame) placed before energy gate — ensures low-energy frames are available in pre-buffer when speech onset detected (Pitfall 1 prevention)
+- [Phase 03-vad-integration]: _do_stop() shutdown order: capture stop (None sentinel) before VadThread.stop()/wait() — ensures VadThread sees sentinel and exits cleanly
+- [Phase 03-vad-integration]: _do_set_device() stops VadThread before stopping old AudioCapture — prevents reading from dead queue during hot-swap
 
 ### Pending Todos
 
@@ -94,6 +97,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T07:03:26.454Z
-Stopped at: Completed 03-vad-integration 03-01-PLAN.md
+Last session: 2026-03-27T07:11:27.494Z
+Stopped at: Checkpoint: Task 2 human-verify — 03-02-PLAN.md awaiting live audio test
 Resume file: None

@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [ ] **Phase 1: Config Consolidation** - Single config.py replaces .env + @AppStorage + CLI args
 - [x] **Phase 2: IPC Cleanup** - Replace stdout fd redirect hack with --protocol-fd argument (completed 2026-03-27)
-- [ ] **Phase 3: VAD Integration** - Silero VAD provides utterance boundaries that gate Whisper
+- [x] **Phase 3: VAD Integration** - Silero VAD provides utterance boundaries that gate Whisper (completed 2026-03-27)
 - [ ] **Phase 4: Whisper Integration** - Whisper large-v3-turbo runs in isolated spawn subprocess
 - [ ] **Phase 5: Telegram Hardening** - TranscriptionUpdate contract locked, Telegram lifecycle fixed
 - [ ] **Phase 6: Cleanup** - Remove Parakeet code, CoreML models, and dead dependencies
@@ -58,10 +58,10 @@ Plans:
   2. Each utterance emitted to speech_q includes a 300-500ms pre-buffer so the first phoneme of a sentence is not clipped
   3. Low-energy ambient noise chunks are rejected before they reach speech_q
   4. AudioCapture uses 512-sample blocks (required by Silero VADIterator) and Silero runs on CPU, not MPS
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 03-01-PLAN.md — TDD: VadThread implementation (config update, tests, Silero state machine)
-- [ ] 03-02-PLAN.md — Wire VadThread into server.py, replace _pump_audio, live verification
+- [x] 03-02-PLAN.md — Wire VadThread into server.py, replace _pump_audio, live verification
 
 ### Phase 4: Whisper Integration
 **Goal**: Whisper large-v3-turbo transcribes every utterance from speech_q, running in an isolated spawn-context subprocess with Metal safety, watchdog timeouts, and hallucination filtering
@@ -104,7 +104,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Config Consolidation | 2/2 | Complete | 2026-03-26 |
 | 2. IPC Cleanup | 2/2 | Complete   | 2026-03-27 |
-| 3. VAD Integration | 1/2 | In Progress|  |
+| 3. VAD Integration | 2/2 | Complete   | 2026-03-27 |
 | 4. Whisper Integration | 0/? | Not started | - |
 | 5. Telegram Hardening | 0/? | Not started | - |
 | 6. Cleanup | 0/? | Not started | - |
