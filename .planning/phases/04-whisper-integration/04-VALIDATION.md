@@ -2,7 +2,7 @@
 phase: 4
 slug: whisper-integration
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-03-27
 ---
@@ -38,22 +38,24 @@ created: 2026-03-27
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 04-01-01 | 01 | 1 | PIPE-04 | unit | `pytest tests/test_whisper_worker.py -k transcribe` | ❌ W0 | ⬜ pending |
-| 04-01-02 | 01 | 1 | PIPE-05 | unit | `pytest tests/test_whisper_worker.py -k subprocess` | ❌ W0 | ⬜ pending |
-| 04-01-03 | 01 | 1 | PIPE-06 | unit | `pytest tests/test_whisper_worker.py -k hallucination` | ❌ W0 | ⬜ pending |
-| 04-02-01 | 02 | 1 | ARCH-03 | unit | `pytest tests/test_whisper_worker.py -k watchdog` | ❌ W0 | ⬜ pending |
-| 04-02-02 | 02 | 1 | ARCH-04 | unit | `pytest tests/test_transcription_update.py` | ❌ W0 | ⬜ pending |
-| 04-03-01 | 03 | 2 | ARCH-04 | integration | `pytest tests/test_consumers.py` | ❌ W0 | ⬜ pending |
+| 04-01-01 | 01 | 1 | PIPE-04 | unit | `pytest tests/test_whisper_transcriber.py -k transcribe` | W0 | pending |
+| 04-01-02 | 01 | 1 | PIPE-05 | unit | `pytest tests/test_whisper_transcriber.py -k subprocess` | W0 | pending |
+| 04-01-03 | 01 | 1 | PIPE-06 | unit | `pytest tests/test_whisper_transcriber.py -k hallucination` | W0 | pending |
+| 04-01-04 | 01 | 1 | ARCH-03 | unit | `pytest tests/test_whisper_transcriber.py -k watchdog` | W0 | pending |
+| 04-01-05 | 01 | 1 | ARCH-03 | unit | `pytest tests/test_whisper_transcriber.py -k model_load_timeout` | W0 | pending |
+| 04-01-06 | 01 | 1 | ARCH-04 | unit | `pytest tests/test_whisper_transcriber.py -k transcription_update` | W0 | pending |
+| 04-02-01 | 02 | 2 | ARCH-04 | unit | `pytest tests/test_telegram_sender.py` | W0 | pending |
+| 04-02-02 | 02 | 2 | ARCH-04 | integration | `pytest tests/ -x -q --timeout=30` | existing | pending |
+| 04-03-01 | 03 | 2 | ARCH-04 | build | `xcodebuild -scheme EsperApp -destination 'platform=macOS' build` | n/a | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending / green / red / flaky*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tests/test_whisper_worker.py` — stubs for PIPE-04, PIPE-05, PIPE-06, ARCH-03
-- [ ] `tests/test_transcription_update.py` — stubs for ARCH-04 (new dataclass)
-- [ ] `tests/test_consumers.py` — stubs for consumer migration (telegram, realtime_demo)
+- [ ] `tests/test_whisper_transcriber.py` — stubs for PIPE-04, PIPE-05, PIPE-06, ARCH-03 (per-utterance + model load timeout), ARCH-04 (TranscriptionUpdate dataclass)
+- [ ] `tests/test_telegram_sender.py` — stubs for per-utterance Telegram model (D-03)
 - [ ] `tests/conftest.py` — shared fixtures (mock audio, mock subprocess)
 
 *pytest already in requirements.txt — no framework install needed.*
@@ -67,18 +69,19 @@ created: 2026-03-27
 | <3s latency from utterance end | PIPE-04 | Requires live audio + MLX inference timing | Speak a sentence, measure time from silence to transcript appearing |
 | Metal shader cold compilation <120s | CLEAN-03 | Requires clean Metal cache state | Delete ~/Library/Caches/com.apple.Metal, start transcription, measure load time |
 | 50 utterances without crash | PIPE-05 | Requires extended live session | Run continuous transcription for 50+ utterances, verify no subprocess crash |
+| Swift JSON parsing of new TranscriptionPayload fields | ARCH-04 | Swift code verified by xcodebuild compilation only; no XCTest suite exists for this project | Build the Xcode project; if it compiles, Protocol.swift correctly defines the new types and all views reference them without errors |
 
-*If none: "All phase behaviors have automated verification."*
+*Accepted: Swift-side changes are verified by successful xcodebuild compilation. Adding XCTest infrastructure is out of scope for Phase 4.*
 
 ---
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s
+- [x] `nyquist_compliant: true` set in frontmatter
 
 **Approval:** pending
