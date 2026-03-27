@@ -1,26 +1,19 @@
 import SwiftUI
 
 struct TranscriptView: View {
-    let sentences: [SentencePayload]
-    let draftText: String
+    let sentences: [String]
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 8) {
                     ForEach(Array(sentences.enumerated()), id: \.offset) { index, sentence in
-                        Text(sentence.text)
+                        Text(sentence)
                             .textSelection(.enabled)
                             .id("sentence-\(index)")
                     }
 
-                    if !draftText.isEmpty {
-                        Text(draftText)
-                            .foregroundStyle(.secondary)
-                            .id("draft")
-                    }
-
-                    if sentences.isEmpty && draftText.isEmpty {
+                    if sentences.isEmpty {
                         emptyState
                     }
 
@@ -34,9 +27,6 @@ struct TranscriptView: View {
                 withAnimation(.easeOut(duration: 0.15)) {
                     proxy.scrollTo("bottom", anchor: .bottom)
                 }
-            }
-            .onChange(of: draftText) {
-                proxy.scrollTo("bottom", anchor: .bottom)
             }
         }
     }

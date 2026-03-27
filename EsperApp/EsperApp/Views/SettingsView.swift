@@ -64,26 +64,6 @@ private struct GeneralTab: View {
                     .help("Refresh device list")
                 }
             }
-
-            Section("Engine") {
-                Picker("Backend", selection: $settings.engine) {
-                    Text("CoreML").tag("coreml")
-                    Text("MLX").tag("mlx")
-                }
-                .pickerStyle(.segmented)
-                .help("CoreML uses Apple Neural Engine (fastest). MLX uses GPU.")
-
-                if settings.engine == "coreml" {
-                    HStack {
-                        Text("Buffer")
-                        Slider(value: $settings.bufferSeconds, in: 1...15, step: 0.5)
-                        Text("\(settings.bufferSeconds, specifier: "%.1f")s")
-                            .monospacedDigit()
-                            .frame(width: 36, alignment: .trailing)
-                    }
-                    .help("Seconds of audio to buffer before transcribing. Lower = faster, less context.")
-                }
-            }
         }
         .formStyle(.grouped)
     }

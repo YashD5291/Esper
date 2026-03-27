@@ -7,7 +7,8 @@ struct StatusBadge: View {
     private var color: Color {
         switch status {
         case .idle: .gray
-        case .loadingModel: .orange
+        case .downloadingModel, .compilingShaders, .loadingModel: .orange
+        case .transcribing: .yellow
         case .listening: .green
         }
     }
