@@ -10,9 +10,9 @@ final class TranscriptionEngine {
     var devices: [AudioDevice] = []
     var selectedDevice: Int?
     var energyLevel: Double = 0.0
-    var finalizedSentences: [SentencePayload] = []
-    var draftText: String = ""
+    var currentText: String = ""
     var finalizedText: String = ""
+    var sentences: [String] = []
     var errorMessage: String?
     var telegramTestResult: TelegramTestResult?
 
@@ -26,6 +26,17 @@ final class TranscriptionEngine {
     @ObservationIgnored
     private var restartAttempts = 0
     private static let maxRestartAttempts = 3
+
+    // MARK: - Computed
+
+    var isLoading: Bool {
+        switch status {
+        case .downloadingModel, .compilingShaders, .loadingModel:
+            return true
+        default:
+            return false
+        }
+    }
 
     // MARK: - Lifecycle
 
@@ -58,10 +69,7 @@ final class TranscriptionEngine {
     // MARK: - Commands
 
     func startListening() {
-        var data: [String: Any] = [
-            "engine": settings.engine,
-            "buffer": settings.bufferSeconds,
-        ]
+        var data: [String: Any] = [:]
         if let device = selectedDevice {
             data["device"] = device
         }
@@ -74,9 +82,9 @@ final class TranscriptionEngine {
             ]
         }
         // Clear previous transcript
-        finalizedSentences = []
-        draftText = ""
+        currentText = ""
         finalizedText = ""
+        sentences = []
         errorMessage = nil
 
         bridge.send(cmd: "start", data: data)
@@ -144,9 +152,9 @@ final class TranscriptionEngine {
             errorMessage = nil
 
         case .transcript(let payload):
+            currentText = payload.text
             finalizedText = payload.finalizedText
-            draftText = payload.draftText
-            finalizedSentences = payload.finalizedSentences
+            sentences = payload.sentences
 
         case .energy(let level):
             energyLevel = level

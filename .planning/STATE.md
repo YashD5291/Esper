@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-02-PLAN.md — WhisperTranscriber pipeline wiring
-last_updated: "2026-03-27T08:28:38.992Z"
+stopped_at: Completed all Phase 04 plans (04-01, 04-02, 04-03)
+last_updated: "2026-03-27T08:30:00.000Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 6
   completed_phases: 3
   total_plans: 10
-  completed_plans: 7
+  completed_plans: 8
   percent: 0
 ---
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03-vad-integration P02 | 8min | 1 tasks | 1 files |
 | Phase 04-whisper-integration P01 | 8min | 1 tasks | 5 files |
 | Phase 04-whisper-integration P02 | 18min | 3 tasks | 4 files |
+| Phase 04-whisper-integration P03 | 6min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,8 @@ Recent decisions affecting current work:
 - [Phase 04-whisper-integration]: _whisper_consumer replaces _bridge_speech_q — emits transcribing/listening status events flanking each transcribe_utterance call (D-02)
 - [Phase 04-whisper-integration]: TelegramSender stream parameter kept for API compat but ignored — per-utterance sends always used (D-03)
 - [Phase 04-whisper-integration]: realtime_demo --record saves speech-only utterances from speech_q, not full raw audio stream
+- [Phase 04-whisper-integration]: StatusBadge exhaustive switch fixed as part of Task 2 (Rule 1 deviation — would not compile)
+- [Phase 04-whisper-integration]: isLoading computed property pattern chosen over repeating switch in each view
 
 ### Pending Todos
 
@@ -104,6 +107,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T08:28:38.989Z
-Stopped at: Completed 04-02-PLAN.md — WhisperTranscriber pipeline wiring
+Last session: 2026-03-27T08:30:00.000Z
+Stopped at: Completed all Phase 04 plans (04-01, 04-02, 04-03)
 Resume file: None

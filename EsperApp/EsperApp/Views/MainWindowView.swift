@@ -14,8 +14,7 @@ struct MainWindowView: View {
             Divider()
 
             TranscriptView(
-                sentences: engine.finalizedSentences,
-                draftText: engine.draftText
+                sentences: engine.sentences
             )
 
             Divider()
@@ -51,7 +50,7 @@ struct MainWindowView: View {
                 .fixedSize()
             }
 
-            Text(engine.settings.engine.uppercased())
+            Text("WHISPER")
                 .font(.caption2.weight(.semibold))
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 8)
@@ -75,7 +74,7 @@ struct MainWindowView: View {
                 }
             } label: {
                 HStack(spacing: 8) {
-                    if engine.status == .loadingModel {
+                    if engine.isLoading {
                         ProgressView()
                             .controlSize(.small)
                     }
@@ -86,7 +85,7 @@ struct MainWindowView: View {
             .controlSize(.large)
             .buttonStyle(.borderedProminent)
             .tint(engine.status == .listening ? .red : .accentColor)
-            .disabled(engine.status == .loadingModel)
+            .disabled(engine.isLoading)
 
             if let error = engine.errorMessage {
                 HStack(spacing: 6) {
@@ -113,7 +112,10 @@ struct MainWindowView: View {
     private var buttonLabel: String {
         switch engine.status {
         case .idle: "Start Listening"
+        case .downloadingModel: "Downloading Model..."
+        case .compilingShaders: "Compiling Shaders..."
         case .loadingModel: "Loading Model..."
+        case .transcribing: "Transcribing..."
         case .listening: "Stop Listening"
         }
     }
@@ -121,7 +123,8 @@ struct MainWindowView: View {
     private var buttonIcon: String {
         switch engine.status {
         case .idle: "mic.fill"
-        case .loadingModel: "hourglass"
+        case .downloadingModel, .compilingShaders, .loadingModel: "hourglass"
+        case .transcribing: "waveform"
         case .listening: "stop.fill"
         }
     }

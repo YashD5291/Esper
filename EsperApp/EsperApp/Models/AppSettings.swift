@@ -2,14 +2,6 @@ import SwiftUI
 
 @Observable
 final class AppSettings {
-    // Engine
-    @ObservationIgnored
-    @AppStorage("engine") var engine: String = "coreml"
-
-    // Buffer
-    @ObservationIgnored
-    @AppStorage("bufferSeconds") var bufferSeconds: Double = 1.5
-
     // Paths
     @ObservationIgnored
     @AppStorage("pythonPath") var pythonPath: String = ""

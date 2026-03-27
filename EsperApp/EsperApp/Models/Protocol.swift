@@ -4,7 +4,10 @@ import Foundation
 
 enum EngineStatus: String {
     case idle
+    case downloadingModel = "downloading_model"
+    case compilingShaders = "compiling_shaders"
     case loadingModel = "loading_model"
+    case transcribing
     case listening
 }
 
@@ -12,7 +15,10 @@ extension EngineStatus {
     var displayName: String {
         switch self {
         case .idle: "Ready"
+        case .downloadingModel: "Downloading Model"
+        case .compilingShaders: "Compiling Shaders"
         case .loadingModel: "Loading Model"
+        case .transcribing: "Transcribing"
         case .listening: "Listening"
         }
     }
@@ -32,16 +38,11 @@ struct AudioDevice: Identifiable, Hashable {
 // MARK: - Transcription
 
 struct TranscriptionPayload: Sendable {
+    var text: String = ""
     var finalizedText: String = ""
-    var draftText: String = ""
-    var finalizedSentences: [SentencePayload] = []
-}
-
-struct SentencePayload: Identifiable, Sendable {
-    let text: String
-    let confidence: Double
-
-    var id: String { text }
+    var sentences: [String] = []
+    var noSpeechProb: Double = 0.0
+    var durationS: Double = 0.0
 }
 
 // MARK: - Telegram
@@ -95,20 +96,17 @@ enum ServerEvent {
 
         case "transcript":
             guard let d = payload as? [String: Any] else { return nil }
+            let text = d["text"] as? String ?? ""
             let finalizedText = d["finalized_text"] as? String ?? ""
-            let draftText = d["draft_text"] as? String ?? ""
-            var sentences: [SentencePayload] = []
-            if let rawSentences = d["finalized_sentences"] as? [[String: Any]] {
-                sentences = rawSentences.compactMap { s -> SentencePayload? in
-                    guard let text = s["text"] as? String else { return nil }
-                    let confidence = s["confidence"] as? Double ?? 1.0
-                    return SentencePayload(text: text, confidence: confidence)
-                }
-            }
+            let sentences = d["sentences"] as? [String] ?? []
+            let noSpeechProb = d["no_speech_prob"] as? Double ?? 0.0
+            let durationS = d["duration_s"] as? Double ?? 0.0
             return .transcript(TranscriptionPayload(
+                text: text,
                 finalizedText: finalizedText,
-                draftText: draftText,
-                finalizedSentences: sentences
+                sentences: sentences,
+                noSpeechProb: noSpeechProb,
+                durationS: durationS
             ))
 
         case "energy":
