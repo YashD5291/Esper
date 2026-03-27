@@ -39,7 +39,7 @@ def silence_frame() -> np.ndarray:
 def make_mock_model(speech_prob: float = 0.9) -> MagicMock:
     """Return a mock Silero model that returns a fixed speech probability."""
     model = MagicMock()
-    model.return_value.item.return_value = speech_prob
+    model.return_value = speech_prob
     model.reset_states = MagicMock()
     return model
 
@@ -57,7 +57,7 @@ def run_vad(frames: list[np.ndarray], mock_model: MagicMock, timeout: float = 2.
         audio_q.put(frame)
     audio_q.put(None)  # sentinel
 
-    with patch("src.vad.load_silero_vad", return_value=mock_model):
+    with patch("src.vad.SileroVadOnnx", return_value=mock_model):
         vad = VadThread(audio_q=audio_q, speech_q=speech_q)
         vad.start()
         vad.wait(timeout=timeout)
@@ -90,13 +90,11 @@ def test_speech_then_silence_emits_utterance():
 
     call_count = [0]
     def side_effect(tensor, sample_rate):
-        result = MagicMock()
         if call_count[0] < 20:
-            result.item.return_value = 0.9
-        else:
-            result.item.return_value = 0.1
+            call_count[0] += 1
+            return 0.9
         call_count[0] += 1
-        return result
+        return 0.1
 
     model.side_effect = side_effect
 
@@ -127,16 +125,14 @@ def test_prebuffer_prepended_to_utterance():
 
     call_count = [0]
     def side_effect(tensor, sample_rate):
-        result = MagicMock()
         # Frames 0-14: ambient (low VAD prob)
         # Frames 15-34: speech (high VAD prob)
         # Frames 35+: silence (low VAD prob)
         if 15 <= call_count[0] < 35:
-            result.item.return_value = 0.9
-        else:
-            result.item.return_value = 0.1
+            call_count[0] += 1
+            return 0.9
         call_count[0] += 1
-        return result
+        return 0.1
 
     model.side_effect = side_effect
 
@@ -169,13 +165,11 @@ def test_postbuffer_appended_to_utterance():
 
     call_count = [0]
     def side_effect(tensor, sample_rate):
-        result = MagicMock()
         if call_count[0] < 20:
-            result.item.return_value = 0.9
-        else:
-            result.item.return_value = 0.1
+            call_count[0] += 1
+            return 0.9
         call_count[0] += 1
-        return result
+        return 0.1
 
     model.side_effect = side_effect
 
@@ -220,13 +214,11 @@ def test_short_utterance_discarded():
 
     call_count = [0]
     def side_effect(tensor, sample_rate):
-        result = MagicMock()
         if call_count[0] < 2:
-            result.item.return_value = 0.9
-        else:
-            result.item.return_value = 0.1
+            call_count[0] += 1
+            return 0.9
         call_count[0] += 1
-        return result
+        return 0.1
 
     model.side_effect = side_effect
 
