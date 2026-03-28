@@ -82,25 +82,22 @@ for dylib in $(otool -L "$PYTHON_REAL" | awk '/^\t/ {print $1}' | grep -v '/usr/
     install_name_tool -change "$dylib" "@executable_path/../lib/$dylib_name" "$RESOURCES/python/bin/python3"
 done
 
-# Also fix dylib cross-references (e.g., libpython referencing libintl)
-shopt -s nullglob
-for dylib_file in "$RESOURCES/python/lib/"*.dylib; do
-    for dep in $(otool -L "$dylib_file" | awk '/^\t/ {print $1}' | grep -v '/usr/lib\|/System\|@'); do
+# Fix cross-references in ALL bundled libs (*.dylib, *.so, framework-style like "Python")
+find "$RESOURCES/python/lib" -maxdepth 1 -type f | while read -r lib_file; do
+    file "$lib_file" | grep -q "Mach-O" || continue
+    for dep in $(otool -L "$lib_file" | awk '/^\t/ {print $1}' | grep -v '/usr/lib\|/System\|@'); do
         dep_name=$(basename "$dep")
         if [[ -f "$RESOURCES/python/lib/$dep_name" ]]; then
-            install_name_tool -change "$dep" "@loader_path/$dep_name" "$dylib_file"
+            install_name_tool -change "$dep" "@loader_path/$dep_name" "$lib_file"
         fi
     done
-    # Update the dylib's own install name
-    install_name_tool -id "@loader_path/$( basename "$dylib_file")" "$dylib_file" 2>/dev/null || true
+    install_name_tool -id "@loader_path/$(basename "$lib_file")" "$lib_file" 2>/dev/null || true
 done
 
-# Ad-hoc re-sign after install_name_tool (invalidates original signature)
-codesign --force --sign - "$RESOURCES/python/bin/python3"
-for dylib_file in "$RESOURCES/python/lib/"*.dylib; do
-    codesign --force --sign - "$dylib_file"
+# Ad-hoc re-sign ALL Mach-O files in python dir (install_name_tool invalidates signatures)
+find "$RESOURCES/python" -type f | while read -r f; do
+    file "$f" | grep -q "Mach-O" && codesign --force --sign - "$f"
 done
-shopt -u nullglob
 
 # Copy stdlib
 cp -R "$PYTHON_PREFIX/lib/python${PYTHON_VERSION}" "$RESOURCES/python/lib/"
@@ -136,10 +133,10 @@ rm -rf "$RESOURCES/site-packages/pip" \
        "$RESOURCES/site-packages/wheel" \
        "$RESOURCES/site-packages/_distutils_hack" 2>/dev/null || true
 
-# ── 5b. Re-sign entire app bundle with entitlements ────────────────────────
+# ── 5b. Re-sign app binary with entitlements (after all bundle modifications) ─
 echo "==> Re-signing app bundle with entitlements..."
 ENTITLEMENTS="$PROJECT_DIR/EsperApp/EsperApp/EsperApp.entitlements"
-codesign --force --sign - --entitlements "$ENTITLEMENTS" --deep "$APP"
+codesign --force --sign - --entitlements "$ENTITLEMENTS" "$APP"
 
 # ── 6. Create DMG ───────────────────────────────────────────────────────────
 DMG_NAME="Esper-${VERSION}-arm64.dmg"
