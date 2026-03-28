@@ -16,12 +16,16 @@ import logging
 import multiprocessing
 import pathlib
 import queue
+import subprocess
+import sys
+import threading
 from dataclasses import dataclass, field
 from typing import Callable
 
 import numpy as np
 
 from . import config
+from .whisper_worker import _send_msg, _recv_msg
 
 log = logging.getLogger("esper.transcriber")
 
@@ -143,7 +147,12 @@ class WhisperTranscriber:
 
     def stop(self) -> None:
         """Send shutdown sentinel and kill the worker process."""
-        if self._audio_q is not None:
+        if self._pipe_proc is not None:
+            try:
+                _send_msg(self._pipe_proc.stdin, None)
+            except Exception:
+                pass
+        elif self._audio_q is not None:
             try:
                 self._audio_q.put(None)
             except Exception:
@@ -153,7 +162,9 @@ class WhisperTranscriber:
 
     def wait(self, timeout: float = 5.0) -> None:
         """Wait for the worker process to exit."""
-        if self._proc is not None:
+        if self._pipe_proc is not None:
+            self._pipe_proc.wait(timeout=timeout)
+        elif self._proc is not None:
             self._proc.join(timeout=timeout)
 
     def transcribe_utterance(self, audio: np.ndarray) -> TranscriptionUpdate | None:
@@ -171,7 +182,10 @@ class WhisperTranscriber:
         if self._stopped:
             return None
 
-        self._audio_q.put(audio)
+        if self._pipe_proc:
+            _send_msg(self._pipe_proc.stdin, audio)
+        else:
+            self._audio_q.put(audio)
 
         try:
             result = self._result_q.get(timeout=config.WHISPER_SUBPROCESS_TIMEOUT_S)
@@ -220,27 +234,91 @@ class WhisperTranscriber:
     # ── internals ─────────────────────────────────────────────────────────────
 
     def _spawn_worker(self) -> None:
-        """Create and start a new worker subprocess using spawn context.
+        """Create and start a new worker subprocess.
 
-        Uses SimpleQueue for audio_q (parent→worker, no timeout needed) and
-        Queue for result_q (worker→parent, needs .get(timeout=...) for watchdog).
-        multiprocessing.Queue is safe here because the watchdog timeout kills
-        the worker before queue state can deadlock.
+        In frozen mode (PyInstaller): uses subprocess.Popen to launch a
+        second instance of the frozen binary with --whisper-worker flag.
+        Communication via length-prefixed pickle on stdin/stdout.
+        This avoids all PyInstaller + multiprocessing issues.
+
+        In dev mode: uses multiprocessing spawn context with queues.
         """
-        ctx = multiprocessing.get_context("spawn")
-        self._audio_q = ctx.SimpleQueue()
-        self._result_q = ctx.Queue()
-        self._proc = ctx.Process(
-            target=_whisper_worker_entry,
-            args=(self._audio_q, self._result_q),
-            daemon=True,
-            name="whisper-worker",
-        )
-        self._proc.start()
+        self._result_q = queue.Queue()
+
+        if getattr(sys, '_MEIPASS', None):
+            # Frozen: launch self with --whisper-worker flag
+            self._pipe_proc = subprocess.Popen(
+                [sys.executable, "--whisper-worker"],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            self._audio_q = None  # not used in pipe mode
+            self._proc = None     # not a multiprocessing.Process
+            self._result_q = queue.Queue()
+
+            # Background thread reads results from worker stdout → result_q
+            self._reader_thread = threading.Thread(
+                target=self._pipe_reader,
+                daemon=True,
+                name="whisper-pipe-reader",
+            )
+            self._reader_thread.start()
+
+            # Background thread captures worker stderr for logging
+            self._stderr_thread = threading.Thread(
+                target=self._stderr_reader,
+                daemon=True,
+                name="whisper-stderr-reader",
+            )
+            self._stderr_thread.start()
+        else:
+            # Dev mode: use multiprocessing spawn (queues directly)
+            self._pipe_proc = None
+            ctx = multiprocessing.get_context("spawn")
+            self._audio_q = ctx.SimpleQueue()
+            self._result_q = ctx.Queue()
+            self._proc = ctx.Process(
+                target=_whisper_worker_entry,
+                args=(self._audio_q, self._result_q),
+                daemon=True,
+                name="whisper-worker",
+            )
+            self._proc.start()
+
+    def _pipe_reader(self) -> None:
+        """Read length-prefixed pickle messages from pipe worker stdout."""
+        try:
+            while True:
+                msg = _recv_msg(self._pipe_proc.stdout)
+                if msg is None:
+                    break
+                self._result_q.put(msg)
+        except Exception:
+            pass
+
+    def _stderr_reader(self) -> None:
+        """Log worker stderr output."""
+        try:
+            for line in self._pipe_proc.stderr:
+                text = line.decode("utf-8", errors="replace").rstrip()
+                if text:
+                    log.debug("[whisper-worker] %s", text)
+        except Exception:
+            pass
+
 
     def _kill_worker(self) -> None:
         """Kill and join the current worker process."""
-        if self._proc is not None and self._proc.is_alive():
+        if self._pipe_proc is not None:
+            try:
+                self._pipe_proc.stdin.close()
+            except Exception:
+                pass
+            self._pipe_proc.kill()
+            self._pipe_proc.wait(timeout=5)
+            self._pipe_proc = None
+        elif self._proc is not None and self._proc.is_alive():
             self._proc.kill()
             self._proc.join(timeout=5)
 

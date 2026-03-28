@@ -7,15 +7,25 @@ block_cipher = None
 
 # ── paths ──────────────────────────────────────────────────────────────
 PROJECT = os.path.abspath('.')
+VENV_SITE = os.path.join(PROJECT, '.venv', 'lib', 'python3.11', 'site-packages')
+
+from PyInstaller.utils.hooks import collect_all
+
+# Collect ALL files for packages with C extensions that PyInstaller misses
+scipy_datas, scipy_binaries, scipy_hiddenimports = collect_all('scipy')
+mlx_datas, mlx_binaries, mlx_hiddenimports = collect_all('mlx')
+mlxw_datas, mlxw_binaries, mlxw_hiddenimports = collect_all('mlx_whisper')
 
 a = Analysis(
     ['esper_server_entry.py'],
     pathex=[PROJECT],
-    binaries=[],
+    binaries=[
+        (os.path.join(VENV_SITE, 'mlx', 'lib', 'mlx.metallib'), 'mlx/lib'),
+    ] + scipy_binaries + mlx_binaries + mlxw_binaries,
     datas=[
         ('models/silero_vad.onnx', 'models'),
         ('models/whisper', 'models/whisper'),
-    ],
+    ] + scipy_datas + mlx_datas + mlxw_datas,
     hiddenimports=[
         # project modules
         'src',
@@ -36,12 +46,14 @@ a = Analysis(
         'onnxruntime.capi',
         'onnxruntime.capi._pybind_state',
         '_sounddevice_data',
+        # MLX internals
+        'mlx._reprlib_fix',
         # MLX / Whisper
         'mlx_whisper',
         'mlx',
         'mlx.core',
         'huggingface_hub',
-    ],
+    ] + scipy_hiddenimports + mlx_hiddenimports + mlxw_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
