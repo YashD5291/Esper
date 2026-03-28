@@ -80,6 +80,9 @@ mkdir -p "$RESOURCES/models"
 cp -R "$PROJECT_DIR/models/whisper" "$RESOURCES/models/whisper"
 cp "$PROJECT_DIR/models/silero_vad.onnx" "$RESOURCES/models/silero_vad.onnx"
 
+# ── 4b. Remove broken symlinks (dangling refs from Python stdlib copy) ───────
+find "$RESOURCES" -type l ! -exec test -e {} \; -delete 2>/dev/null || true
+
 # ── 5. Strip unnecessary files ──────────────────────────────────────────────
 echo "==> Stripping unnecessary files..."
 find "$RESOURCES" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
