@@ -3,22 +3,21 @@ import SwiftUI
 @main
 struct EsperApp: App {
     @State private var engine = TranscriptionEngine()
+    @State private var launched = false
     @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         MenuBarExtra {
             MenuBarView(engine: engine)
+                .onAppear { ensureLaunched() }
         } label: {
             Image(systemName: engine.status == .listening ? "waveform.circle.fill" : "waveform.circle")
         }
 
         WindowGroup("Esper", id: "main") {
             MainWindowView(engine: engine)
-                .task {
-                    // Launch here — @State is fully wired, events reach the real engine
-                    if !engine.bridge.isRunning {
-                        engine.launch()
-                    }
+                .onAppear {
+                    ensureLaunched()
                     NSApp.activate(ignoringOtherApps: true)
                 }
         }
@@ -26,6 +25,18 @@ struct EsperApp: App {
 
         Settings {
             SettingsView(engine: engine)
+        }
+    }
+
+    private func ensureLaunched() {
+        guard !launched else { return }
+        launched = true
+        engine.launch()
+    }
+
+    init() {
+        DispatchQueue.main.async { [self] in
+            openWindow(id: "main")
         }
     }
 }

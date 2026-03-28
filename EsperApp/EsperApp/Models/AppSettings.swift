@@ -2,13 +2,6 @@ import SwiftUI
 
 @Observable
 final class AppSettings {
-    // Paths
-    @ObservationIgnored
-    @AppStorage("pythonPath") var pythonPath: String = ""
-
-    @ObservationIgnored
-    @AppStorage("projectDir") var projectDir: String = ""
-
     // Telegram
     @ObservationIgnored
     @AppStorage("telegramEnabled") var telegramEnabled: Bool = false
@@ -19,31 +12,22 @@ final class AppSettings {
     @ObservationIgnored
     @AppStorage("telegramChatId") var telegramChatId: String = ""
 
-    // MARK: - Resolved paths (fall back to sensible defaults)
+    // MARK: - Server executable path
 
-    var resolvedPythonPath: String {
-        if !pythonPath.isEmpty { return pythonPath }
-        // Bundled app: python inside Resources
-        if let bundled = Bundle.main.resourcePath {
-            let bundledPython = (bundled as NSString).appendingPathComponent("python/bin/python3")
-            if FileManager.default.fileExists(atPath: bundledPython) {
-                return bundledPython
-            }
-        }
-        // Dev fallback: venv in project directory
-        return (resolvedProjectDir as NSString).appendingPathComponent(".venv/bin/python3")
+    /// Path to the frozen esper-server binary (bundled mode), or nil for dev mode.
+    var frozenServerPath: String? {
+        guard let resources = Bundle.main.resourcePath else { return nil }
+        let path = (resources as NSString).appendingPathComponent("esper-server/esper-server")
+        return FileManager.default.fileExists(atPath: path) ? path : nil
     }
 
-    var resolvedProjectDir: String {
-        if !projectDir.isEmpty { return projectDir }
-        // Bundled app: src/ and models/ inside Resources
-        if let bundled = Bundle.main.resourcePath {
-            let bundledSrc = (bundled as NSString).appendingPathComponent("src")
-            if FileManager.default.fileExists(atPath: bundledSrc) {
-                return bundled
-            }
-        }
-        // Dev fallback
-        return (NSHomeDirectory() as NSString).appendingPathComponent("Codebase/Fun/Esper")
+    /// Dev-mode Python path (venv in project directory).
+    var devPythonPath: String {
+        (devProjectDir as NSString).appendingPathComponent(".venv/bin/python3")
+    }
+
+    /// Dev-mode project directory.
+    var devProjectDir: String {
+        (NSHomeDirectory() as NSString).appendingPathComponent("Codebase/Fun/Esper")
     }
 }

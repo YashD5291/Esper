@@ -6,8 +6,10 @@ constructed.
 """
 
 import pathlib
+import sys
 
-_PROJECT_ROOT = pathlib.Path(__file__).resolve().parent.parent
+_FROZEN = getattr(sys, '_MEIPASS', None)
+_PROJECT_ROOT = pathlib.Path(_FROZEN) if _FROZEN else pathlib.Path(__file__).resolve().parent.parent
 
 # ── Audio ──────────────────────────────────────────────────────────────────────
 SAMPLE_RATE: int = 16000

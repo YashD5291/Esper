@@ -17,7 +17,8 @@ import sys
 
 # Add project root to sys.path so 'from . import config' works in spawn context.
 # Spawn does not inherit the parent's runtime sys.path modifications.
-_PROJECT_ROOT = str(pathlib.Path(__file__).parent.parent)
+_FROZEN = getattr(sys, '_MEIPASS', None)
+_PROJECT_ROOT = _FROZEN if _FROZEN else str(pathlib.Path(__file__).parent.parent)
 if _PROJECT_ROOT not in sys.path:
     sys.path.insert(0, _PROJECT_ROOT)
 

@@ -124,34 +124,24 @@ private struct TelegramTab: View {
 // MARK: - Advanced
 
 private struct AdvancedTab: View {
-    @Bindable var settings: AppSettings
+    var settings: AppSettings
 
     var body: some View {
         Form {
-            Section("Paths") {
-                LabeledContent("Python") {
-                    TextField("", text: $settings.pythonPath, prompt: Text(settings.resolvedPythonPath))
-                        .textFieldStyle(.roundedBorder)
-                        .overlay(pathBorder(settings.resolvedPythonPath))
+            Section("Server") {
+                if let frozenPath = settings.frozenServerPath {
+                    LabeledContent("Mode", value: "Bundled")
+                    LabeledContent("Binary", value: frozenPath)
+                        .textSelection(.enabled)
+                } else {
+                    LabeledContent("Mode", value: "Dev")
+                    LabeledContent("Python", value: settings.devPythonPath)
+                        .textSelection(.enabled)
+                    LabeledContent("Project Dir", value: settings.devProjectDir)
+                        .textSelection(.enabled)
                 }
-                .help("Path to the Python interpreter with Esper's dependencies.")
-
-                LabeledContent("Project Dir") {
-                    TextField("", text: $settings.projectDir, prompt: Text(settings.resolvedProjectDir))
-                        .textFieldStyle(.roundedBorder)
-                        .overlay(pathBorder(settings.resolvedProjectDir))
-                }
-                .help("Root directory of the Esper project (where src/ lives).")
             }
         }
         .formStyle(.grouped)
-    }
-
-    @ViewBuilder
-    private func pathBorder(_ path: String) -> some View {
-        if !path.isEmpty && !FileManager.default.fileExists(atPath: path) {
-            RoundedRectangle(cornerRadius: 5)
-                .stroke(.red, lineWidth: 1)
-        }
     }
 }

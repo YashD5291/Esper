@@ -22,7 +22,21 @@
 
 ---
 
-## Quick Start
+## Install
+
+1. Download [**Esper.dmg**](https://github.com/YashD5291/Esper/releases/latest) from the latest release
+2. Open the DMG and drag **Esper** to **Applications**
+3. Open Terminal and run:
+   ```
+   xattr -cr /Applications/Esper.app
+   ```
+4. Open Esper from Applications or Launchpad
+
+**Requirements:** macOS 14+ (Sonoma), Apple Silicon (M1/M2/M3/M4)
+
+---
+
+## Developer Setup
 
 ### CLI
 
@@ -37,15 +51,9 @@ python -m src.realtime_demo
 
 Select your mic from the device picker, speak, see transcriptions.
 
-### SwiftUI App
+### SwiftUI App (from source)
 
-```bash
-# Build and install
-xcodebuild -project EsperApp/EsperApp.xcodeproj -scheme EsperApp -configuration Release build
-cp -R build/Release/EsperApp.app /Applications/
-```
-
-Or open `EsperApp/EsperApp.xcodeproj` in Xcode and hit Cmd+R.
+Open `EsperApp/EsperApp.xcodeproj` in Xcode and hit Cmd+R.
 
 ---
 
@@ -205,19 +213,6 @@ models/
 
 tests/                      71 tests (config, IPC, VAD, transcriber, cleanup)
 ```
-
----
-
-## Download
-
-Grab the latest release: [**Esper.dmg**](https://github.com/YashD5291/Esper/releases/latest)
-
-After installing, open Terminal and run:
-```
-xattr -cr /Applications/Esper.app
-```
-
-Then open Esper from Applications.
 
 ---
 

@@ -38,33 +38,44 @@ final class ProcessBridge: @unchecked Sendable {
 
     // MARK: - Lifecycle
 
-    func launch(pythonPath: String, projectDir: String) {
+    func launch(settings: AppSettings) {
         guard !isRunning else { return }
 
         let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: pythonPath)
-        proc.currentDirectoryURL = URL(fileURLWithPath: projectDir)
 
-        var env = ProcessInfo.processInfo.environment
-        env["PYTHONUNBUFFERED"] = "1"
-        // Ensure the venv's bin is on PATH so Python finds its packages
-        let venvBin = (projectDir as NSString).appendingPathComponent(".venv/bin")
-        if let existingPath = env["PATH"] {
-            env["PATH"] = "\(venvBin):\(existingPath)"
+        if let frozenPath = settings.frozenServerPath {
+            // Bundled mode: launch the frozen esper-server binary directly
+            proc.executableURL = URL(fileURLWithPath: frozenPath)
+            proc.currentDirectoryURL = URL(fileURLWithPath: frozenPath).deletingLastPathComponent()
+            proc.arguments = []
+            dlog("[Bridge] Launching frozen: \(frozenPath)")
         } else {
-            env["PATH"] = venvBin
-        }
-        // When running from app bundle, set Python paths for embedded runtime
-        if let resourcePath = Bundle.main.resourcePath {
-            let sitePackages = (resourcePath as NSString).appendingPathComponent("site-packages")
-            if FileManager.default.fileExists(atPath: sitePackages) {
-                // Bundled mode: tell Python where to find packages and source
-                let pythonHome = (resourcePath as NSString).appendingPathComponent("python")
-                env["PYTHONHOME"] = pythonHome
-                env["PYTHONPATH"] = "\(sitePackages):\(resourcePath)"
+            // Dev mode: launch python -m src.server
+            let pythonPath = settings.devPythonPath
+            let projectDir = settings.devProjectDir
+            proc.executableURL = URL(fileURLWithPath: pythonPath)
+            proc.currentDirectoryURL = URL(fileURLWithPath: projectDir)
+            proc.arguments = ["-m", "src.server"]
+
+            // In dev mode, ensure venv bin is on PATH
+            var env = ProcessInfo.processInfo.environment
+            env["PYTHONUNBUFFERED"] = "1"
+            let venvBin = (projectDir as NSString).appendingPathComponent(".venv/bin")
+            if let existingPath = env["PATH"] {
+                env["PATH"] = "\(venvBin):\(existingPath)"
+            } else {
+                env["PATH"] = venvBin
             }
+            proc.environment = env
+            dlog("[Bridge] Launching dev: \(pythonPath) -m src.server, cwd=\(projectDir)")
         }
-        proc.environment = env
+
+        // For frozen mode, just set PYTHONUNBUFFERED
+        if proc.environment == nil {
+            var env = ProcessInfo.processInfo.environment
+            env["PYTHONUNBUFFERED"] = "1"
+            proc.environment = env
+        }
 
         let stdin = Pipe()
         let stdout = Pipe()
@@ -79,10 +90,6 @@ final class ProcessBridge: @unchecked Sendable {
         stderrPipe = stderr
         protocolPipe = stdout  // Protocol events come over stdout (all print() removed in Phase 2)
         process = proc
-
-        // No --protocol-fd: Python falls back to stdout for protocol events.
-        // macOS 26+ POSIX_SPAWN_CLOEXEC_DEFAULT closes extra fds despite fcntl.
-        proc.arguments = ["-m", "src.server"]
 
         // Read stderr on a background queue (Python logging)
         stderr.fileHandleForReading.readabilityHandler = { handle in
@@ -109,11 +116,9 @@ final class ProcessBridge: @unchecked Sendable {
         }
 
         do {
-            dlog("[Bridge] Launching: \(pythonPath) -m src.server, cwd=\(projectDir)")
-            dlog("[Bridge] Env PYTHONHOME=\(env["PYTHONHOME"] ?? "nil")")
             try proc.run()
             isRunning = true
-            dlog("[Bridge] Process running, pid=\(proc.processIdentifier), read fd=\(stdout.fileHandleForReading.fileDescriptor)")
+            dlog("[Bridge] Process running, pid=\(proc.processIdentifier)")
             // Protocol events come over stdout — read from stdout pipe
             startReading(protocolPipe: stdout)
         } catch {
