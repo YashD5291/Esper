@@ -134,6 +134,11 @@ rm -rf "$RESOURCES/site-packages/pip" \
        "$RESOURCES/site-packages/wheel" \
        "$RESOURCES/site-packages/_distutils_hack" 2>/dev/null || true
 
+# ── 5b. Re-sign entire app bundle with entitlements ────────────────────────
+echo "==> Re-signing app bundle with entitlements..."
+ENTITLEMENTS="$PROJECT_DIR/EsperApp/EsperApp/EsperApp.entitlements"
+codesign --force --sign - --entitlements "$ENTITLEMENTS" --deep "$APP"
+
 # ── 6. Create DMG ───────────────────────────────────────────────────────────
 DMG_NAME="Esper-${VERSION}-arm64.dmg"
 echo "==> Creating $DMG_NAME..."

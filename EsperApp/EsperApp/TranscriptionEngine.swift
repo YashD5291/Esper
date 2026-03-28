@@ -138,17 +138,20 @@ final class TranscriptionEngine {
     // MARK: - Event Consumption
 
     private func startConsuming() {
+        dlog("[Engine] startConsuming: creating event loop task")
         eventTask = Task { [weak self] in
-            guard let self else { return }
+            guard let self else { dlog("[Engine] startConsuming: self is nil, exiting"); return }
+            dlog("[Engine] startConsuming: entering for-await loop")
             for await event in bridge.events {
-                guard !Task.isCancelled else { break }
+                guard !Task.isCancelled else { dlog("[Engine] task cancelled"); break }
                 self.handle(event)
             }
+            dlog("[Engine] startConsuming: for-await loop exited")
         }
     }
 
     private func handle(_ event: ServerEvent) {
-        NSLog("[Engine] handle: %@", "\(event)")
+        dlog("[Engine] handle: \(event)")
         switch event {
         case .devices(let list):
             NSLog("[Engine] got %d devices", list.count)

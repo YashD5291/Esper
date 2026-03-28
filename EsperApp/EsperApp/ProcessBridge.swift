@@ -1,6 +1,19 @@
 import Darwin
 import Foundation
 
+// Debug log to file (visible even from Launchpad launch)
+let _debugLog: FileHandle? = {
+    let path = "/tmp/esper-bridge.log"
+    FileManager.default.createFile(atPath: path, contents: nil)
+    return FileHandle(forWritingAtPath: path)
+}()
+func dlog(_ msg: String) {
+    let line = "\(Date()) \(msg)\n"
+    _debugLog?.seekToEndOfFile()
+    _debugLog?.write(line.data(using: .utf8)!)
+    NSLog("%@", msg)
+}
+
 /// Spawns `python -m src.server` and manages JSON-line communication.
 final class ProcessBridge: @unchecked Sendable {
     private var process: Process?
@@ -76,7 +89,7 @@ final class ProcessBridge: @unchecked Sendable {
             let data = handle.availableData
             if !data.isEmpty, let text = String(data: data, encoding: .utf8) {
                 for line in text.components(separatedBy: "\n") where !line.isEmpty {
-                    NSLog("[Python] %@", line)
+                    dlog("[Python] \(line)")
                 }
             }
         }
@@ -85,9 +98,10 @@ final class ProcessBridge: @unchecked Sendable {
         let continuation = eventContinuation
         userInitiatedStop = false
         proc.terminationHandler = { [weak self] process in
+            let code = process.terminationStatus
+            dlog("[Bridge] Process terminated with code=\(code), userStop=\(self?.userInitiatedStop ?? false)")
             DispatchQueue.main.async {
                 self?.isRunning = false
-                let code = process.terminationStatus
                 if code != 0, self?.userInitiatedStop != true {
                     continuation?.yield(.crashed(code))
                 }
@@ -95,8 +109,11 @@ final class ProcessBridge: @unchecked Sendable {
         }
 
         do {
+            dlog("[Bridge] Launching: \(pythonPath) -m src.server, cwd=\(projectDir)")
+            dlog("[Bridge] Env PYTHONHOME=\(env["PYTHONHOME"] ?? "nil")")
             try proc.run()
             isRunning = true
+            dlog("[Bridge] Process running, pid=\(proc.processIdentifier), read fd=\(stdout.fileHandleForReading.fileDescriptor)")
             // Protocol events come over stdout — read from stdout pipe
             startReading(protocolPipe: stdout)
         } catch {
@@ -113,7 +130,10 @@ final class ProcessBridge: @unchecked Sendable {
     }
 
     func send(cmd: String, data: [String: Any]? = nil) {
-        guard let pipe = stdinPipe, isRunning else { return }
+        guard let pipe = stdinPipe, isRunning else {
+            dlog("[Bridge] send(\(cmd)) DROPPED — pipe=\(stdinPipe != nil), running=\(isRunning)")
+            return
+        }
 
         var obj: [String: Any] = ["cmd": cmd]
         if let data = data {
@@ -125,6 +145,7 @@ final class ProcessBridge: @unchecked Sendable {
             return
         }
 
+        dlog("[Bridge] send: \(jsonString.prefix(120))")
         jsonString += "\n"
         if let writeData = jsonString.data(using: .utf8) {
             pipe.fileHandleForWriting.write(writeData)
@@ -151,31 +172,34 @@ final class ProcessBridge: @unchecked Sendable {
         let handle = protocolPipe.fileHandleForReading
         let continuation = eventContinuation
         let thread = Thread {
-            NSLog("[Bridge] Reader thread started on fd=%d", handle.fileDescriptor)
+            dlog("[Bridge] Reader thread started on fd=\(handle.fileDescriptor)")
             var buffer = Data()
             let newline = UInt8(ascii: "\n")
 
             while true {
+                dlog("[Bridge] Reader: calling availableData on fd=\(handle.fileDescriptor)...")
                 let data = handle.availableData
                 if data.isEmpty {
-                    NSLog("[Bridge] Reader: EOF")
+                    dlog("[Bridge] Reader: EOF (0 bytes)")
                     break
                 }
-                NSLog("[Bridge] Reader: got %d bytes", data.count)
+                dlog("[Bridge] Reader: got \(data.count) bytes")
                 buffer.append(data)
 
                 while let newlineIndex = buffer.firstIndex(of: newline) {
                     let lineData = buffer[buffer.startIndex..<newlineIndex]
                     buffer = buffer[buffer.index(after: newlineIndex)...]
 
-                    if let line = String(data: Data(lineData), encoding: .utf8) {
-                        NSLog("[Bridge] Reader line: %@", line)
-                    }
+                    let lineStr = String(data: Data(lineData), encoding: .utf8) ?? "<non-utf8>"
                     if let event = ServerEvent.parse(json: Data(lineData)) {
-                        NSLog("[Bridge] Parsed event, yielding to stream")
-                        continuation?.yield(event)
-                    } else if let line = String(data: Data(lineData), encoding: .utf8), !line.isEmpty {
-                        NSLog("[Bridge] Failed to parse event: %@", line)
+                        dlog("[Bridge] Parsed: \(lineStr.prefix(80))")
+                        if continuation != nil {
+                            continuation!.yield(event)
+                        } else {
+                            dlog("[Bridge] ERROR: continuation is nil!")
+                        }
+                    } else if !lineStr.isEmpty {
+                        dlog("[Bridge] FAILED to parse: \(lineStr.prefix(120))")
                     }
                 }
             }
