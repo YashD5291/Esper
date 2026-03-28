@@ -64,10 +64,43 @@ if [[ ! -d "$VENV" ]]; then
     exit 1
 fi
 
-# Copy Python interpreter and stdlib
+# Resolve the real Python binary (follow symlinks)
+PYTHON_REAL=$("$VENV/bin/python3" -c "import sys, os; print(os.path.realpath(sys.executable))")
 PYTHON_PREFIX=$("$VENV/bin/python3" -c "import sys; print(sys.base_prefix)")
 mkdir -p "$RESOURCES/python/bin" "$RESOURCES/python/lib"
-cp "$VENV/bin/python3" "$RESOURCES/python/bin/python3"
+
+# Copy Python binary and its dylib dependencies
+cp "$PYTHON_REAL" "$RESOURCES/python/bin/python3"
+
+# Bundle non-system dylibs and rewrite load paths
+for dylib in $(otool -L "$PYTHON_REAL" | awk '/^\t/ {print $1}' | grep -v '/usr/lib\|/System'); do
+    dylib_name=$(basename "$dylib")
+    echo "    Bundling $dylib_name"
+    cp "$dylib" "$RESOURCES/python/lib/$dylib_name"
+    chmod 644 "$RESOURCES/python/lib/$dylib_name"
+    # Rewrite the Python binary to look for dylib next to itself
+    install_name_tool -change "$dylib" "@executable_path/../lib/$dylib_name" "$RESOURCES/python/bin/python3"
+done
+
+# Also fix dylib cross-references (e.g., libpython referencing libintl)
+for dylib_file in "$RESOURCES/python/lib/"*.dylib; do
+    for dep in $(otool -L "$dylib_file" | awk '/^\t/ {print $1}' | grep -v '/usr/lib\|/System\|@'); do
+        dep_name=$(basename "$dep")
+        if [[ -f "$RESOURCES/python/lib/$dep_name" ]]; then
+            install_name_tool -change "$dep" "@loader_path/$dep_name" "$dylib_file"
+        fi
+    done
+    # Update the dylib's own install name
+    install_name_tool -id "@loader_path/$( basename "$dylib_file")" "$dylib_file" 2>/dev/null || true
+done
+
+# Ad-hoc re-sign after install_name_tool (invalidates original signature)
+codesign --force --sign - "$RESOURCES/python/bin/python3"
+for dylib_file in "$RESOURCES/python/lib/"*.dylib; do
+    codesign --force --sign - "$dylib_file"
+done
+
+# Copy stdlib
 cp -R "$PYTHON_PREFIX/lib/python${PYTHON_VERSION}" "$RESOURCES/python/lib/"
 
 # Copy site-packages (installed deps)
