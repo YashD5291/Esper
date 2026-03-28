@@ -42,10 +42,7 @@ final class TranscriptionEngine {
 
     func launch() {
         NSLog("[Engine] launch() called")
-        bridge.launch(
-            pythonPath: settings.resolvedPythonPath,
-            projectDir: settings.resolvedProjectDir
-        )
+        bridge.launch(settings: settings)
         NSLog("[Engine] bridge.launch() done, isRunning=%d", bridge.isRunning ? 1 : 0)
         startConsuming()
         // Request device list after launch
