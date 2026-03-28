@@ -78,6 +78,9 @@ cp -R "$BUILT_APP" "$APP"
 echo "==> Embedding frozen server..."
 cp -R "$FROZEN_DIR" "$RESOURCES/esper-server"
 
+# Add Applications symlink for drag-to-install DMG experience
+ln -s /Applications "$STAGING/Applications"
+
 # ── 5. Sign the app bundle ──────────────────────────────────────────────────
 echo "==> Signing app bundle..."
 
