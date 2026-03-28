@@ -83,6 +83,7 @@ for dylib in $(otool -L "$PYTHON_REAL" | awk '/^\t/ {print $1}' | grep -v '/usr/
 done
 
 # Also fix dylib cross-references (e.g., libpython referencing libintl)
+shopt -s nullglob
 for dylib_file in "$RESOURCES/python/lib/"*.dylib; do
     for dep in $(otool -L "$dylib_file" | awk '/^\t/ {print $1}' | grep -v '/usr/lib\|/System\|@'); do
         dep_name=$(basename "$dep")
@@ -99,6 +100,7 @@ codesign --force --sign - "$RESOURCES/python/bin/python3"
 for dylib_file in "$RESOURCES/python/lib/"*.dylib; do
     codesign --force --sign - "$dylib_file"
 done
+shopt -u nullglob
 
 # Copy stdlib
 cp -R "$PYTHON_PREFIX/lib/python${PYTHON_VERSION}" "$RESOURCES/python/lib/"
