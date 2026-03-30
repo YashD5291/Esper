@@ -24,6 +24,9 @@ final class TranscriptionEngine {
     private var eventTask: Task<Void, Never>?
 
     @ObservationIgnored
+    private var watchdogTask: Task<Void, Never>?
+
+    @ObservationIgnored
     private var restartAttempts = 0
     private static let maxRestartAttempts = 3
 
@@ -56,6 +59,7 @@ final class TranscriptionEngine {
     }
 
     func shutdown() {
+        cancelWatchdog()
         eventTask?.cancel()
         eventTask = nil
         bridge.send(cmd: "stop")
@@ -94,11 +98,13 @@ final class TranscriptionEngine {
                 try? await Task.sleep(for: .seconds(1))
                 guard let self, self.bridge.isRunning else { return }
                 self.bridge.send(cmd: "start", data: data)
+                self.startWatchdog(expecting: "listening status")
             }
             return
         }
 
         bridge.send(cmd: "start", data: data)
+        startWatchdog(expecting: "listening status")
     }
 
     func stopListening() {
@@ -132,6 +138,25 @@ final class TranscriptionEngine {
         }
     }
 
+    // MARK: - Watchdog
+
+    private func startWatchdog(timeout: TimeInterval = 30.0, expecting: String = "response") {
+        watchdogTask?.cancel()
+        watchdogTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(timeout))
+            guard !Task.isCancelled, let self else { return }
+            if self.status != .listening && self.status != .idle {
+                self.errorMessage = "Python is unresponsive (no \(expecting) after \(Int(timeout))s). Restarting..."
+                self.restart()
+            }
+        }
+    }
+
+    private func cancelWatchdog() {
+        watchdogTask?.cancel()
+        watchdogTask = nil
+    }
+
     // MARK: - Event Consumption
 
     private func startConsuming() {
@@ -159,6 +184,9 @@ final class TranscriptionEngine {
 
         case .status(let newStatus):
             status = newStatus
+            if newStatus == .listening || newStatus == .idle {
+                cancelWatchdog()
+            }
             if newStatus == .idle {
                 energyLevel = 0.0
             }
@@ -179,6 +207,7 @@ final class TranscriptionEngine {
             telegramTestResult = TelegramTestResult(success: success, error: error)
 
         case .crashed(let exitCode):
+            cancelWatchdog()
             status = .idle
             energyLevel = 0.0
             if restartAttempts < Self.maxRestartAttempts {
