@@ -46,6 +46,7 @@ class TestPerUtteranceSend:
     def test_per_utterance_send(self):
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
 
         mock_client_instance = MagicMock()
         mock_client_instance.post.return_value = mock_response
@@ -61,6 +62,7 @@ class TestPerUtteranceSend:
         """TranscriptionUpdate with text='' must not enqueue anything."""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
 
         mock_client_instance = MagicMock()
         mock_client_instance.post.return_value = mock_response
@@ -76,6 +78,7 @@ class TestPerUtteranceSend:
         """TranscriptionUpdate with text='   ' must not enqueue anything."""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
 
         mock_client_instance = MagicMock()
         mock_client_instance.post.return_value = mock_response
@@ -91,6 +94,7 @@ class TestPerUtteranceSend:
         """After on_update(text='Hi.') + stop(), only 'Hi.' is sent — no leftover draft."""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
 
         mock_client_instance = MagicMock()
         mock_client_instance.post.return_value = mock_response
@@ -110,6 +114,7 @@ class TestPerUtteranceSend:
         """Multiple on_update calls produce one message each."""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
 
         mock_client_instance = MagicMock()
         mock_client_instance.post.return_value = mock_response
@@ -131,6 +136,7 @@ class TestPerUtteranceSend:
         """update.text is stripped before sending (no leading/trailing whitespace in message)."""
         mock_response = MagicMock()
         mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
 
         mock_client_instance = MagicMock()
         mock_client_instance.post.return_value = mock_response
@@ -173,6 +179,7 @@ class TestHardening:
 
         resp_200 = MagicMock()
         resp_200.status_code = 200
+        resp_200.json.return_value = {"ok": True}
 
         mock_client = MagicMock()
         mock_client.post.side_effect = [resp_429, resp_200]
@@ -197,6 +204,7 @@ class TestHardening:
 
         resp_200 = MagicMock()
         resp_200.status_code = 200
+        resp_200.json.return_value = {"ok": True}
 
         mock_client = MagicMock()
         mock_client.post.side_effect = [resp_429, resp_200]
@@ -239,6 +247,7 @@ class TestHardening:
             time.sleep(0.3)
             resp = MagicMock()
             resp.status_code = 200
+            resp.json.return_value = {"ok": True}
             return resp
 
         mock_client = MagicMock()
@@ -271,3 +280,41 @@ class TestHardening:
         assert "stream" not in sig.parameters, (
             f"TelegramSender.__init__ must not have 'stream' parameter, found: {list(sig.parameters)}"
         )
+
+    def test_non_retryable_error_not_retried(self):
+        """HTTP 401 should not be retried — only 1 request made."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.text = "Unauthorized"
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            with patch("src.telegram_sender.time.sleep"):
+                sender = _make_sender()
+                sender.on_update(TranscriptionUpdate(text="test"))
+                sender.stop()
+                sender.wait(timeout=5)
+
+        assert mock_client.post.call_count == 1, (
+            f"Expected 1 post call (no retries for 401), got {mock_client.post.call_count}"
+        )
+
+    def test_long_message_truncated(self):
+        """Messages > 4096 chars are truncated with ellipsis."""
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            sender = _make_sender()
+            sender.on_update(TranscriptionUpdate(text="a" * 5000))
+            sent = _drain(sender, mock_client)
+
+        assert len(sent) == 1, f"Expected 1 message, got {len(sent)}"
+        assert len(sent[0]) == 4096, f"Expected 4096 chars, got {len(sent[0])}"
+        assert sent[0].endswith("..."), "Truncated message should end with '...'"
