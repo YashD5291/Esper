@@ -120,3 +120,92 @@ def test_test_telegram_missing_credentials():
         assert "required" in payload["error"].lower()
     finally:
         server._send = original
+
+
+# ── Telegram credential validation ──────────────────────────────────────
+
+
+class TestTelegramValidation:
+    def test_valid_credentials(self):
+        """Valid bot token and chat_id pass validation."""
+        assert server._validate_telegram_credentials("123456:ABC-DEF_ghi", "12345") is True
+
+    def test_valid_negative_chat_id(self):
+        """Negative chat_id (group chats) passes validation."""
+        assert server._validate_telegram_credentials("123456:ABCdef", "-100123456") is True
+
+    def test_invalid_bot_token_rejected(self):
+        """Invalid bot token format doesn't create sender."""
+        # Reset state
+        server._telegram_sender = None
+        server._transcriber = None
+        server._capture = None
+        events, restore = _capture_events()
+        try:
+            # Mock WhisperTranscriber to prevent actual startup
+            with patch.object(server, "WhisperTranscriber") as mock_wt:
+                mock_wt.side_effect = Exception("should not reach here")
+                server._do_start({"telegram": {"bot_token": "not-valid", "chat_id": "12345"}})
+        except Exception:
+            pass
+        finally:
+            server._send = restore
+        assert server._telegram_sender is None
+
+    def test_invalid_bot_token_format(self):
+        """Bot token without colon-separated numeric prefix is rejected."""
+        assert server._validate_telegram_credentials("not-valid", "12345") is False
+
+    def test_invalid_chat_id_non_numeric(self):
+        """Non-numeric chat_id is rejected."""
+        assert server._validate_telegram_credentials("123456:ABCdef", "not-a-number") is False
+
+    def test_empty_bot_token(self):
+        """Empty bot token is rejected."""
+        assert server._validate_telegram_credentials("", "12345") is False
+
+
+# ── VAD restart ─────────────────────────────────────────────────────────
+
+
+class TestVadRestart:
+    def test_restart_vad_creates_new_thread(self):
+        """_restart_vad stops old thread and creates a new VadThread."""
+        mock_old_vad = MagicMock()
+        mock_capture = MagicMock()
+        mock_capture._queue = MagicMock()
+        mock_speech_q = MagicMock()
+
+        server._vad_thread = mock_old_vad
+        server._capture = mock_capture
+        server._speech_q = mock_speech_q
+
+        try:
+            with patch.object(server, "VadThread") as mock_vt:
+                mock_new_vad = MagicMock()
+                mock_vt.return_value = mock_new_vad
+                server._restart_vad()
+
+                mock_old_vad.stop.assert_called_once()
+                mock_old_vad.wait.assert_called_once_with(timeout=2.0)
+                mock_vt.assert_called_once_with(audio_q=mock_capture._queue, speech_q=mock_speech_q)
+                mock_new_vad.start.assert_called_once()
+        finally:
+            server._vad_thread = None
+            server._capture = None
+            server._speech_q = None
+
+    def test_restart_vad_noop_without_capture(self):
+        """_restart_vad does nothing when _capture is None."""
+        mock_old_vad = MagicMock()
+        server._vad_thread = mock_old_vad
+        server._capture = None
+        server._speech_q = MagicMock()
+
+        try:
+            with patch.object(server, "VadThread") as mock_vt:
+                server._restart_vad()
+                mock_vt.assert_not_called()
+        finally:
+            server._vad_thread = None
+            server._speech_q = None

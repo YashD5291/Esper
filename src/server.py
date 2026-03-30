@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import queue as _queue
+import re
 import signal
 import sys
 import threading
@@ -140,6 +141,11 @@ def _whisper_consumer():
         except _queue.Empty:
             continue
         if utterance is None:
+            if not _stop_event.is_set() and _vad_thread is not None:
+                log.warning("Whisper consumer: VAD thread crashed, restarting")
+                _send("error", {"message": "Voice detection crashed, restarting..."})
+                _restart_vad()
+                continue
             log.info("Whisper consumer: got None sentinel, exiting")
             break
         if _transcriber is None or _transcriber.stopped:
@@ -161,6 +167,31 @@ def _emit_energy():
         time.sleep(config.ENERGY_EMIT_INTERVAL_S)
 
 
+def _validate_telegram_credentials(bot_token: str, chat_id: str) -> bool:
+    """Validate Telegram credential formats."""
+    if not re.match(r'^\d+:[A-Za-z0-9_-]+$', bot_token):
+        log.warning("Invalid bot token format")
+        return False
+    try:
+        int(chat_id)
+    except ValueError:
+        log.warning("Invalid chat_id (must be numeric): %s", chat_id)
+        return False
+    return True
+
+
+def _restart_vad():
+    """Restart the VAD thread after a crash."""
+    global _vad_thread
+    if _vad_thread is not None:
+        _vad_thread.stop()
+        _vad_thread.wait(timeout=2.0)
+    if _capture is not None and _speech_q is not None:
+        _vad_thread = VadThread(audio_q=_capture._queue, speech_q=_speech_q)
+        _vad_thread.start()
+        log.info("VAD thread restarted")
+
+
 def _do_start(data: dict):
     """Handle the 'start' command: spawn WhisperTranscriber, start capture + VAD."""
     global _capture, _transcriber, _telegram_sender, _vad_thread, _speech_q, _bridge_thread
@@ -176,7 +207,7 @@ def _do_start(data: dict):
     if telegram_cfg:
         bot_token = telegram_cfg.get("bot_token", "")
         chat_id = telegram_cfg.get("chat_id", "")
-        if bot_token and chat_id:
+        if bot_token and chat_id and _validate_telegram_credentials(bot_token, chat_id):
             from .telegram_sender import TelegramSender
             config.TELEGRAM_BOT_TOKEN = bot_token
             config.TELEGRAM_CHAT_ID = chat_id
