@@ -72,6 +72,11 @@ enum ServerEvent {
             let event = obj["event"] as? String
         else { return nil }
 
+        let version = obj["v"] as? Int ?? 0
+        if version > 1 {
+            NSLog("[Protocol] Warning: event version %d > 1, may have unknown fields", version)
+        }
+
         let payload = obj["data"]
 
         switch event {

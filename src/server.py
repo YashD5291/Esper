@@ -71,7 +71,7 @@ def _send(event: str, payload=None):
     Thread-safe: multiple threads (_whisper_consumer, _emit_energy, main)
     may call _send concurrently. The lock ensures complete JSON lines.
     """
-    obj = {"event": event}
+    obj = {"event": event, "v": 1}
     if payload is not None:
         obj["data"] = payload
     try:
