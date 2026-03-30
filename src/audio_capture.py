@@ -60,6 +60,7 @@ class AudioCapture:
         self._queue: queue.Queue[np.ndarray | None] = queue.Queue(maxsize=config.QUEUE_MAXSIZE)
         self._stream: sd.InputStream | None = None
         self._energy: float = 0.0
+        self._drop_count: int = 0
         self._lock = threading.Lock()
 
     # -- public API --
@@ -105,7 +106,11 @@ class AudioCapture:
 
     def _callback(self, indata: np.ndarray, frames: int, time_info, status):
         if status:
-            log.warning("Audio stream status: %s", status)
+            status_str = str(status)
+            if "error" in status_str.lower() or "overflow" in status_str.lower():
+                log.error("Audio device error: %s", status)
+            else:
+                log.warning("Audio stream status: %s", status)
         chunk = indata[:, 0].copy()  # (frames,) float32
         rms = math.sqrt(float(np.mean(chunk ** 2)))
         with self._lock:
@@ -113,4 +118,6 @@ class AudioCapture:
         try:
             self._queue.put_nowait(chunk)
         except queue.Full:
-            pass  # drop oldest-ish audio rather than block the audio thread
+            self._drop_count += 1
+            if self._drop_count % 100 == 1:  # Log every 100th drop (first, 101st, 201st...)
+                log.warning("Audio queue full — dropped %d frames (consumer too slow)", self._drop_count)

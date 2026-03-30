@@ -139,8 +139,45 @@ def test_stop_puts_sentinel(mock_sd):
 
 
 @patch("src.audio_capture.sd")
-def test_callback_logs_status_warning(mock_sd, caplog):
-    """Non-empty status logs a warning but still queues the audio."""
+def test_callback_counts_dropped_frames(mock_sd):
+    """Drop counter increments when queue is full."""
+    mock_sd.default.device = (0, 0)
+    mock_sd.query_devices.return_value = {"name": "Built-in Mic", "max_input_channels": 1}
+
+    cap = AudioCapture(device=0)
+    for _ in range(cap._queue.maxsize):
+        cap._queue.put(np.zeros(512, dtype=np.float32))
+
+    chunk = np.random.default_rng(0).normal(0, 0.1, (512, 1)).astype(np.float32)
+    cap._callback(chunk, 512, None, None)
+    assert cap._drop_count == 1
+
+    cap._callback(chunk, 512, None, None)
+    assert cap._drop_count == 2
+
+
+@patch("src.audio_capture.sd")
+def test_callback_logs_error_for_overflow_status(mock_sd, caplog):
+    """Status containing 'overflow' logs at ERROR level."""
+    mock_sd.default.device = (0, 0)
+    mock_sd.query_devices.return_value = {"name": "Built-in Mic", "max_input_channels": 1}
+
+    cap = AudioCapture(device=0)
+    indata = np.random.default_rng(1).normal(0, 0.1, (512, 1)).astype(np.float32)
+
+    with caplog.at_level(logging.DEBUG, logger="src.audio_capture"):
+        cap._callback(indata, 512, None, "input overflow")
+
+    error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert any("input overflow" in r.message for r in error_records)
+    # Audio still queued despite the error
+    chunk = cap._queue.get_nowait()
+    assert chunk.shape == (512,)
+
+
+@patch("src.audio_capture.sd")
+def test_callback_logs_warning_for_non_error_status(mock_sd, caplog):
+    """Status without 'error'/'overflow' logs at WARNING level."""
     mock_sd.default.device = (0, 0)
     mock_sd.query_devices.return_value = {"name": "Built-in Mic", "max_input_channels": 1}
 
@@ -148,9 +185,7 @@ def test_callback_logs_status_warning(mock_sd, caplog):
     indata = np.random.default_rng(1).normal(0, 0.1, (512, 1)).astype(np.float32)
 
     with caplog.at_level(logging.WARNING, logger="src.audio_capture"):
-        cap._callback(indata, 512, None, "input overflow")
+        cap._callback(indata, 512, None, "input underflow")
 
-    assert any("input overflow" in record.message for record in caplog.records)
-    # Audio still queued despite the warning
-    chunk = cap._queue.get_nowait()
-    assert chunk.shape == (512,)
+    warning_records = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert any("input underflow" in r.message for r in warning_records)
