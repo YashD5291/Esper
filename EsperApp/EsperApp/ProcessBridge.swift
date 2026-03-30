@@ -16,6 +16,8 @@ func dlog(_ msg: String) {
 
 /// Spawns `python -m src.server` and manages JSON-line communication.
 final class ProcessBridge: @unchecked Sendable {
+    private let lock = NSLock()
+
     private var process: Process?
     private var stdinPipe: Pipe?
     private var stdoutPipe: Pipe?
@@ -39,7 +41,12 @@ final class ProcessBridge: @unchecked Sendable {
     // MARK: - Lifecycle
 
     func launch(settings: AppSettings) {
-        guard !isRunning else { return }
+        lock.lock()
+        guard !isRunning else {
+            lock.unlock()
+            return
+        }
+        lock.unlock()
 
         let proc = Process()
 
@@ -85,11 +92,13 @@ final class ProcessBridge: @unchecked Sendable {
         proc.standardOutput = stdout
         proc.standardError = stderr
 
+        lock.lock()
         stdinPipe = stdin
         stdoutPipe = stdout
         stderrPipe = stderr
         protocolPipe = stdout  // Protocol events come over stdout (all print() removed in Phase 2)
         process = proc
+        lock.unlock()
 
         // Read stderr on a background queue (Python logging)
         stderr.fileHandleForReading.readabilityHandler = { handle in
@@ -103,13 +112,18 @@ final class ProcessBridge: @unchecked Sendable {
 
         // Handle process termination
         let continuation = eventContinuation
+        lock.lock()
         userInitiatedStop = false
+        lock.unlock()
         proc.terminationHandler = { [weak self] process in
             let code = process.terminationStatus
             dlog("[Bridge] Process terminated with code=\(code), userStop=\(self?.userInitiatedStop ?? false)")
             DispatchQueue.main.async {
+                self?.lock.lock()
                 self?.isRunning = false
-                if code != 0, self?.userInitiatedStop != true {
+                let wasUserStop = self?.userInitiatedStop ?? true
+                self?.lock.unlock()
+                if code != 0, !wasUserStop {
                     continuation?.yield(.crashed(code))
                 }
             }
@@ -117,7 +131,9 @@ final class ProcessBridge: @unchecked Sendable {
 
         do {
             try proc.run()
+            lock.lock()
             isRunning = true
+            lock.unlock()
             dlog("[Bridge] Process running, pid=\(proc.processIdentifier)")
             // Protocol events come over stdout — read from stdout pipe
             startReading(protocolPipe: stdout)
@@ -125,20 +141,25 @@ final class ProcessBridge: @unchecked Sendable {
             stdin.fileHandleForWriting.closeFile()
             stdout.fileHandleForReading.closeFile()
             stderr.fileHandleForReading.closeFile()
+            lock.lock()
             stdinPipe = nil
             stdoutPipe = nil
             stderrPipe = nil
             protocolPipe = nil
             process = nil
+            lock.unlock()
             eventContinuation?.yield(.error("Failed to launch Python: \(error.localizedDescription)"))
         }
     }
 
     func send(cmd: String, data: [String: Any]? = nil) {
+        lock.lock()
         guard let pipe = stdinPipe, isRunning else {
+            lock.unlock()
             dlog("[Bridge] send(\(cmd)) DROPPED — pipe=\(stdinPipe != nil), running=\(isRunning)")
             return
         }
+        lock.unlock()
 
         var obj: [String: Any] = ["cmd": cmd]
         if let data = data {
@@ -158,17 +179,25 @@ final class ProcessBridge: @unchecked Sendable {
     }
 
     func terminate() {
+        lock.lock()
         userInitiatedStop = true
-        stdinPipe?.fileHandleForWriting.closeFile()
-        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
-        stderrPipe?.fileHandleForReading.readabilityHandler = nil
-        process?.terminate()
-        process = nil
+        let stdin = stdinPipe
+        let stdout = stdoutPipe
+        let stderr = stderrPipe
+        let proc = process
         stdinPipe = nil
         stdoutPipe = nil
         stderrPipe = nil
         protocolPipe = nil
+        process = nil
         isRunning = false
+        lock.unlock()
+
+        // Perform cleanup on captured locals (outside lock to avoid deadlock)
+        stdin?.fileHandleForWriting.closeFile()
+        stdout?.fileHandleForReading.readabilityHandler = nil
+        stderr?.fileHandleForReading.readabilityHandler = nil
+        proc?.terminate()
     }
 
     // MARK: - Reading
