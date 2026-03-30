@@ -56,6 +56,9 @@ class TelegramSender:
             client.close()
 
     def _send_message(self, client: httpx.Client, text: str):
+        if len(text) > 4096:
+            log.warning("Truncating message from %d to 4096 chars", len(text))
+            text = text[:4093] + "..."
         for attempt in range(config.TELEGRAM_MAX_RETRIES):
             try:
                 resp = client.post(
@@ -63,8 +66,15 @@ class TelegramSender:
                     json={"chat_id": self._chat_id, "text": text},
                 )
                 if resp.status_code == 200:
-                    log.debug("Sent: %s", text[:40])
-                    return
+                    try:
+                        body = resp.json()
+                        if body.get("ok"):
+                            log.debug("Sent: %s", text[:40])
+                            return
+                        log.warning("Telegram API returned ok=false: %s", body.get("description", "unknown"))
+                    except (ValueError, KeyError):
+                        log.debug("Sent (no body check): %s", text[:40])
+                        return
                 if resp.status_code == 429:
                     try:
                         body = resp.json()
@@ -78,6 +88,12 @@ class TelegramSender:
                     )
                     time.sleep(wait_time)
                     continue
+                if 400 <= resp.status_code < 500 and resp.status_code != 429:
+                    log.error(
+                        "Telegram API %d (non-retryable): %s",
+                        resp.status_code, resp.text[:200]
+                    )
+                    return  # Don't retry 4xx errors
                 log.warning(
                     "Telegram API %d: %s", resp.status_code, resp.text[:200]
                 )
