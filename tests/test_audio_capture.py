@@ -90,17 +90,21 @@ def test_callback_puts_chunk_in_queue(mock_sd):
 
 @patch("src.audio_capture.sd")
 def test_callback_updates_energy(mock_sd):
-    """_callback updates energy to RMS of the chunk."""
+    """_callback updates energy to RMS of the DC-removed chunk."""
     mock_sd.default.device = (0, 0)
     mock_sd.query_devices.return_value = {"name": "Built-in Mic", "max_input_channels": 1}
 
     cap = AudioCapture(device=0)
-    indata = np.full((512, 1), 0.5, dtype=np.float32)
+    # Use a sine-like signal (not constant) so DC removal doesn't zero it out
+    rng = np.random.default_rng(42)
+    indata = rng.normal(0, 0.3, (512, 1)).astype(np.float32)
 
     cap._callback(indata, 512, None, None)
 
-    expected_rms = math.sqrt(float(np.mean(indata[:, 0] ** 2)))
-    assert cap.energy == expected_rms
+    chunk = indata[:, 0].copy()
+    chunk -= np.mean(chunk)
+    expected_rms = math.sqrt(float(np.mean(chunk ** 2)))
+    assert abs(cap.energy - expected_rms) < 1e-6
 
 
 @patch("src.audio_capture.sd")

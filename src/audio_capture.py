@@ -112,6 +112,7 @@ class AudioCapture:
             else:
                 log.warning("Audio stream status: %s", status)
         chunk = indata[:, 0].copy()  # (frames,) float32
+        chunk -= np.mean(chunk)  # Remove DC offset (some mics have constant bias)
         rms = math.sqrt(float(np.mean(chunk ** 2)))
         with self._lock:
             self._energy = rms
