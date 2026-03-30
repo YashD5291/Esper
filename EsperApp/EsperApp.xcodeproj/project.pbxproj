@@ -19,7 +19,18 @@
 		A100000010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010; };
 		A100000011 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011; };
 		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012; };
+		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		G200000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E100000010 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E100000001;
+			remoteInfo = EsperApp;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		B100000001 /* EsperApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperApp.swift; sourceTree = "<group>"; };
@@ -36,6 +47,8 @@
 		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000013 /* EsperApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EsperApp.entitlements; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
+		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -43,6 +56,7 @@
 			isa = PBXGroup;
 			children = (
 				D100000002 /* EsperApp */,
+				D200000001 /* EsperAppTests */,
 				D100000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -87,8 +101,17 @@
 			isa = PBXGroup;
 			children = (
 				C100000001 /* EsperApp.app */,
+				C200000001 /* EsperAppTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		D200000001 /* EsperAppTests */ = {
+			isa = PBXGroup;
+			children = (
+				B200000001 /* ProtocolTests.swift */,
+			);
+			path = EsperAppTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -110,6 +133,23 @@
 			productName = EsperApp;
 			productReference = C100000001 /* EsperApp.app */;
 			productType = "com.apple.product-type.application";
+		};
+		E200000001 /* EsperAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F200000003 /* Build configuration list for PBXNativeTarget "EsperAppTests" */;
+			buildPhases = (
+				E200000002 /* Sources */,
+				E200000003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				H200000001 /* PBXTargetDependency */,
+			);
+			name = EsperAppTests;
+			productName = EsperAppTests;
+			productReference = C200000001 /* EsperAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -135,6 +175,7 @@
 			projectRoot = "";
 			targets = (
 				E100000001 /* EsperApp */,
+				E200000001 /* EsperAppTests */,
 			);
 		};
 /* End PBXProject section */
@@ -158,10 +199,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E200000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A200000001 /* ProtocolTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		E100000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E200000003 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -180,6 +236,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		H200000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E100000001 /* EsperApp */;
+			targetProxy = G200000001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		F100000010 /* Debug */ = {
@@ -350,6 +414,40 @@
 			};
 			name = Release;
 		};
+		F200000020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.esper.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EsperApp.app/Contents/MacOS/EsperApp";
+			};
+			name = Debug;
+		};
+		F200000021 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.esper.app.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/EsperApp.app/Contents/MacOS/EsperApp";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -367,6 +465,15 @@
 			buildConfigurations = (
 				F100000020 /* Debug */,
 				F100000021 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F200000003 /* Build configuration list for PBXNativeTarget "EsperAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F200000020 /* Debug */,
+				F200000021 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
