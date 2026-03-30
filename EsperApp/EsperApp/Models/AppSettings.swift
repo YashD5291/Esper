@@ -28,6 +28,22 @@ final class AppSettings {
 
     /// Dev-mode project directory.
     var devProjectDir: String {
-        (NSHomeDirectory() as NSString).appendingPathComponent("Codebase/Fun/Esper")
+        // 1. Environment variable override (for any developer)
+        if let envDir = ProcessInfo.processInfo.environment["ESPER_PROJECT_DIR"] {
+            return envDir
+        }
+        // 2. Infer from executable location (works if launched from project)
+        let execDir = Bundle.main.bundlePath
+        let projectDir = (execDir as NSString).deletingLastPathComponent
+        if FileManager.default.fileExists(atPath: (projectDir as NSString).appendingPathComponent("src/server.py")) {
+            return projectDir
+        }
+        // 3. Final fallback: current working directory
+        let cwd = FileManager.default.currentDirectoryPath
+        if FileManager.default.fileExists(atPath: (cwd as NSString).appendingPathComponent("src/server.py")) {
+            return cwd
+        }
+        // 4. Last resort: home directory assumption (will fail gracefully at launch)
+        return (NSHomeDirectory() as NSString).appendingPathComponent("Codebase/Fun/Esper")
     }
 }
