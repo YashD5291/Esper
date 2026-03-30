@@ -159,10 +159,32 @@ final class ProcessBridge: @unchecked Sendable {
 
     func terminate() {
         userInitiatedStop = true
+
+        // Close stdin to signal Python to exit
         stdinPipe?.fileHandleForWriting.closeFile()
-        stdoutPipe?.fileHandleForReading.readabilityHandler = nil
+
+        // Close stdout reading end to unblock reader thread (causes EOF on availableData)
+        stdoutPipe?.fileHandleForReading.closeFile()
+
+        // Clear stderr handler and close
         stderrPipe?.fileHandleForReading.readabilityHandler = nil
-        process?.terminate()
+        stderrPipe?.fileHandleForReading.closeFile()
+
+        // Terminate with SIGKILL fallback
+        if let proc = process {
+            proc.terminate()
+            DispatchQueue.global().async {
+                let deadline = Date().addingTimeInterval(5.0)
+                while proc.isRunning && Date() < deadline {
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+                if proc.isRunning {
+                    kill(proc.processIdentifier, SIGKILL)
+                    dlog("[Bridge] Sent SIGKILL to pid=\(proc.processIdentifier)")
+                }
+            }
+        }
+
         process = nil
         stdinPipe = nil
         stdoutPipe = nil
