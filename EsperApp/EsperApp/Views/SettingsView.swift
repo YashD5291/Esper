@@ -72,34 +72,72 @@ private struct GeneralTab: View {
 // MARK: - Telegram
 
 private struct TelegramTab: View {
-    @Bindable var settings: AppSettings
+    var settings: AppSettings
     var onTestTelegram: ((String, String) -> Void)?
     var telegramTestResult: TelegramTestResult?
+
+    @State private var botToken: String = ""
+    @State private var chatId: String = ""
+    @State private var enabled: Bool = false
+    @State private var saved: Bool = false
+
+    private var hasChanges: Bool {
+        botToken != settings.telegramBotToken ||
+        chatId != settings.telegramChatId ||
+        enabled != settings.telegramEnabled
+    }
+
+    private var canTest: Bool {
+        !botToken.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !chatId.trimmingCharacters(in: .whitespaces).isEmpty
+    }
 
     var body: some View {
         Form {
             Section {
-                Toggle("Send transcriptions to Telegram", isOn: $settings.telegramEnabled)
+                Toggle("Send transcriptions to Telegram", isOn: $enabled)
                     .help("Relay transcribed text to a Telegram chat in real time.")
             }
 
-            if settings.telegramEnabled {
+            if enabled {
                 Section("Credentials") {
-                    TextField("Bot Token", text: $settings.telegramBotToken)
+                    TextField("Bot Token", text: $botToken)
                         .textFieldStyle(.roundedBorder)
                         .help("Create a bot via @BotFather on Telegram to get this token.")
 
-                    TextField("Chat ID", text: $settings.telegramChatId)
+                    TextField("Chat ID", text: $chatId)
                         .textFieldStyle(.roundedBorder)
                         .help("Numeric ID of the Telegram chat to send messages to.")
                 }
 
                 Section {
                     HStack {
+                        Button("Save") {
+                            settings.telegramEnabled = enabled
+                            settings.telegramBotToken = botToken.trimmingCharacters(in: .whitespaces)
+                            settings.telegramChatId = chatId.trimmingCharacters(in: .whitespaces)
+                            saved = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                saved = false
+                            }
+                        }
+                        .disabled(!hasChanges)
+
                         Button("Test Connection") {
+                            // Save first, then test
+                            settings.telegramBotToken = botToken.trimmingCharacters(in: .whitespaces)
+                            settings.telegramChatId = chatId.trimmingCharacters(in: .whitespaces)
+                            settings.telegramEnabled = enabled
                             onTestTelegram?(settings.telegramBotToken, settings.telegramChatId)
                         }
-                        .disabled(settings.telegramBotToken.isEmpty || settings.telegramChatId.isEmpty)
+                        .disabled(!canTest)
+
+                        if saved {
+                            Label("Saved", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                                .transition(.opacity)
+                        }
 
                         if let result = telegramTestResult {
                             if result.success {
@@ -118,6 +156,14 @@ private struct TelegramTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear {
+            botToken = settings.telegramBotToken
+            chatId = settings.telegramChatId
+            enabled = settings.telegramEnabled
+        }
+        .onChange(of: enabled) { _, newValue in
+            settings.telegramEnabled = newValue
+        }
     }
 }
 
