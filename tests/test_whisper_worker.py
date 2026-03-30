@@ -1,13 +1,13 @@
 """Unit tests for src/whisper_worker.py — pipe protocol (_send_msg / _recv_msg).
 
-Tests the length-prefixed pickle framing used for Swift↔Python IPC in frozen
-(PyInstaller) mode. All tests use io.BytesIO as the pipe mock — no real
-subprocesses needed.
+Tests the typed, length-prefixed framing (JSON + raw numpy bytes) used for
+Swift↔Python IPC in frozen (PyInstaller) mode. All tests use io.BytesIO as the
+pipe mock — no real subprocesses needed.
 """
 
 import io
+import json
 import pathlib
-import pickle
 import struct
 import sys
 
@@ -63,15 +63,15 @@ def test_recv_returns_none_on_empty_pipe():
 
 
 def test_recv_returns_none_on_partial_header():
-    """Only 2 bytes available (incomplete 4-byte header) returns None."""
+    """Only 2 bytes available (incomplete 5-byte header) returns None."""
     buf = io.BytesIO(b"\x00\x00")
     assert _recv_msg(buf) is None
 
 
 def test_recv_returns_none_on_truncated_body():
     """Header claims N bytes but only half the body is present — returns None."""
-    payload = pickle.dumps({"hello": "world"}, protocol=pickle.HIGHEST_PROTOCOL)
-    header = struct.pack(">I", len(payload))
+    payload = json.dumps({"hello": "world"}).encode()
+    header = struct.pack(">BI", 0, len(payload))  # type=JSON, full length
     # Write header + only half the payload
     buf = io.BytesIO(header + payload[: len(payload) // 2])
     assert _recv_msg(buf) is None
@@ -103,20 +103,13 @@ def test_multiple_messages_sequential():
 
 
 def test_framing_format():
-    """Wire format is 4-byte big-endian length prefix followed by pickle payload."""
+    """Verify wire format: 1-byte type + 4-byte big-endian length + JSON payload."""
     buf = io.BytesIO()
-    obj = {"key": "value"}
-    _send_msg(buf, obj)
-
+    msg = {"ok": True}
+    _send_msg(buf, msg)
     raw = buf.getvalue()
-
-    # First 4 bytes are the big-endian length prefix
-    length_prefix = raw[:4]
-    body = raw[4:]
-
-    expected_body = pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
-    expected_length = struct.pack(">I", len(expected_body))
-
-    assert length_prefix == expected_length
-    assert body == expected_body
-    assert pickle.loads(body) == obj
+    msg_type = raw[0]
+    length = struct.unpack('>I', raw[1:5])[0]
+    assert msg_type == 0  # JSON
+    payload = json.loads(raw[5:5+length])
+    assert payload == msg

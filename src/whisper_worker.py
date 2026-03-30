@@ -12,11 +12,13 @@ mlx_whisper.transcribe() — they cause crashes on some audio inputs.
 
 from __future__ import annotations
 
+import json
 import logging
 import pathlib
-import pickle
 import struct
 import sys
+
+import numpy as np
 
 # Add project root to sys.path so 'from . import config' works in spawn context.
 _FROZEN = getattr(sys, '_MEIPASS', None)
@@ -27,24 +29,54 @@ if _PROJECT_ROOT not in sys.path:
 
 # ── Framed pipe protocol ─────────────────────────────────────────────────
 
+_MSG_JSON = 0
+_MSG_NUMPY = 1
+_MSG_NONE = 2
+
 def _send_msg(pipe, obj):
-    """Write a length-prefixed pickled message to pipe."""
-    data = pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
-    pipe.write(struct.pack('>I', len(data)))
-    pipe.write(data)
+    """Write a typed, length-prefixed message to pipe."""
+    if obj is None:
+        pipe.write(struct.pack('>BI', _MSG_NONE, 0))
+        pipe.flush()
+        return
+    if isinstance(obj, np.ndarray):
+        dtype_bytes = str(obj.dtype).encode()
+        shape_bytes = struct.pack(f'>{len(obj.shape)}Q', *obj.shape)
+        header = struct.pack('>I', len(dtype_bytes)) + dtype_bytes + struct.pack('>I', len(obj.shape)) + shape_bytes
+        raw = obj.tobytes()
+        payload = header + raw
+        pipe.write(struct.pack('>BI', _MSG_NUMPY, len(payload)))
+        pipe.write(payload)
+        pipe.flush()
+        return
+    payload = json.dumps(obj).encode()
+    pipe.write(struct.pack('>BI', _MSG_JSON, len(payload)))
+    pipe.write(payload)
     pipe.flush()
 
-
 def _recv_msg(pipe):
-    """Read a length-prefixed pickled message from pipe. Returns None on EOF."""
-    header = pipe.read(4)
-    if not header or len(header) < 4:
+    """Read a typed, length-prefixed message from pipe. Returns None on EOF."""
+    hdr = pipe.read(5)
+    if not hdr or len(hdr) < 5:
         return None
-    length = struct.unpack('>I', header)[0]
+    msg_type, length = struct.unpack('>BI', hdr)
+    if msg_type == _MSG_NONE:
+        return None
+    if length == 0:
+        return None
     data = pipe.read(length)
     if not data or len(data) < length:
         return None
-    return pickle.loads(data)
+    if msg_type == _MSG_JSON:
+        return json.loads(data)
+    if msg_type == _MSG_NUMPY:
+        off = 0
+        dl = struct.unpack('>I', data[off:off+4])[0]; off += 4
+        dt = data[off:off+dl].decode(); off += dl
+        nd = struct.unpack('>I', data[off:off+4])[0]; off += 4
+        shape = struct.unpack(f'>{nd}Q', data[off:off+nd*8]); off += nd*8
+        return np.frombuffer(data[off:], dtype=np.dtype(dt)).reshape(shape).copy()
+    return None
 
 
 # ── Pipe-based worker (frozen mode) ──────────────────────────────────────
