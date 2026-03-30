@@ -533,3 +533,20 @@ def test_session_accumulator():
     assert len(r2.sentences) == 2
     assert r2.sentences[0] == "First sentence."
     assert r2.sentences[1] == "Second sentence."
+
+
+# ── regression: stop/wait before start must not crash ────────────────────────
+
+def test_stop_before_start_does_not_crash():
+    """Calling stop() before start() must not raise AttributeError."""
+    from src.transcriber import WhisperTranscriber
+    wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
+    wt.stop()
+    assert wt.stopped is True
+
+
+def test_wait_before_start_does_not_crash():
+    """Calling wait() before start() must not raise AttributeError."""
+    from src.transcriber import WhisperTranscriber
+    wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
+    wt.wait(timeout=0.1)

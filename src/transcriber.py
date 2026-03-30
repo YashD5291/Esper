@@ -101,6 +101,9 @@ class WhisperTranscriber:
         self._proc = None
         self._audio_q = None
         self._result_q = None
+        self._pipe_proc = None
+        self._reader_thread = None
+        self._stderr_thread = None
 
     @property
     def stopped(self) -> bool:
