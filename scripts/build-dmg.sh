@@ -83,14 +83,16 @@ ln -s /Applications "$STAGING/Applications"
 
 # ── 5. Sign the app bundle ──────────────────────────────────────────────────
 echo "==> Signing app bundle..."
+# TODO: For notarization, replace '--sign -' with '--sign "Developer ID Application: ..."'
+# then run: xcrun notarytool submit <dmg> --apple-id <email> --team-id <team>
 
 # Sign all Mach-O files inside the frozen server directory
 find "$RESOURCES/esper-server" -type f | while read -r f; do
-    file "$f" | grep -q "Mach-O" && codesign --force --sign - "$f"
+    file "$f" | grep -q "Mach-O" && codesign --force --sign - --options runtime "$f"
 done
 
 # Sign the app bundle with entitlements (must be last)
-codesign --force --sign - --entitlements "$ENTITLEMENTS" "$APP"
+codesign --force --sign - --options runtime --entitlements "$ENTITLEMENTS" "$APP"
 
 # ── 6. Verify bundle ────────────────────────────────────────────────────────
 echo "==> Verifying bundle..."
