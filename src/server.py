@@ -326,7 +326,7 @@ def main():
     def _sigterm(sig, frame):
         log.info("Received SIGTERM, shutting down")
         _do_stop()
-        sys.exit(0)
+        raise SystemExit(0)
 
     signal.signal(signal.SIGTERM, _sigterm)
 
