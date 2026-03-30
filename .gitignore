@@ -6,7 +6,10 @@ recordings/
 *.egg-info/
 dist/
 build/
-/models/
+/models/*/
+/models/**/*.bin
+/models/**/*.safetensors
+/models/**/*.mlmodelc
 !/models/silero_vad.onnx
 .history
 .DS_Store
