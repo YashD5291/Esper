@@ -78,8 +78,10 @@ def _send(event: str, payload=None):
         with _write_lock:
             _proto_out.write(json.dumps(obj) + "\n")
             _proto_out.flush()
+    except BlockingIOError:
+        log.warning("Protocol write would block (pipe full), dropping event: %s", event)
     except (BrokenPipeError, OSError) as exc:
-        log.warning("Protocol write failed (pipe overflow or closed): %s", exc)
+        log.warning("Protocol write failed (pipe closed): %s", exc)
 
 
 def _send_error(message: str):

@@ -35,7 +35,7 @@ final class ProcessBridge: @unchecked Sendable {
 
     init() {
         var continuation: AsyncStream<ServerEvent>.Continuation!
-        events = AsyncStream { continuation = $0 }
+        events = AsyncStream(bufferingPolicy: .bufferingNewest(200)) { continuation = $0 }
         eventContinuation = continuation
     }
 
