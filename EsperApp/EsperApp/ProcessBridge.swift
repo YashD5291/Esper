@@ -3,7 +3,10 @@ import Foundation
 
 // Debug log to file (visible even from Launchpad launch)
 let _debugLog: FileHandle? = {
-    let path = "/tmp/esper-bridge.log"
+    let logDir = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/Logs/Esper")
+    try? FileManager.default.createDirectory(at: logDir, withIntermediateDirectories: true)
+    let path = logDir.appendingPathComponent("esper-bridge.log").path
     FileManager.default.createFile(atPath: path, contents: nil)
     return FileHandle(forWritingAtPath: path)
 }()
