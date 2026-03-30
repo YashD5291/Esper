@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/chip-Apple%20Silicon-black?style=flat-square&logo=apple" alt="Apple Silicon">
   <img src="https://img.shields.io/badge/model-Whisper%20large--v3--turbo-green?style=flat-square" alt="Whisper">
   <img src="https://img.shields.io/badge/inference-MLX%20Metal-orange?style=flat-square" alt="MLX">
-  <img src="https://img.shields.io/badge/tests-71%20passing-brightgreen?style=flat-square" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-144%20passing-brightgreen?style=flat-square" alt="Tests">
 </p>
 
 <p align="center">
@@ -118,7 +118,13 @@ python -m src.realtime_demo --record           # Save speech audio to WAV
 
 ### Telegram Setup
 
-Create `.env` in the project root:
+Copy the example config and fill in your credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your bot token and chat ID from [@BotFather](https://t.me/BotFather):
 
 ```env
 TELEGRAM_BOT_TOKEN=your-bot-token
@@ -126,6 +132,8 @@ TELEGRAM_CHAT_ID=your-chat-id
 ```
 
 Run with `--telegram`, or configure in the SwiftUI app settings.
+
+**Reliability:** Messages retry up to 3x with exponential backoff. Rate limits (429) are respected automatically. Non-retryable errors (401/403) fail immediately. Messages over 4096 chars are truncated.
 
 ---
 
@@ -140,8 +148,10 @@ Menu bar app with waveform icon. Click to start/stop listening.
 | **Transcript view** | Scrolling per-utterance transcript |
 | **Telegram** | Configure bot token + chat ID in settings |
 | **Auto-restart** | Python process auto-restarts on crash (up to 3x) |
+| **Mic permission** | Prompts for microphone access with clear error if denied |
+| **Command timeout** | 30s watchdog — auto-restarts if Python becomes unresponsive |
 
-**IPC:** SwiftUI spawns `python -m src.server` as a subprocess. Commands go over stdin, events come back over stdout -- both as newline-delimited JSON.
+**IPC:** SwiftUI spawns `python -m src.server` as a subprocess. Commands go over stdin, events come back over stdout -- both as newline-delimited JSON (protocol v1). Thread-safe with NSLock, bounded event buffer (200), zombie process cleanup with SIGKILL fallback.
 
 ---
 
@@ -195,11 +205,13 @@ src/
 EsperApp/
   EsperApp/
     EsperApp.swift               App entry (MenuBarExtra + WindowGroup)
-    ProcessBridge.swift          Python subprocess management
-    TranscriptionEngine.swift    @Observable state + event consumption
+    ProcessBridge.swift          Python subprocess management (NSLock, bounded stream)
+    TranscriptionEngine.swift    @Observable state + event consumption + watchdog
+    Helpers/
+      KeychainHelper.swift       Keychain read/write (for future use with Developer ID)
     Models/
-      Protocol.swift             Event types + JSON parsing
-      AppSettings.swift          @AppStorage preferences
+      Protocol.swift             Event types + JSON parsing (protocol v1)
+      AppSettings.swift          @AppStorage preferences + dynamic dev path
     Views/
       MainWindowView.swift       Primary window
       MenuBarView.swift          Menu bar controls
@@ -207,11 +219,26 @@ EsperApp/
       AudioLevelMeter.swift      Real-time audio meter
       StatusBadge.swift          Status indicator
       SettingsView.swift         App settings
+  EsperAppTests/
+    ProtocolTests.swift          25 XCTests for JSON event parsing
 
 models/
-  whisper/                  Whisper large-v3-turbo (local, gitignored)
+  silero_vad.onnx           Silero VAD model (2.2MB, tracked in git)
+  whisper/                  Whisper large-v3-turbo (1.5GB, gitignored)
 
-tests/                      71 tests (config, IPC, VAD, transcriber, cleanup)
+tests/                      119 Python tests
+  test_config.py            Configuration constants + validation
+  test_server_ipc.py        IPC protocol (--protocol-fd)
+  test_server_commands.py   Server command handlers
+  test_vad.py               VAD state machine
+  test_vad_model.py         Silero ONNX wrapper
+  test_audio_capture.py     Microphone capture + queue
+  test_whisper_transcriber.py  Whisper subprocess lifecycle
+  test_whisper_worker.py    Pipe protocol (JSON + numpy framing)
+  test_telegram_sender.py   Telegram retry/truncation/validation
+  test_integration.py       Full pipeline (VAD -> Whisper -> Telegram)
+  test_cleanup.py           Dead code assertions
+  test_frozen_paths.py      PyInstaller path resolution
 ```
 
 ---
