@@ -86,13 +86,21 @@ echo "==> Signing app bundle..."
 # TODO: For notarization, replace '--sign -' with '--sign "Developer ID Application: ..."'
 # then run: xcrun notarytool submit <dmg> --apple-id <email> --team-id <team>
 
+# Detect signing identity — use Developer ID if available, else ad-hoc
+SIGN_IDENTITY="-"
+CODESIGN_FLAGS="--force --sign $SIGN_IDENTITY"
+if [[ "$SIGN_IDENTITY" != "-" ]]; then
+    # Hardened runtime only works with a real developer certificate
+    CODESIGN_FLAGS="$CODESIGN_FLAGS --options runtime"
+fi
+
 # Sign all Mach-O files inside the frozen server directory
 find "$RESOURCES/esper-server" -type f | while read -r f; do
-    file "$f" | grep -q "Mach-O" && codesign --force --sign - --options runtime "$f"
+    file "$f" | grep -q "Mach-O" && codesign $CODESIGN_FLAGS "$f"
 done
 
 # Sign the app bundle with entitlements (must be last)
-codesign --force --sign - --options runtime --entitlements "$ENTITLEMENTS" "$APP"
+codesign $CODESIGN_FLAGS --entitlements "$ENTITLEMENTS" "$APP"
 
 # ── 6. Verify bundle ────────────────────────────────────────────────────────
 echo "==> Verifying bundle..."
