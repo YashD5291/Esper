@@ -311,7 +311,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access for speech-to-text transcription.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access to transcribe your speech in real-time.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -337,7 +337,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access for speech-to-text transcription.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access to transcribe your speech in real-time.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

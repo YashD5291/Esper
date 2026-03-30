@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 /// Single source of truth for all app state.
@@ -69,6 +70,14 @@ final class TranscriptionEngine {
     // MARK: - Commands
 
     func startListening() {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            guard await self.checkMicrophonePermission() else { return }
+            self.doStartListening()
+        }
+    }
+
+    private func doStartListening() {
         var data: [String: Any] = [:]
         if let device = selectedDevice {
             data["device"] = device
@@ -198,6 +207,20 @@ final class TranscriptionEngine {
 
         case .unknown:
             break
+        }
+    }
+
+    private func checkMicrophonePermission() async -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            return true
+        case .notDetermined:
+            return await AVCaptureDevice.requestAccess(for: .audio)
+        case .denied, .restricted:
+            errorMessage = "Microphone access denied. Go to System Settings > Privacy & Security > Microphone to enable it for Esper."
+            return false
+        @unknown default:
+            return true
         }
     }
 
