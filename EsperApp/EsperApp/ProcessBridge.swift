@@ -196,11 +196,28 @@ final class ProcessBridge: @unchecked Sendable {
         isRunning = false
         lock.unlock()
 
-        // Perform cleanup on captured locals (outside lock to avoid deadlock)
+        // Close stdin to signal Python to exit
         stdin?.fileHandleForWriting.closeFile()
-        stdout?.fileHandleForReading.readabilityHandler = nil
+        // Close stdout reading end to unblock reader thread (causes EOF on availableData)
+        stdout?.fileHandleForReading.closeFile()
+        // Clear stderr handler and close
         stderr?.fileHandleForReading.readabilityHandler = nil
-        proc?.terminate()
+        stderr?.fileHandleForReading.closeFile()
+
+        // Terminate with SIGKILL fallback
+        if let proc {
+            proc.terminate()
+            DispatchQueue.global().async {
+                let deadline = Date().addingTimeInterval(5.0)
+                while proc.isRunning && Date() < deadline {
+                    Thread.sleep(forTimeInterval: 0.1)
+                }
+                if proc.isRunning {
+                    kill(proc.processIdentifier, SIGKILL)
+                    dlog("[Bridge] Sent SIGKILL to pid=\(proc.processIdentifier)")
+                }
+            }
+        }
     }
 
     // MARK: - Reading
