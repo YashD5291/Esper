@@ -19,6 +19,7 @@
 		A100000010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010; };
 		A100000011 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011; };
 		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012; };
+		A100000013 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 /* End PBXBuildFile section */
 
@@ -46,6 +47,7 @@
 		B100000011 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000013 /* EsperApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EsperApp.entitlements; sourceTree = "<group>"; };
+		B100000014 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -69,6 +71,7 @@
 				B100000003 /* TranscriptionEngine.swift */,
 				D100000003 /* Models */,
 				D100000004 /* Views */,
+				D100000006 /* Helpers */,
 				B100000012 /* Assets.xcassets */,
 				B100000013 /* EsperApp.entitlements */,
 			);
@@ -82,6 +85,14 @@
 				B100000005 /* AppSettings.swift */,
 			);
 			path = Models;
+			sourceTree = "<group>";
+		};
+		D100000006 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				B100000014 /* KeychainHelper.swift */,
+			);
+			path = Helpers;
 			sourceTree = "<group>";
 		};
 		D100000004 /* Views */ = {
@@ -196,6 +207,7 @@
 				A100000009 /* AudioLevelMeter.swift in Sources */,
 				A100000010 /* SettingsView.swift in Sources */,
 				A100000011 /* StatusBadge.swift in Sources */,
+				A100000013 /* KeychainHelper.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
