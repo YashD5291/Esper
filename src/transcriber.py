@@ -295,7 +295,7 @@ class WhisperTranscriber:
                     break
                 self._result_q.put(msg)
         except Exception:
-            pass
+            log.error("Pipe reader thread crashed", exc_info=True)
 
     def _stderr_reader(self) -> None:
         """Log worker stderr output."""
@@ -305,7 +305,7 @@ class WhisperTranscriber:
                 if text:
                     log.debug("[whisper-worker] %s", text)
         except Exception:
-            pass
+            log.error("Stderr reader thread crashed", exc_info=True)
 
 
     def _kill_worker(self) -> None:

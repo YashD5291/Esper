@@ -166,7 +166,7 @@ class VadThread:
 
         if speech_frame_count >= min_frames:
             utterance = np.concatenate(speech_buf).astype(np.float32)
-            duration = len(utterance) / 16000
+            duration = len(utterance) / config.SAMPLE_RATE
             log.info("VAD: utterance sealed %.2fs (%d frames passed threshold)", duration, speech_frame_count)
             try:
                 self._speech_q.put_nowait(utterance)  # non-blocking (Pitfall 3)
