@@ -379,6 +379,11 @@ class WhisperTranscriber:
         self._sentences.append(text)
         self._finalized_text = " ".join(self._sentences)
 
+        # Cap session accumulator to prevent unbounded memory growth
+        if len(self._sentences) > 500:
+            self._sentences = self._sentences[-500:]
+            self._finalized_text = " ".join(self._sentences)
+
         segments = result.get("segments", [])
         avg_no_speech = (
             sum(s["no_speech_prob"] for s in segments) / len(segments)

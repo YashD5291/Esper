@@ -550,3 +550,24 @@ def test_wait_before_start_does_not_crash():
     from src.transcriber import WhisperTranscriber
     wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
     wt.wait(timeout=0.1)
+
+
+# ── session memory cap ────────────────────────────────────────────────────────
+
+def test_sentences_capped_at_500():
+    """_sentences list doesn't grow beyond 500 entries."""
+    from src.transcriber import WhisperTranscriber
+
+    wt = WhisperTranscriber(on_update=MagicMock(), on_status=MagicMock())
+    wt._sentences = [f"sentence {i}" for i in range(600)]
+    wt._finalized_text = " ".join(wt._sentences)
+
+    audio = np.zeros(16000, dtype=np.float32)
+    result = {
+        "text": " New sentence.",
+        "segments": [{"no_speech_prob": 0.1, "compression_ratio": 1.2, "text": "New sentence."}],
+    }
+    update = wt._build_update(result, audio)
+
+    assert len(wt._sentences) <= 500
+    assert "New sentence." in wt._sentences[-1]

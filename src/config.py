@@ -45,3 +45,11 @@ TELEGRAM_BACKOFF_BASE: float = 1.0
 # ── IPC ────────────────────────────────────────────────────────────────────────
 ENERGY_EMIT_INTERVAL_S: float = 0.1   # ~10 Hz energy events
 MODEL_LOAD_TIMEOUT_S: float = 120.0   # includes MLX Metal shader compile on cold start
+
+# ── Validation ────────────────────────────────────────────────────────────────
+assert 0.0 <= VAD_SPEECH_THRESHOLD <= 1.0, f"VAD_SPEECH_THRESHOLD must be 0-1, got {VAD_SPEECH_THRESHOLD}"
+assert VAD_MIN_ENERGY >= 0.0, f"VAD_MIN_ENERGY must be >= 0, got {VAD_MIN_ENERGY}"
+assert QUEUE_MAXSIZE > 0, f"QUEUE_MAXSIZE must be > 0, got {QUEUE_MAXSIZE}"
+assert WHISPER_SUBPROCESS_TIMEOUT_S > 0, f"WHISPER_SUBPROCESS_TIMEOUT_S must be > 0, got {WHISPER_SUBPROCESS_TIMEOUT_S}"
+assert TELEGRAM_MAX_RETRIES >= 1, f"TELEGRAM_MAX_RETRIES must be >= 1, got {TELEGRAM_MAX_RETRIES}"
+assert SAMPLE_RATE > 0, f"SAMPLE_RATE must be > 0, got {SAMPLE_RATE}"
