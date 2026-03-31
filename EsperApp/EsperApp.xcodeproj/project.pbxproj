@@ -20,7 +20,10 @@
 		A100000011 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011; };
 		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012; };
 		A100000013 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014; };
+		A100000014 /* OverlayPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000015; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
+		A200000002 /* OverlayPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
+		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -48,8 +51,11 @@
 		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000013 /* EsperApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EsperApp.entitlements; sourceTree = "<group>"; };
 		B100000014 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		B100000015 /* OverlayPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPosition.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
+		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
+		B200000003 /* AppSettingsOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsOverlayTests.swift; sourceTree = "<group>"; };
 		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -83,6 +89,7 @@
 			children = (
 				B100000004 /* Protocol.swift */,
 				B100000005 /* AppSettings.swift */,
+				B100000015 /* OverlayPosition.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -121,6 +128,7 @@
 			isa = PBXGroup;
 			children = (
 				B200000001 /* ProtocolTests.swift */,
+				B200000002 /* OverlayPositionTests.swift */,
 			);
 			path = EsperAppTests;
 			sourceTree = "<group>";
@@ -208,6 +216,7 @@
 				A100000010 /* SettingsView.swift in Sources */,
 				A100000011 /* StatusBadge.swift in Sources */,
 				A100000013 /* KeychainHelper.swift in Sources */,
+				A100000014 /* OverlayPosition.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,6 +225,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A200000001 /* ProtocolTests.swift in Sources */,
+				A200000002 /* OverlayPositionTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
