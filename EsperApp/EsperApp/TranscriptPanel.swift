@@ -22,7 +22,7 @@ final class TranscriptPanel: NSPanel {
         hidesOnDeactivate = false
         isOpaque = false
         backgroundColor = .clear
-        hasShadow = true
+        hasShadow = false
         ignoresMouseEvents = true
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
 
@@ -43,6 +43,15 @@ final class TranscriptPanel: NSPanel {
         vibrancyView.frame = contentView?.bounds ?? .zero
         hostView.frame = vibrancyView.bounds
         hostView.autoresizingMask = [.width, .height]
+
+        // Control redraw timing — prevent continuous redraws during layout changes
+        hostView.wantsLayer = true
+        hostView.layerContentsRedrawPolicy = .onSetNeedsDisplay
+
+        // Disable automatic intrinsic-size recalculation on every SwiftUI update
+        if let hosting = hostView as? NSHostingView<TranscriptOverlayView> {
+            hosting.sizingOptions = []
+        }
 
         vibrancyView.addSubview(hostView)
         contentView?.addSubview(vibrancyView)
