@@ -25,6 +25,8 @@
 		A100000015 /* TranscriptPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016; };
 		A100000016 /* TranscriptOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000017; };
 		A100000017 /* OverlaySettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000018; };
+		A100000018 /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000019; };
+		A100000019 /* UpdateSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000020; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* OverlayPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -59,6 +61,8 @@
 		B100000017 /* TranscriptOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptOverlayView.swift; sourceTree = "<group>"; };
 		B100000016 /* TranscriptPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptPanel.swift; sourceTree = "<group>"; };
 		B100000018 /* OverlaySettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettingsTab.swift; sourceTree = "<group>"; };
+		B100000019 /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
+		B100000020 /* UpdateSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTab.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
@@ -121,6 +125,8 @@
 				B100000011 /* StatusBadge.swift */,
 				B100000017 /* TranscriptOverlayView.swift */,
 				B100000018 /* OverlaySettingsTab.swift */,
+				B100000019 /* CheckForUpdatesView.swift */,
+				B100000020 /* UpdateSettingsTab.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -237,6 +243,8 @@
 				A100000015 /* TranscriptPanel.swift in Sources */,
 				A100000016 /* TranscriptOverlayView.swift in Sources */,
 				A100000017 /* OverlaySettingsTab.swift in Sources */,
+				A100000018 /* CheckForUpdatesView.swift in Sources */,
+				A100000019 /* UpdateSettingsTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

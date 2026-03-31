@@ -1,7 +1,9 @@
+import Sparkle
 import SwiftUI
 
 struct MenuBarView: View {
     let engine: TranscriptionEngine
+    let updater: SPUUpdater
     @Environment(\.openWindow) private var openWindow
     @State private var overlayEnabled = false
 
@@ -66,6 +68,10 @@ struct MenuBarView: View {
             overlayEnabled.toggle()
             engine.settings.overlayEnabled = overlayEnabled
         }
+
+        Divider()
+
+        CheckForUpdatesView(updater: updater)
 
         Divider()
 
