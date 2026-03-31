@@ -6,20 +6,22 @@
     <description>Esper app updates</description>
     <language>en</language>
     <item>
-      <title>Version 3.0.1</title>
-      <sparkle:version>1</sparkle:version>
-      <sparkle:shortVersionString>3.0.1</sparkle:shortVersionString>
+      <title>Version 3.1.0</title>
+      <sparkle:version>2</sparkle:version>
+      <sparkle:shortVersionString>3.1.0</sparkle:shortVersionString>
       <description><![CDATA[
         <ul>
+          <li>Sparkle auto-update integration</li>
           <li>Fixed overlay blink during live transcription</li>
           <li>Rendering hardening for overlay panel</li>
+          <li>Fixed legacy UI on macOS 16 (disabled hardened runtime for ad-hoc builds)</li>
         </ul>
       ]]></description>
-      <pubDate>Mon, 31 Mar 2026 00:00:00 +0000</pubDate>
+      <pubDate>Tue, 01 Apr 2026 00:00:00 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v3.0.1/Esper.dmg"
-        sparkle:edSignature="PLACEHOLDER_SIGN_WITH_GENERATE_APPCAST"
-        length="0"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.1.0/Esper.dmg"
+        sparkle:edSignature="So0ppMdT8OO6MMZmeY4v8h2y3ljTPHRdnEKlvvnCsnhAFx2qU2FIYnvobT1OLlpcvmVBtINsEW7mdKw1Ue3WBQ=="
+        length="2090199"
         type="application/octet-stream"
       />
     </item>
