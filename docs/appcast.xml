@@ -19,9 +19,9 @@
       ]]></description>
       <pubDate>Tue, 01 Apr 2026 00:00:00 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v3.1.0/Esper.dmg"
-        sparkle:edSignature="So0ppMdT8OO6MMZmeY4v8h2y3ljTPHRdnEKlvvnCsnhAFx2qU2FIYnvobT1OLlpcvmVBtINsEW7mdKw1Ue3WBQ=="
-        length="2090199"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.1.0/Esper-3.1.0-arm64.dmg"
+        sparkle:edSignature="VhOgHXMgN9CBbngovEN2LO27EIsP2mtTdJ1wcWUvhTl/Feo1XY4zlWSWw6x2dRA9dvfCumY4Ir0MgzYKLp5OCA=="
+        length="1686858912"
         type="application/octet-stream"
       />
     </item>
