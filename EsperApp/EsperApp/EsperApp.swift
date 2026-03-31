@@ -1,4 +1,5 @@
 import QuartzCore
+import Sparkle
 import SwiftUI
 
 @main
@@ -6,11 +7,12 @@ struct EsperApp: App {
     @State private var engine = TranscriptionEngine()
     @State private var launched = false
     @State private var overlayController = OverlayController()
+    private let updaterController: SPUStandardUpdaterController
     @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(engine: engine)
+            MenuBarView(engine: engine, updater: updaterController.updater)
                 .onAppear { ensureLaunched() }
         } label: {
             Image(systemName: engine.status == .listening ? "waveform.circle.fill" : "waveform.circle")
@@ -26,7 +28,7 @@ struct EsperApp: App {
         .defaultSize(width: 520, height: 640)
 
         Settings {
-            SettingsView(engine: engine, overlayController: overlayController)
+            SettingsView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
         }
     }
 
@@ -38,6 +40,11 @@ struct EsperApp: App {
     }
 
     init() {
+        updaterController = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
         DispatchQueue.main.async { [self] in
             openWindow(id: "main")
         }

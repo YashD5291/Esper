@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A100000020 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP00000002 /* Sparkle */; };
 		A100000001 /* EsperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001; };
 		A100000002 /* ProcessBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002; };
 		A100000003 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000003; };
@@ -24,9 +25,12 @@
 		A100000015 /* TranscriptPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016; };
 		A100000016 /* TranscriptOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000017; };
 		A100000017 /* OverlaySettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000018; };
+		A100000018 /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000019; };
+		A100000019 /* UpdateSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000020; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* OverlayPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
+		A200000004 /* UpdateSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,10 +62,13 @@
 		B100000017 /* TranscriptOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptOverlayView.swift; sourceTree = "<group>"; };
 		B100000016 /* TranscriptPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptPanel.swift; sourceTree = "<group>"; };
 		B100000018 /* OverlaySettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettingsTab.swift; sourceTree = "<group>"; };
+		B100000019 /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
+		B100000020 /* UpdateSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTab.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
 		B200000003 /* AppSettingsOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsOverlayTests.swift; sourceTree = "<group>"; };
+		B200000004 /* UpdateSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTests.swift; sourceTree = "<group>"; };
 		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -120,6 +127,8 @@
 				B100000011 /* StatusBadge.swift */,
 				B100000017 /* TranscriptOverlayView.swift */,
 				B100000018 /* OverlaySettingsTab.swift */,
+				B100000019 /* CheckForUpdatesView.swift */,
+				B100000020 /* UpdateSettingsTab.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -139,6 +148,7 @@
 				B200000001 /* ProtocolTests.swift */,
 				B200000002 /* OverlayPositionTests.swift */,
 				B200000003 /* AppSettingsOverlayTests.swift */,
+				B200000004 /* UpdateSettingsTests.swift */,
 			);
 			path = EsperAppTests;
 			sourceTree = "<group>";
@@ -153,12 +163,16 @@
 				E100000002 /* Sources */,
 				E100000003 /* Frameworks */,
 				E100000004 /* Resources */,
+				E100000005 /* Re-sign Sparkle Framework */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = EsperApp;
+			packageProductDependencies = (
+				SP00000002 /* Sparkle */,
+			);
 			productName = EsperApp;
 			productReference = C100000001 /* EsperApp.app */;
 			productType = "com.apple.product-type.application";
@@ -202,6 +216,9 @@
 			productRefGroup = D100000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			targets = (
 				E100000001 /* EsperApp */,
 				E200000001 /* EsperAppTests */,
@@ -230,6 +247,8 @@
 				A100000015 /* TranscriptPanel.swift in Sources */,
 				A100000016 /* TranscriptOverlayView.swift in Sources */,
 				A100000017 /* OverlaySettingsTab.swift in Sources */,
+				A100000018 /* CheckForUpdatesView.swift in Sources */,
+				A100000019 /* UpdateSettingsTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,6 +259,7 @@
 				A200000001 /* ProtocolTests.swift in Sources */,
 				A200000002 /* OverlayPositionTests.swift in Sources */,
 				A200000003 /* AppSettingsOverlayTests.swift in Sources */,
+				A200000004 /* UpdateSettingsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -250,6 +270,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A100000020 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -272,6 +293,28 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		E100000005 /* Re-sign Sparkle Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Re-sign Sparkle Framework";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Re-sign embedded Sparkle framework to match ad-hoc app signing\nif [ -d \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\" ]; then\n    codesign --force --deep --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXTargetDependency section */
 		H200000001 /* PBXTargetDependency */ = {
@@ -319,7 +362,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -381,7 +424,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -409,6 +452,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EsperApp/Info.plist;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access to transcribe your speech in real-time.";
@@ -435,6 +479,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EsperApp/Info.plist;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access to transcribe your speech in real-time.";
@@ -515,6 +560,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		SP00000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 	};
 	rootObject = E100000010 /* Project object */;

@@ -151,6 +151,17 @@ Menu bar app with waveform icon. Click to start/stop listening.
 | **Mic permission** | Prompts for microphone access with clear error if denied |
 | **Command timeout** | 30s watchdog — auto-restarts if Python becomes unresponsive |
 | **Floating overlay** | Always-on-top transcription text over any window (configurable) |
+| **Auto-updates** | Sparkle 2 — checks every 24h, EdDSA-verified, installs and relaunches automatically |
+
+### Auto-Updates
+
+| Feature | Details |
+|---------|---------|
+| **Framework** | Sparkle 2 |
+| **Check interval** | Every 24 hours (configurable in Settings) |
+| **Manual check** | Menu bar > "Check for Updates..." or Settings > Updates |
+| **Verification** | EdDSA signature verification |
+| **Install** | Downloads, verifies, replaces, relaunches automatically |
 
 ### Floating Overlay
 

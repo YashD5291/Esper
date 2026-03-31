@@ -1,8 +1,10 @@
+import Sparkle
 import SwiftUI
 
 struct SettingsView: View {
     let engine: TranscriptionEngine
     var overlayController: OverlayController?
+    let updater: SPUUpdater
 
     var body: some View {
         TabView {
@@ -26,6 +28,9 @@ struct SettingsView: View {
 
             OverlaySettingsTab(settings: engine.settings, overlayController: overlayController)
                 .tabItem { Label("Overlay", systemImage: "text.bubble") }
+
+            UpdateSettingsTab(updater: updater)
+                .tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }
 
             AdvancedTab(settings: engine.settings)
             .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
