@@ -129,6 +129,7 @@
 			children = (
 				B200000001 /* ProtocolTests.swift */,
 				B200000002 /* OverlayPositionTests.swift */,
+				B200000003 /* AppSettingsOverlayTests.swift */,
 			);
 			path = EsperAppTests;
 			sourceTree = "<group>";
@@ -226,6 +227,7 @@
 			files = (
 				A200000001 /* ProtocolTests.swift in Sources */,
 				A200000002 /* OverlayPositionTests.swift in Sources */,
+				A200000003 /* AppSettingsOverlayTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
