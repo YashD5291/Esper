@@ -5,9 +5,9 @@ set -euo pipefail
 VERSION="${1:?Usage: release.sh <version> <release-notes>}"
 NOTES="${2:?Usage: release.sh <version> <release-notes>}"
 TAG="v${VERSION}"
-BUILD_DIR="/tmp/EsperBuild"
-DMG_PATH="/tmp/Esper.dmg"
-APPCAST="docs/appcast.xml"
+PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+DMG_PATH="$PROJECT_DIR/dist/Esper-${VERSION}-arm64.dmg"
+APPCAST="$PROJECT_DIR/docs/appcast.xml"
 SIGN_TOOL=$(find ~/Library/Developer/Xcode/DerivedData/EsperApp-*/SourcePackages/artifacts -name "sign_update" 2>/dev/null | head -1)
 
 if [ -z "$SIGN_TOOL" ]; then
@@ -15,17 +15,15 @@ if [ -z "$SIGN_TOOL" ]; then
     exit 1
 fi
 
-echo "=== Building Release ==="
-xcodebuild -project EsperApp/EsperApp.xcodeproj -scheme EsperApp \
-    -configuration Release clean build \
-    CONFIGURATION_BUILD_DIR="$BUILD_DIR" 2>&1 | tail -3
+echo "=== Building Full DMG (PyInstaller + Swift) ==="
+"$PROJECT_DIR/scripts/build-dmg.sh" --version "$VERSION"
 
-echo "=== Creating DMG ==="
-rm -f "$DMG_PATH"
-hdiutil create -volname "Esper" -srcfolder "$BUILD_DIR/EsperApp.app" \
-    -ov -format UDZO "$DMG_PATH"
+if [ ! -f "$DMG_PATH" ]; then
+    echo "Error: DMG not found at $DMG_PATH"
+    exit 1
+fi
 
-echo "=== Signing DMG ==="
+echo "=== Signing DMG with EdDSA ==="
 SIGN_OUTPUT=$("$SIGN_TOOL" "$DMG_PATH")
 echo "$SIGN_OUTPUT"
 
@@ -41,6 +39,7 @@ fi
 CURRENT_BUILD=$(grep 'sparkle:version>' "$APPCAST" | head -1 | grep -o '[0-9]*')
 NEW_BUILD=$((CURRENT_BUILD + 1))
 PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
+DMG_NAME="Esper-${VERSION}-arm64.dmg"
 
 # Format release notes as HTML list items
 NOTES_HTML=$(echo "$NOTES" | tr ',' '\n' | sed 's/^ *//' | sed 's/.*/          <li>&<\/li>/')
@@ -65,7 +64,7 @@ ${NOTES_HTML}
       ]]></description>
       <pubDate>${PUB_DATE}</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/${TAG}/Esper.dmg"
+        url="https://github.com/YashD5291/Esper/releases/download/${TAG}/${DMG_NAME}"
         sparkle:edSignature="${ED_SIG}"
         length="${LENGTH}"
         type="application/octet-stream"
