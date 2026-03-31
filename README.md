@@ -13,7 +13,7 @@
   <img src="https://img.shields.io/badge/chip-Apple%20Silicon-black?style=flat-square&logo=apple" alt="Apple Silicon">
   <img src="https://img.shields.io/badge/model-Whisper%20large--v3--turbo-green?style=flat-square" alt="Whisper">
   <img src="https://img.shields.io/badge/inference-MLX%20Metal-orange?style=flat-square" alt="MLX">
-  <img src="https://img.shields.io/badge/tests-144%20passing-brightgreen?style=flat-square" alt="Tests">
+  <img src="https://img.shields.io/badge/tests-158%20passing-brightgreen?style=flat-square" alt="Tests">
 </p>
 
 <p align="center">
@@ -150,6 +150,23 @@ Menu bar app with waveform icon. Click to start/stop listening.
 | **Auto-restart** | Python process auto-restarts on crash (up to 3x) |
 | **Mic permission** | Prompts for microphone access with clear error if denied |
 | **Command timeout** | 30s watchdog — auto-restarts if Python becomes unresponsive |
+| **Floating overlay** | Always-on-top transcription text over any window (configurable) |
+
+### Floating Overlay
+
+A transparent floating panel that shows live transcription text on top of all windows — no need to switch to the app to verify what was said.
+
+**Enable:** Settings → Overlay → toggle ON, or click "Show Overlay" in the menu bar.
+
+| Setting | Options |
+|---------|---------|
+| **Placement** | Draggable (drag anywhere) or Fixed (6 preset positions) |
+| **Text Size** | Small / Medium / Large |
+| **Text Color** | 5 presets + custom color picker |
+| **Lines** | 1–9 visible lines |
+| **Opacity** | 30–100% |
+
+The overlay is click-through in fixed mode — clicks pass to windows below. In draggable mode, grab and reposition it anywhere on screen. Position is remembered between sessions.
 
 **IPC:** SwiftUI spawns `python -m src.server` as a subprocess. Commands go over stdin, events come back over stdout -- both as newline-delimited JSON (protocol v1). Thread-safe with NSLock, bounded event buffer (200), zombie process cleanup with SIGKILL fallback.
 
@@ -204,23 +221,29 @@ src/
 
 EsperApp/
   EsperApp/
-    EsperApp.swift               App entry (MenuBarExtra + WindowGroup)
+    EsperApp.swift               App entry (MenuBarExtra + WindowGroup + OverlayController)
     ProcessBridge.swift          Python subprocess management (NSLock, bounded stream)
     TranscriptionEngine.swift    @Observable state + event consumption + watchdog
+    TranscriptPanel.swift        Floating NSPanel (vibrancy, click-through, draggable)
     Helpers/
       KeychainHelper.swift       Keychain read/write (for future use with Developer ID)
     Models/
       Protocol.swift             Event types + JSON parsing (protocol v1)
-      AppSettings.swift          @AppStorage preferences + dynamic dev path
+      AppSettings.swift          @AppStorage preferences (Telegram + Overlay + dev paths)
+      OverlayPosition.swift      6-position enum with screen coordinate math
     Views/
       MainWindowView.swift       Primary window
-      MenuBarView.swift          Menu bar controls
+      MenuBarView.swift          Menu bar controls (incl. overlay toggle)
       TranscriptView.swift       Scrolling transcript
+      TranscriptOverlayView.swift  Floating overlay SwiftUI content + OverlayViewModel
       AudioLevelMeter.swift      Real-time audio meter
       StatusBadge.swift          Status indicator
-      SettingsView.swift         App settings
+      SettingsView.swift         App settings (4 tabs)
+      OverlaySettingsTab.swift   Overlay config (position, appearance, preview)
   EsperAppTests/
     ProtocolTests.swift          25 XCTests for JSON event parsing
+    OverlayPositionTests.swift   8 XCTests for position coordinate math
+    AppSettingsOverlayTests.swift  6 XCTests for overlay settings defaults
 
 models/
   silero_vad.onnx           Silero VAD model (2.2MB, tracked in git)
