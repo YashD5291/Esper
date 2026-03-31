@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A100000020 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP00000002 /* Sparkle */; };
 		A100000001 /* EsperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001; };
 		A100000002 /* ProcessBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002; };
 		A100000003 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000003; };
@@ -159,6 +160,9 @@
 			dependencies = (
 			);
 			name = EsperApp;
+			packageProductDependencies = (
+				SP00000002 /* Sparkle */,
+			);
 			productName = EsperApp;
 			productReference = C100000001 /* EsperApp.app */;
 			productType = "com.apple.product-type.application";
@@ -202,6 +206,9 @@
 			productRefGroup = D100000005 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			targets = (
 				E100000001 /* EsperApp */,
 				E200000001 /* EsperAppTests */,
@@ -250,6 +257,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A100000020 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -409,6 +417,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EsperApp/Info.plist;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access to transcribe your speech in real-time.";
@@ -435,6 +444,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = EsperApp/Info.plist;
 				INFOPLIST_KEY_LSUIElement = NO;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2025 Esper. All rights reserved.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Esper needs microphone access to transcribe your speech in real-time.";
@@ -515,6 +525,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		SP00000002 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 	};
 	rootObject = E100000010 /* Project object */;
