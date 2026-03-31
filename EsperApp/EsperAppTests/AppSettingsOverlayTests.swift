@@ -4,6 +4,25 @@ import SwiftUI
 
 final class AppSettingsOverlayTests: XCTestCase {
 
+    private let overlayKeys = [
+        "overlayEnabled", "overlayPosition", "overlayTextSize",
+        "overlayTextColor", "overlayMaxLines", "overlayOpacity",
+    ]
+
+    override func setUp() {
+        super.setUp()
+        for key in overlayKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
+    override func tearDown() {
+        for key in overlayKeys {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+        super.tearDown()
+    }
+
     func testDefaultValues() {
         let settings = AppSettings()
         XCTAssertFalse(settings.overlayEnabled)
@@ -47,9 +66,11 @@ final class AppSettingsOverlayTests: XCTestCase {
         let settings = AppSettings()
         settings.overlayTextColor = "not-a-color"
         let resolved = NSColor(settings.parsedOverlayColor)
+            .usingColorSpace(.sRGB)!
         let white = NSColor.white
-        XCTAssertEqual(
-            resolved.redComponent, white.redComponent, accuracy: 0.01
-        )
+            .usingColorSpace(.sRGB)!
+        XCTAssertEqual(resolved.redComponent, white.redComponent, accuracy: 0.01)
+        XCTAssertEqual(resolved.greenComponent, white.greenComponent, accuracy: 0.01)
+        XCTAssertEqual(resolved.blueComponent, white.blueComponent, accuracy: 0.01)
     }
 }
