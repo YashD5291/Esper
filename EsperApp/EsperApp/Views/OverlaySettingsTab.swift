@@ -4,13 +4,21 @@ struct OverlaySettingsTab: View {
     @Bindable var settings: AppSettings
     var overlayController: OverlayController?
 
+    // Local state mirrors @AppStorage (which is @ObservationIgnored)
+    @State private var enabled = false
+    @State private var position = "bottomCenter"
+    @State private var textSize = "medium"
+    @State private var textColor = "#FFFFFF"
+    @State private var maxLines = 3
+    @State private var opacity = 1.0
+
     var body: some View {
         Form {
             Section {
-                Toggle("Show Overlay", isOn: $settings.overlayEnabled)
+                Toggle("Show Overlay", isOn: $enabled)
             }
 
-            if settings.overlayEnabled {
+            if enabled {
                 Section("Position") {
                     positionPicker
                 }
@@ -24,11 +32,33 @@ struct OverlaySettingsTab: View {
             }
         }
         .formStyle(.grouped)
-        .onAppear { overlayController?.previewMode = true }
+        .onAppear {
+            loadFromSettings()
+            overlayController?.previewMode = true
+        }
         .onDisappear { overlayController?.previewMode = false }
+        .onChange(of: enabled) { _, val in settings.overlayEnabled = val }
+        .onChange(of: position) { _, val in settings.overlayPosition = val }
+        .onChange(of: textSize) { _, val in settings.overlayTextSize = val }
+        .onChange(of: textColor) { _, val in settings.overlayTextColor = val }
+        .onChange(of: maxLines) { _, val in settings.overlayMaxLines = val }
+        .onChange(of: opacity) { _, val in settings.overlayOpacity = val }
+    }
+
+    private func loadFromSettings() {
+        enabled = settings.overlayEnabled
+        position = settings.overlayPosition
+        textSize = settings.overlayTextSize
+        textColor = settings.overlayTextColor
+        maxLines = settings.overlayMaxLines
+        opacity = settings.overlayOpacity
     }
 
     // MARK: - Position Picker (Mini Screen)
+
+    private var selectedPosition: OverlayPosition {
+        OverlayPosition(rawValue: position) ?? .bottomCenter
+    }
 
     private var positionPicker: some View {
         ZStack {
@@ -59,14 +89,14 @@ struct OverlaySettingsTab: View {
             ]
 
             ForEach(positions, id: \.0) { pos, x, y in
-                let isSelected = settings.parsedOverlayPosition == pos
+                let isSelected = selectedPosition == pos
                 Circle()
                     .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.3))
                     .frame(width: dotSize, height: dotSize)
                     .shadow(color: isSelected ? Color.accentColor.opacity(0.6) : .clear, radius: 4)
                     .position(x: x + dotSize / 2, y: y + dotSize / 2)
                     .onTapGesture {
-                        settings.overlayPosition = pos.rawValue
+                        position = pos.rawValue
                     }
             }
         }
@@ -78,7 +108,7 @@ struct OverlaySettingsTab: View {
         HStack {
             Text("Text Size")
             Spacer()
-            Picker("", selection: $settings.overlayTextSize) {
+            Picker("", selection: $textSize) {
                 Text("S").tag("small")
                 Text("M").tag("medium")
                 Text("L").tag("large")
@@ -86,6 +116,17 @@ struct OverlaySettingsTab: View {
             .pickerStyle(.segmented)
             .frame(width: 120)
         }
+    }
+
+    private var parsedColor: Color {
+        guard textColor.hasPrefix("#"),
+              textColor.count == 7,
+              let hex = UInt64(textColor.dropFirst(), radix: 16)
+        else { return .white }
+        let r = Double((hex >> 16) & 0xFF) / 255
+        let g = Double((hex >> 8) & 0xFF) / 255
+        let b = Double(hex & 0xFF) / 255
+        return Color(red: r, green: g, blue: b)
     }
 
     private var textColorControl: some View {
@@ -106,20 +147,20 @@ struct OverlaySettingsTab: View {
                     .overlay(
                         Circle()
                             .stroke(
-                                settings.overlayTextColor == hex ? Color.accentColor : Color.clear,
+                                textColor == hex ? Color.accentColor : Color.clear,
                                 lineWidth: 2
                             )
                     )
-                    .onTapGesture { settings.overlayTextColor = hex }
+                    .onTapGesture { textColor = hex }
             }
 
             Divider().frame(height: 18)
 
             ColorPicker("", selection: Binding(
-                get: { settings.parsedOverlayColor },
+                get: { parsedColor },
                 set: { newColor in
                     if let hex = newColor.toHex() {
-                        settings.overlayTextColor = hex
+                        textColor = hex
                     }
                 }
             ), supportsOpacity: false)
@@ -133,10 +174,10 @@ struct OverlaySettingsTab: View {
             Text("Lines")
             Spacer()
             Stepper(
-                value: $settings.overlayMaxLines,
+                value: $maxLines,
                 in: 1...9
             ) {
-                Text("\(settings.overlayMaxLines)")
+                Text("\(maxLines)")
                     .monospacedDigit()
                     .frame(minWidth: 20, alignment: .center)
             }
@@ -147,11 +188,11 @@ struct OverlaySettingsTab: View {
         HStack {
             Text("Opacity")
             Spacer()
-            Text("\(Int(settings.overlayOpacity * 100))%")
+            Text("\(Int(opacity * 100))%")
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .frame(width: 40, alignment: .trailing)
-            Slider(value: $settings.overlayOpacity, in: 0.3...1.0, step: 0.05)
+            Slider(value: $opacity, in: 0.3...1.0, step: 0.05)
                 .frame(width: 140)
         }
     }

@@ -58,42 +58,29 @@ final class OverlayController {
         updateTask = Task { @MainActor [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
-                let shouldShow = settings.overlayEnabled &&
-                    (engine.status == .listening || self.previewMode)
-                let lines = self.overlayLines(engine: engine, settings: settings)
-                let position = settings.parsedOverlayPosition
-                let fontSize = settings.overlayFontSize
-                let textColor = settings.parsedOverlayColor
-                let opacity = settings.overlayOpacity
-
-                if shouldShow {
-                    self.showPanel(
-                        lines: lines,
-                        position: position,
-                        fontSize: fontSize,
-                        textColor: textColor,
-                        opacity: opacity
-                    )
-                } else {
-                    self.hidePanel()
-                }
-
-                await withCheckedContinuation { continuation in
-                    withObservationTracking {
-                        _ = settings.overlayEnabled
-                        _ = settings.overlayPosition
-                        _ = settings.overlayTextSize
-                        _ = settings.overlayTextColor
-                        _ = settings.overlayMaxLines
-                        _ = settings.overlayOpacity
-                        _ = engine.status
-                        _ = engine.sentences
-                        _ = engine.currentText
-                    } onChange: {
-                        continuation.resume()
-                    }
-                }
+                self.update(engine: engine, settings: settings)
+                // Settings use @ObservationIgnored so withObservationTracking
+                // won't fire for them. Use a short poll instead.
+                try? await Task.sleep(for: .milliseconds(200))
             }
+        }
+    }
+
+    private func update(engine: TranscriptionEngine, settings: AppSettings) {
+        let shouldShow = settings.overlayEnabled &&
+            (engine.status == .listening || previewMode)
+
+        if shouldShow {
+            let lines = overlayLines(engine: engine, settings: settings)
+            showPanel(
+                lines: lines,
+                position: settings.parsedOverlayPosition,
+                fontSize: settings.overlayFontSize,
+                textColor: settings.parsedOverlayColor,
+                opacity: settings.overlayOpacity
+            )
+        } else {
+            hidePanel()
         }
     }
 
