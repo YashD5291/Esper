@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OverlaySettingsTab: View {
     @Bindable var settings: AppSettings
+    var overlayController: OverlayController?
 
     var body: some View {
         Form {
@@ -23,6 +24,8 @@ struct OverlaySettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear { overlayController?.previewMode = true }
+        .onDisappear { overlayController?.previewMode = false }
     }
 
     // MARK: - Position Picker (Mini Screen)

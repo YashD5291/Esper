@@ -26,7 +26,7 @@ struct EsperApp: App {
         .defaultSize(width: 520, height: 640)
 
         Settings {
-            SettingsView(engine: engine)
+            SettingsView(engine: engine, overlayController: overlayController)
         }
     }
 

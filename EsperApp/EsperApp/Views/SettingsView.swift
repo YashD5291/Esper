@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsView: View {
     let engine: TranscriptionEngine
+    var overlayController: OverlayController?
 
     var body: some View {
         TabView {
@@ -23,7 +24,7 @@ struct SettingsView: View {
             )
             .tabItem { Label("Telegram", systemImage: "paperplane") }
 
-            OverlaySettingsTab(settings: engine.settings)
+            OverlaySettingsTab(settings: engine.settings, overlayController: overlayController)
                 .tabItem { Label("Overlay", systemImage: "text.bubble") }
 
             AdvancedTab(settings: engine.settings)
