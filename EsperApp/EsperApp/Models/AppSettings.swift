@@ -20,7 +20,16 @@ final class AppSettings {
     @AppStorage("overlayEnabled") var overlayEnabled: Bool = false
 
     @ObservationIgnored
+    @AppStorage("overlayPlacementMode") var overlayPlacementMode: String = "draggable"
+
+    @ObservationIgnored
     @AppStorage("overlayPosition") var overlayPosition: String = "bottomCenter"
+
+    @ObservationIgnored
+    @AppStorage("overlayDragX") var overlayDragX: Double = -1
+
+    @ObservationIgnored
+    @AppStorage("overlayDragY") var overlayDragY: Double = -1
 
     @ObservationIgnored
     @AppStorage("overlayTextSize") var overlayTextSize: String = "medium"

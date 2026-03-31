@@ -30,7 +30,15 @@ struct SettingsView: View {
             AdvancedTab(settings: engine.settings)
             .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
         }
-        .frame(width: 460, height: 380)
+        .frame(minWidth: 460, minHeight: 320)
+        .onAppear {
+            // Make Settings window resizable (Settings scene doesn't support this natively)
+            DispatchQueue.main.async {
+                if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.identifier?.rawValue == "com_apple_SwiftUI_Settings_window" }) {
+                    window.styleMask.insert(.resizable)
+                }
+            }
+        }
     }
 }
 

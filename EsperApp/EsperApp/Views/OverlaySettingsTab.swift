@@ -6,6 +6,7 @@ struct OverlaySettingsTab: View {
 
     // Local state mirrors @AppStorage (which is @ObservationIgnored)
     @State private var enabled = false
+    @State private var placementMode = "draggable"
     @State private var position = "bottomCenter"
     @State private var textSize = "medium"
     @State private var textColor = "#FFFFFF"
@@ -19,8 +20,20 @@ struct OverlaySettingsTab: View {
             }
 
             if enabled {
-                Section("Position") {
-                    positionPicker
+                Section("Placement") {
+                    Picker("Mode", selection: $placementMode) {
+                        Text("Fixed").tag("fixed")
+                        Text("Draggable").tag("draggable")
+                    }
+                    .pickerStyle(.segmented)
+
+                    if placementMode == "fixed" {
+                        positionPicker
+                    } else {
+                        Text("Drag the overlay to any position on screen")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Appearance") {
@@ -38,6 +51,7 @@ struct OverlaySettingsTab: View {
         }
         .onDisappear { overlayController?.previewMode = false }
         .onChange(of: enabled) { _, val in settings.overlayEnabled = val }
+        .onChange(of: placementMode) { _, val in settings.overlayPlacementMode = val }
         .onChange(of: position) { _, val in settings.overlayPosition = val }
         .onChange(of: textSize) { _, val in settings.overlayTextSize = val }
         .onChange(of: textColor) { _, val in settings.overlayTextColor = val }
@@ -47,6 +61,7 @@ struct OverlaySettingsTab: View {
 
     private func loadFromSettings() {
         enabled = settings.overlayEnabled
+        placementMode = settings.overlayPlacementMode
         position = settings.overlayPosition
         textSize = settings.overlayTextSize
         textColor = settings.overlayTextColor
@@ -173,14 +188,11 @@ struct OverlaySettingsTab: View {
         HStack {
             Text("Lines")
             Spacer()
-            Stepper(
-                value: $maxLines,
-                in: 1...9
-            ) {
-                Text("\(maxLines)")
-                    .monospacedDigit()
-                    .frame(minWidth: 20, alignment: .center)
-            }
+            Text("\(maxLines)")
+                .monospacedDigit()
+                .frame(minWidth: 20, alignment: .trailing)
+            Stepper("", value: $maxLines, in: 1...9)
+                .labelsHidden()
         }
     }
 

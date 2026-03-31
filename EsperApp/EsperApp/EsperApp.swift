@@ -49,7 +49,8 @@ struct EsperApp: App {
 @MainActor
 final class OverlayController {
     private var panel: TranscriptPanel?
-    private var hostView: NSHostingView<TranscriptOverlayView>?
+    private let viewModel = OverlayViewModel()
+    private var panelCreated = false
     private var updateTask: Task<Void, Never>?
     var previewMode = false
 
@@ -59,8 +60,6 @@ final class OverlayController {
             while !Task.isCancelled {
                 guard let self else { return }
                 self.update(engine: engine, settings: settings)
-                // Settings use @ObservationIgnored so withObservationTracking
-                // won't fire for them. Use a short poll instead.
                 try? await Task.sleep(for: .milliseconds(200))
             }
         }
@@ -71,17 +70,49 @@ final class OverlayController {
             (engine.status == .listening || previewMode)
 
         if shouldShow {
-            let lines = overlayLines(engine: engine, settings: settings)
-            showPanel(
-                lines: lines,
-                position: settings.parsedOverlayPosition,
-                fontSize: settings.overlayFontSize,
-                textColor: settings.parsedOverlayColor,
-                opacity: settings.overlayOpacity
-            )
+            ensurePanel(settings: settings)
+            // Mutate view model — SwiftUI observes and diffs, no rootView replacement
+            viewModel.lines = overlayLines(engine: engine, settings: settings)
+            viewModel.fontSize = settings.overlayFontSize
+            viewModel.textColor = settings.parsedOverlayColor
+            viewModel.opacity = settings.overlayOpacity
+
+            let isDraggable = settings.overlayPlacementMode == "draggable"
+            panel?.setDraggable(isDraggable)
+
+            if !isDraggable {
+                panel?.reposition(to: settings.parsedOverlayPosition)
+            }
+
+            if !(panel?.isVisible ?? false) {
+                if isDraggable, settings.overlayDragX >= 0, settings.overlayDragY >= 0 {
+                    panel?.repositionToCoordinate(x: settings.overlayDragX, y: settings.overlayDragY)
+                } else if isDraggable {
+                    panel?.reposition(to: .bottomCenter)
+                }
+                panel?.orderFrontRegardless()
+            }
         } else {
-            hidePanel()
+            panel?.orderOut(nil)
         }
+    }
+
+    private func ensurePanel(settings: AppSettings) {
+        guard !panelCreated else { return }
+        let panel = TranscriptPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 660, height: 140),
+            styleMask: [],
+            backing: .buffered,
+            defer: false
+        )
+        let host = NSHostingView(rootView: TranscriptOverlayView(viewModel: viewModel))
+        panel.setSwiftUIContent(host)
+        panel.onDragEnd = { origin in
+            settings.overlayDragX = origin.x
+            settings.overlayDragY = origin.y
+        }
+        self.panel = panel
+        panelCreated = true
     }
 
     private static let sampleLines = [
@@ -90,59 +121,30 @@ final class OverlayController {
         "Adjust settings to customize the look",
     ]
 
-    private func overlayLines(engine: TranscriptionEngine, settings: AppSettings) -> [String] {
+    private func overlayLines(engine: TranscriptionEngine, settings: AppSettings) -> [OverlayLine] {
         let maxLines = settings.overlayMaxLines
         if previewMode && engine.status != .listening {
-            return Array(Self.sampleLines.prefix(maxLines))
-        }
-        var lines = Array(engine.sentences.suffix(maxLines))
-        let current = engine.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !current.isEmpty {
-            if lines.count >= maxLines {
-                lines.removeFirst()
+            return Self.sampleLines.prefix(maxLines).enumerated().map { i, text in
+                OverlayLine(id: "sample-\(i)", text: text, dimmed: i == 0 && maxLines > 1)
             }
-            lines.append(current)
-        }
-        return lines
-    }
-
-    private func showPanel(
-        lines: [String],
-        position: OverlayPosition,
-        fontSize: CGFloat,
-        textColor: Color,
-        opacity: Double
-    ) {
-        let view = TranscriptOverlayView(
-            lines: lines,
-            fontSize: fontSize,
-            textColor: textColor,
-            opacity: opacity
-        )
-
-        if let hostView {
-            hostView.rootView = view
-        } else {
-            let panel = TranscriptPanel(
-                contentRect: NSRect(x: 0, y: 0, width: 660, height: 140),
-                styleMask: [],
-                backing: .buffered,
-                defer: false
-            )
-            let host = NSHostingView(rootView: view)
-            panel.contentView = host
-            self.panel = panel
-            self.hostView = host
         }
 
-        panel?.reposition(to: position)
-
-        if !(panel?.isVisible ?? false) {
-            panel?.orderFrontRegardless()
+        let sentenceCount = engine.sentences.count
+        var raw: [(id: String, text: String)] = engine.sentences.suffix(maxLines).enumerated().map { i, text in
+            let globalIndex = sentenceCount - min(maxLines, sentenceCount) + i
+            return (id: "s-\(globalIndex)", text: text)
         }
-    }
 
-    private func hidePanel() {
-        panel?.orderOut(nil)
+        let current = engine.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !current.isEmpty, current != raw.last?.text {
+            if raw.count >= maxLines { raw.removeFirst() }
+            raw.append((id: "current", text: current))
+        }
+
+        let total = raw.count
+        return raw.enumerated().map { i, item in
+            let dimmed = total > 1 && i < total - 1
+            return OverlayLine(id: item.id, text: item.text, dimmed: dimmed)
+        }
     }
 }

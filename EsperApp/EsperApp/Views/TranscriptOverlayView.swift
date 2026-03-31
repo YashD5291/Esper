@@ -1,32 +1,46 @@
 import SwiftUI
 
+// MARK: - View Model (mutated by OverlayController, observed by view)
+
+@Observable
+@MainActor
+final class OverlayViewModel {
+    var lines: [OverlayLine] = []
+    var fontSize: CGFloat = 20
+    var textColor: Color = .white
+    var opacity: Double = 1.0
+}
+
+struct OverlayLine: Identifiable, Equatable {
+    let id: String
+    let text: String
+    let dimmed: Bool
+}
+
+// MARK: - View (never replaced, observes view model)
+
 struct TranscriptOverlayView: View {
-    let lines: [String]
-    let fontSize: CGFloat
-    let textColor: Color
-    let opacity: Double
+    let viewModel: OverlayViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            ForEach(Array(lines.enumerated()), id: \.element) { index, line in
-                Text(line)
-                    .font(.system(size: fontSize, weight: .medium, design: .rounded))
-                    .foregroundStyle(textColor)
+            ForEach(viewModel.lines) { line in
+                Text(line.text)
+                    .font(.system(size: viewModel.fontSize, weight: .medium, design: .rounded))
+                    .foregroundStyle(viewModel.textColor)
                     .shadow(color: .black.opacity(0.7), radius: 2, x: 1, y: 1)
-                    .opacity(lineOpacity(index: index, total: lines.count))
+                    .opacity(line.dimmed ? 0.5 : 1.0)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .opacity
+                    ))
+                    .id(line.id)
             }
         }
-        .opacity(opacity)
+        .animation(.easeInOut(duration: 0.25), value: viewModel.lines.map(\.id))
+        .opacity(viewModel.opacity)
         .padding(.horizontal, 28)
         .padding(.vertical, 16)
         .frame(width: 660, alignment: .leading)
-        .background(Color.clear)
-    }
-
-    private func lineOpacity(index: Int, total: Int) -> Double {
-        guard total > 1 else { return 1.0 }
-        let position = Double(total - 1 - index) / Double(total - 1)
-        // Oldest line dims to 0.45, newest is 1.0
-        return 0.45 + 0.55 * (1.0 - position)
     }
 }

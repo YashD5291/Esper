@@ -3,6 +3,7 @@ import SwiftUI
 struct MenuBarView: View {
     let engine: TranscriptionEngine
     @Environment(\.openWindow) private var openWindow
+    @State private var overlayEnabled = false
 
     var body: some View {
         HStack {
@@ -61,6 +62,13 @@ struct MenuBarView: View {
             Divider()
         }
 
+        Button(overlayEnabled ? "Hide Overlay" : "Show Overlay") {
+            overlayEnabled.toggle()
+            engine.settings.overlayEnabled = overlayEnabled
+        }
+
+        Divider()
+
         Button("Open Window") {
             openWindow(id: "main")
             NSApp.activate(ignoringOtherApps: true)
@@ -79,5 +87,6 @@ struct MenuBarView: View {
             }
         }
         .keyboardShortcut("q")
+        .onAppear { overlayEnabled = engine.settings.overlayEnabled }
     }
 }
