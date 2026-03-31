@@ -1,3 +1,4 @@
+import QuartzCore
 import SwiftUI
 
 @main
@@ -52,6 +53,7 @@ final class OverlayController {
     private let viewModel = OverlayViewModel()
     private var panelCreated = false
     private var updateTask: Task<Void, Never>?
+    private var lastColorHex: String = ""
     var previewMode = false
 
     func bind(engine: TranscriptionEngine, settings: AppSettings) {
@@ -67,15 +69,32 @@ final class OverlayController {
 
     private func update(engine: TranscriptionEngine, settings: AppSettings) {
         let shouldShow = settings.overlayEnabled &&
-            (engine.status == .listening || previewMode)
+            (engine.status == .listening || engine.status == .transcribing || previewMode)
 
         if shouldShow {
             ensurePanel(settings: settings)
-            // Mutate view model — SwiftUI observes and diffs, no rootView replacement
-            viewModel.lines = overlayLines(engine: engine, settings: settings)
-            viewModel.fontSize = settings.overlayFontSize
-            viewModel.textColor = settings.parsedOverlayColor
-            viewModel.opacity = settings.overlayOpacity
+
+            // Suppress implicit Core Animation layer transitions during SwiftUI updates
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+
+            // Only mutate when values actually changed to avoid unnecessary SwiftUI diffs
+            let newLines = overlayLines(engine: engine, settings: settings)
+            if newLines != viewModel.lines { viewModel.lines = newLines }
+
+            let newSize = settings.overlayFontSize
+            if newSize != viewModel.fontSize { viewModel.fontSize = newSize }
+
+            let newOpacity = settings.overlayOpacity
+            if newOpacity != viewModel.opacity { viewModel.opacity = newOpacity }
+
+            let newColorHex = settings.overlayTextColor
+            if newColorHex != lastColorHex {
+                lastColorHex = newColorHex
+                viewModel.textColor = settings.parsedOverlayColor
+            }
+
+            CATransaction.commit()
 
             let isDraggable = settings.overlayPlacementMode == "draggable"
             panel?.setDraggable(isDraggable)

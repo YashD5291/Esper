@@ -30,17 +30,14 @@ struct TranscriptOverlayView: View {
                     .foregroundStyle(viewModel.textColor)
                     .shadow(color: .black.opacity(0.7), radius: 2, x: 1, y: 1)
                     .opacity(line.dimmed ? 0.5 : 1.0)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .bottom).combined(with: .opacity),
-                        removal: .opacity
-                    ))
                     .id(line.id)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: viewModel.lines.map(\.id))
+        .compositingGroup()
         .opacity(viewModel.opacity)
         .padding(.horizontal, 28)
         .padding(.vertical, 16)
         .frame(width: 660, alignment: .leading)
+        .transaction { $0.disablesAnimations = true }
     }
 }
