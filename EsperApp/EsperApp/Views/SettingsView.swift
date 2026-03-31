@@ -23,10 +23,13 @@ struct SettingsView: View {
             )
             .tabItem { Label("Telegram", systemImage: "paperplane") }
 
+            OverlaySettingsTab(settings: engine.settings)
+                .tabItem { Label("Overlay", systemImage: "text.bubble") }
+
             AdvancedTab(settings: engine.settings)
             .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
         }
-        .frame(width: 460, height: 320)
+        .frame(width: 460, height: 380)
     }
 }
 
