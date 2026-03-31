@@ -17,3 +17,6 @@ build/
 xcuserdata/
 .pytest_cache/
 .claude/
+EsperSwift/.build/
+overlay_demo
+.superpowers/

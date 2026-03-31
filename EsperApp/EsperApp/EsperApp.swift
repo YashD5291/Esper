@@ -20,7 +20,6 @@ struct EsperApp: App {
                 .onAppear {
                     ensureLaunched()
                     NSApp.activate(ignoringOtherApps: true)
-                    overlayController.bind(engine: engine, settings: engine.settings)
                 }
         }
         .defaultSize(width: 520, height: 640)
@@ -34,6 +33,7 @@ struct EsperApp: App {
         guard !launched else { return }
         launched = true
         engine.launch()
+        overlayController.bind(engine: engine, settings: engine.settings)
     }
 
     init() {

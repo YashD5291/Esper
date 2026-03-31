@@ -5,8 +5,9 @@ import SwiftUI
 final class AppSettingsOverlayTests: XCTestCase {
 
     private let overlayKeys = [
-        "overlayEnabled", "overlayPosition", "overlayTextSize",
-        "overlayTextColor", "overlayMaxLines", "overlayOpacity",
+        "overlayEnabled", "overlayPlacementMode", "overlayPosition",
+        "overlayTextSize", "overlayTextColor", "overlayMaxLines",
+        "overlayOpacity", "overlayDragX", "overlayDragY",
     ]
 
     override func setUp() {

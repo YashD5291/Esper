@@ -134,14 +134,7 @@ struct OverlaySettingsTab: View {
     }
 
     private var parsedColor: Color {
-        guard textColor.hasPrefix("#"),
-              textColor.count == 7,
-              let hex = UInt64(textColor.dropFirst(), radix: 16)
-        else { return .white }
-        let r = Double((hex >> 16) & 0xFF) / 255
-        let g = Double((hex >> 8) & 0xFF) / 255
-        let b = Double(hex & 0xFF) / 255
-        return Color(red: r, green: g, blue: b)
+        Color.fromHex(textColor)
     }
 
     private var textColorControl: some View {
@@ -213,6 +206,17 @@ struct OverlaySettingsTab: View {
 // MARK: - Color Hex Conversion
 
 extension Color {
+    static func fromHex(_ hex: String) -> Color {
+        guard hex.hasPrefix("#"),
+              hex.count == 7,
+              let val = UInt64(hex.dropFirst(), radix: 16)
+        else { return .white }
+        let r = Double((val >> 16) & 0xFF) / 255
+        let g = Double((val >> 8) & 0xFF) / 255
+        let b = Double(val & 0xFF) / 255
+        return Color(red: r, green: g, blue: b)
+    }
+
     func toHex() -> String? {
         guard let nsColor = NSColor(self).usingColorSpace(.sRGB) else { return nil }
         let r = Int(nsColor.redComponent * 255)

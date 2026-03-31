@@ -58,14 +58,7 @@ final class AppSettings {
     }
 
     var parsedOverlayColor: Color {
-        guard overlayTextColor.hasPrefix("#"),
-              overlayTextColor.count == 7,
-              let hex = UInt64(overlayTextColor.dropFirst(), radix: 16)
-        else { return .white }
-        let r = Double((hex >> 16) & 0xFF) / 255
-        let g = Double((hex >> 8) & 0xFF) / 255
-        let b = Double(hex & 0xFF) / 255
-        return Color(red: r, green: g, blue: b)
+        Color.fromHex(overlayTextColor)
     }
 
     // MARK: - Server executable path
