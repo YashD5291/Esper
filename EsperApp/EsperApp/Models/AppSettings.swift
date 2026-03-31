@@ -15,6 +15,59 @@ final class AppSettings {
     @ObservationIgnored
     @AppStorage("telegramChatId") var telegramChatId: String = ""
 
+    // Overlay
+    @ObservationIgnored
+    @AppStorage("overlayEnabled") var overlayEnabled: Bool = false
+
+    @ObservationIgnored
+    @AppStorage("overlayPlacementMode") var overlayPlacementMode: String = "draggable"
+
+    @ObservationIgnored
+    @AppStorage("overlayPosition") var overlayPosition: String = "bottomCenter"
+
+    @ObservationIgnored
+    @AppStorage("overlayDragX") var overlayDragX: Double = -1
+
+    @ObservationIgnored
+    @AppStorage("overlayDragY") var overlayDragY: Double = -1
+
+    @ObservationIgnored
+    @AppStorage("overlayTextSize") var overlayTextSize: String = "medium"
+
+    @ObservationIgnored
+    @AppStorage("overlayTextColor") var overlayTextColor: String = "#FFFFFF"
+
+    @ObservationIgnored
+    @AppStorage("overlayMaxLines") var overlayMaxLines: Int = 3
+
+    @ObservationIgnored
+    @AppStorage("overlayOpacity") var overlayOpacity: Double = 1.0
+
+    // MARK: - Overlay Computed Helpers
+
+    var parsedOverlayPosition: OverlayPosition {
+        OverlayPosition(rawValue: overlayPosition) ?? .bottomCenter
+    }
+
+    var overlayFontSize: CGFloat {
+        switch overlayTextSize {
+        case "small": return 16
+        case "large": return 26
+        default: return 20
+        }
+    }
+
+    var parsedOverlayColor: Color {
+        guard overlayTextColor.hasPrefix("#"),
+              overlayTextColor.count == 7,
+              let hex = UInt64(overlayTextColor.dropFirst(), radix: 16)
+        else { return .white }
+        let r = Double((hex >> 16) & 0xFF) / 255
+        let g = Double((hex >> 8) & 0xFF) / 255
+        let b = Double(hex & 0xFF) / 255
+        return Color(red: r, green: g, blue: b)
+    }
+
     // MARK: - Server executable path
 
     /// Path to the frozen esper-server binary (bundled mode), or nil for dev mode.
