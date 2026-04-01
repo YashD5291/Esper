@@ -86,25 +86,21 @@ ${NOTES_HTML}
 </rss>
 EOF
 
-echo "=== Committing & Tagging ==="
+echo "=== Committing & Pushing ==="
 git add "$APPCAST"
 git commit -m "release: ${TAG}"
 git tag -a "$TAG" -m "${TAG}: ${NOTES}"
+git push origin main
+git push origin "$TAG"
 
 echo "=== Creating GitHub Release ==="
 if ! gh release create "$TAG" "$DMG_PATH" \
     --title "${TAG}" \
     --notes "$(echo "$NOTES" | tr ',' '\n' | sed 's/^ */- /')"; then
-    echo "Error: GitHub release creation failed. Rolling back tag."
-    git tag -d "$TAG"
-    git reset HEAD~1
-    cp "$APPCAST.bak" "$APPCAST"
+    echo "Error: GitHub release creation failed. Tag and commit are pushed — create release manually:"
+    echo "  gh release create ${TAG} ${DMG_PATH} --title ${TAG}"
     exit 1
 fi
-
-echo "=== Pushing ==="
-git push origin main
-git push origin "$TAG"
 
 echo ""
 echo "=== Done! ==="
