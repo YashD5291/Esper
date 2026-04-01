@@ -30,7 +30,7 @@ class TelegramSender:
     def __init__(self, bot_token: str, chat_id: str) -> None:
         self._base_url = f"https://api.telegram.org/bot{bot_token}"
         self._chat_id = chat_id
-        self._queue: queue.Queue[str | None] = queue.Queue()
+        self._queue: queue.Queue[str | None] = queue.Queue(maxsize=100)
         self._thread = threading.Thread(target=self._loop, daemon=True, name="telegram-sender")
         self._thread.start()
 
@@ -40,7 +40,10 @@ class TelegramSender:
         """Enqueue utterance text for sending. One message per utterance (D-03)."""
         text = update.text.strip()
         if text:
-            self._queue.put(text)
+            try:
+                self._queue.put_nowait(text)
+            except queue.Full:
+                log.warning("Telegram queue full — dropping message: %s", text[:60])
 
     # -- background sender --
 

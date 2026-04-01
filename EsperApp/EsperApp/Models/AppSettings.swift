@@ -92,7 +92,7 @@ final class AppSettings {
         if FileManager.default.fileExists(atPath: (cwd as NSString).appendingPathComponent("src/server.py")) {
             return cwd
         }
-        // 4. Last resort: home directory assumption (will fail gracefully at launch)
-        return (NSHomeDirectory() as NSString).appendingPathComponent("Codebase/Fun/Esper")
+        // 4. Last resort: current working directory (will fail gracefully at launch)
+        return cwd
     }
 }

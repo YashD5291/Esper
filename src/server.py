@@ -164,8 +164,9 @@ def _whisper_consumer():
 def _emit_energy():
     """Emit energy events at ~10 Hz."""
     while not _stop_event.is_set():
-        if _capture is not None:
-            _send("energy", {"level": _capture.energy})
+        capture = _capture
+        if capture is not None:
+            _send("energy", {"level": capture.energy})
         time.sleep(config.ENERGY_EMIT_INTERVAL_S)
 
 
@@ -309,14 +310,19 @@ def _do_set_device(data: dict):
         _send_error("set_device requires a 'device' field")
         return
     if _capture is not None:
-        # Stop VAD (reads from old capture queue)
-        if _vad_thread is not None:
-            _vad_thread.stop()
-            _vad_thread.wait(timeout=2.0)
-        _capture.stop()
+        # Stop old VAD and capture before creating new ones
+        old_vad = _vad_thread
+        old_capture = _capture
+        _vad_thread = None
+        _capture = None
+
+        if old_vad is not None:
+            old_vad.stop()
+            old_vad.wait(timeout=2.0)
+        old_capture.stop()
+
         _capture = AudioCapture(device=device)
         _capture.start()
-        # Restart VAD with new capture queue
         if _speech_q is not None:
             _vad_thread = VadThread(audio_q=_capture._queue, speech_q=_speech_q)
             _vad_thread.start()

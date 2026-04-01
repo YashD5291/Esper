@@ -57,23 +57,35 @@ def _send_msg(pipe, obj):
 def _recv_msg(pipe):
     """Read a typed, length-prefixed message from pipe. Returns None on EOF."""
     hdr = pipe.read(5)
-    if not hdr or len(hdr) < 5:
-        return None
+    if not hdr:
+        return None  # clean EOF
+    if len(hdr) < 5:
+        raise RuntimeError(f"Truncated header: got {len(hdr)} bytes, expected 5")
     msg_type, length = struct.unpack('>BI', hdr)
     if msg_type == _MSG_NONE:
         return None
     if length == 0:
         return None
     data = pipe.read(length)
-    if not data or len(data) < length:
-        return None
+    if not data:
+        return None  # clean EOF
+    if len(data) < length:
+        raise RuntimeError(f"Truncated payload: got {len(data)} bytes, expected {length}")
     if msg_type == _MSG_JSON:
         return json.loads(data)
     if msg_type == _MSG_NUMPY:
         off = 0
+        if off + 4 > len(data):
+            raise RuntimeError(f"Truncated numpy dtype length at offset {off}")
         dl = struct.unpack('>I', data[off:off+4])[0]; off += 4
+        if off + dl > len(data):
+            raise RuntimeError(f"Truncated numpy dtype: need {dl} bytes at offset {off}")
         dt = data[off:off+dl].decode(); off += dl
+        if off + 4 > len(data):
+            raise RuntimeError(f"Truncated numpy ndim at offset {off}")
         nd = struct.unpack('>I', data[off:off+4])[0]; off += 4
+        if off + nd * 8 > len(data):
+            raise RuntimeError(f"Truncated numpy shape: need {nd*8} bytes at offset {off}")
         shape = struct.unpack(f'>{nd}Q', data[off:off+nd*8]); off += nd*8
         return np.frombuffer(data[off:], dtype=np.dtype(dt)).reshape(shape).copy()
     return None
@@ -99,7 +111,10 @@ def run_pipe_worker() -> None:
         from src import config
     except Exception as exc:
         log.error("Import failed: %s", exc, exc_info=True)
-        _send_msg(stdout, {"ok": False, "error": f"ImportError: {exc}"})
+        try:
+            _send_msg(stdout, {"ok": False, "error": f"ImportError: {exc}"})
+        except Exception as send_exc:
+            sys.stderr.write(f"FATAL: Could not send error response: {send_exc}\n")
         return
 
     log.info("Whisper ready. Model: %s", config.WHISPER_MODEL_REPO)

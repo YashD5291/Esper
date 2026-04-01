@@ -5,6 +5,12 @@ set -euo pipefail
 VERSION="${1:?Usage: release.sh <version> <release-notes>}"
 NOTES="${2:?Usage: release.sh <version> <release-notes>}"
 TAG="v${VERSION}"
+
+# Fail early if tag already exists
+if git rev-parse "$TAG" >/dev/null 2>&1; then
+    echo "Error: Tag $TAG already exists. Use a different version."
+    exit 1
+fi
 PROJECT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DMG_PATH="$PROJECT_DIR/dist/Esper-${VERSION}-arm64.dmg"
 APPCAST="$PROJECT_DIR/docs/appcast.xml"
@@ -36,15 +42,21 @@ if [ -z "$ED_SIG" ] || [ -z "$LENGTH" ]; then
 fi
 
 # Get current build number and increment
-CURRENT_BUILD=$(grep 'sparkle:version>' "$APPCAST" | head -1 | grep -o '[0-9]*')
+CURRENT_BUILD=$(grep -o '<sparkle:version>[0-9]*</sparkle:version>' "$APPCAST" | head -1 | grep -o '[0-9]*')
+if [ -z "$CURRENT_BUILD" ]; then
+    echo "Error: Could not parse build number from appcast.xml"
+    exit 1
+fi
 NEW_BUILD=$((CURRENT_BUILD + 1))
 PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
 DMG_NAME="Esper-${VERSION}-arm64.dmg"
 
-# Format release notes as HTML list items
-NOTES_HTML=$(echo "$NOTES" | tr ',' '\n' | sed 's/^ *//' | sed 's/.*/          <li>&<\/li>/')
+# Format release notes as HTML list items (with entity escaping)
+escape_html() { sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g'; }
+NOTES_HTML=$(echo "$NOTES" | escape_html | tr ',' '\n' | sed 's/^ *//' | sed 's/.*/          <li>&<\/li>/')
 
 echo "=== Updating appcast.xml ==="
+cp "$APPCAST" "$APPCAST.bak"
 cat > "$APPCAST" << EOF
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
@@ -74,17 +86,25 @@ ${NOTES_HTML}
 </rss>
 EOF
 
-echo "=== Committing & Pushing ==="
+echo "=== Committing & Tagging ==="
 git add "$APPCAST"
 git commit -m "release: ${TAG}"
 git tag -a "$TAG" -m "${TAG}: ${NOTES}"
-git push origin main
-git push origin "$TAG"
 
 echo "=== Creating GitHub Release ==="
-gh release create "$TAG" "$DMG_PATH" \
+if ! gh release create "$TAG" "$DMG_PATH" \
     --title "${TAG}" \
-    --notes "$(echo "$NOTES" | tr ',' '\n' | sed 's/^ */- /')"
+    --notes "$(echo "$NOTES" | tr ',' '\n' | sed 's/^ */- /')"; then
+    echo "Error: GitHub release creation failed. Rolling back tag."
+    git tag -d "$TAG"
+    git reset HEAD~1
+    cp "$APPCAST.bak" "$APPCAST"
+    exit 1
+fi
+
+echo "=== Pushing ==="
+git push origin main
+git push origin "$TAG"
 
 echo ""
 echo "=== Done! ==="

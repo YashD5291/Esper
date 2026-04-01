@@ -62,19 +62,23 @@ def test_recv_returns_none_on_empty_pipe():
     assert _recv_msg(buf) is None
 
 
-def test_recv_returns_none_on_partial_header():
-    """Only 2 bytes available (incomplete 5-byte header) returns None."""
+def test_recv_raises_on_partial_header():
+    """Only 2 bytes available (incomplete 5-byte header) raises RuntimeError."""
     buf = io.BytesIO(b"\x00\x00")
-    assert _recv_msg(buf) is None
+    import pytest
+    with pytest.raises(RuntimeError, match="Truncated header"):
+        _recv_msg(buf)
 
 
-def test_recv_returns_none_on_truncated_body():
-    """Header claims N bytes but only half the body is present — returns None."""
+def test_recv_raises_on_truncated_body():
+    """Header claims N bytes but only half the body is present — raises RuntimeError."""
     payload = json.dumps({"hello": "world"}).encode()
     header = struct.pack(">BI", 0, len(payload))  # type=JSON, full length
     # Write header + only half the payload
     buf = io.BytesIO(header + payload[: len(payload) // 2])
-    assert _recv_msg(buf) is None
+    import pytest
+    with pytest.raises(RuntimeError, match="Truncated payload"):
+        _recv_msg(buf)
 
 
 # ── sequential / multi-message ────────────────────────────────────────────────

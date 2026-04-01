@@ -19,6 +19,7 @@ import queue
 import subprocess
 import sys
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Callable
 
@@ -136,6 +137,9 @@ class WhisperTranscriber:
             if self._proc and self._proc.is_alive():
                 self._proc.kill()
                 self._proc.join(timeout=5)
+            if self._pipe_proc is not None:
+                self._pipe_proc.kill()
+                self._pipe_proc.wait(timeout=5)
             raise RuntimeError(
                 f"Model load timed out after {config.MODEL_LOAD_TIMEOUT_S}s "
                 f"(worker never emitted ready sentinel)"
@@ -185,10 +189,16 @@ class WhisperTranscriber:
         if self._stopped:
             return None
 
-        if self._pipe_proc:
-            _send_msg(self._pipe_proc.stdin, audio)
-        else:
-            self._audio_q.put(audio)
+        try:
+            if self._pipe_proc:
+                _send_msg(self._pipe_proc.stdin, audio)
+            else:
+                self._audio_q.put(audio)
+        except (BrokenPipeError, OSError) as exc:
+            log.error("Failed to send audio to worker: %s", exc)
+            self._kill_worker()
+            self._on_failure()
+            return None
 
         try:
             result = self._result_q.get(timeout=config.WHISPER_SUBPROCESS_TIMEOUT_S)
@@ -246,7 +256,7 @@ class WhisperTranscriber:
 
         In dev mode: uses multiprocessing spawn context with queues.
         """
-        self._result_q = queue.Queue()
+        self._result_q = queue.Queue(maxsize=10)
 
         if getattr(sys, '_MEIPASS', None):
             # Frozen: launch self with --whisper-worker flag
@@ -258,7 +268,7 @@ class WhisperTranscriber:
             )
             self._audio_q = None  # not used in pipe mode
             self._proc = None     # not a multiprocessing.Process
-            self._result_q = queue.Queue()
+            self._result_q = queue.Queue(maxsize=10)
 
             # Background thread reads results from worker stdout → result_q
             self._reader_thread = threading.Thread(
@@ -296,9 +306,15 @@ class WhisperTranscriber:
                 msg = _recv_msg(self._pipe_proc.stdout)
                 if msg is None:
                     break
-                self._result_q.put(msg)
+                self._result_q.put(msg, timeout=5)
+        except queue.Full:
+            log.error("Pipe reader: result queue full for 5s, exiting")
         except Exception:
             log.error("Pipe reader thread crashed", exc_info=True)
+            try:
+                self._result_q.put_nowait({"ok": False, "error": "Pipe reader crashed"})
+            except queue.Full:
+                pass
 
     def _stderr_reader(self) -> None:
         """Log worker stderr output."""
@@ -333,9 +349,11 @@ class WhisperTranscriber:
             self._on_status("crashed")
             log.error("WhisperTranscriber stopped after 3 consecutive failures")
         else:
+            wait_s = min(30, 2 ** (self._crash_count - 1))
             log.warning(
-                "Worker failure #%d, restarting subprocess", self._crash_count
+                "Worker failure #%d, restarting in %ds", self._crash_count, wait_s
             )
+            time.sleep(wait_s)
             self._spawn_worker()
             # Consume the ready sentinel for the new worker
             try:

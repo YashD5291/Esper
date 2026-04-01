@@ -10,10 +10,14 @@ let _debugLog: FileHandle? = {
     FileManager.default.createFile(atPath: path, contents: nil)
     return FileHandle(forWritingAtPath: path)
 }()
+private let _dlogLock = NSLock()
 func dlog(_ msg: String) {
     let line = "\(Date()) \(msg)\n"
+    let data = line.data(using: .utf8) ?? Data()
+    _dlogLock.lock()
     _debugLog?.seekToEndOfFile()
-    _debugLog?.write(line.data(using: .utf8)!)
+    _debugLog?.write(data)
+    _dlogLock.unlock()
     NSLog("%@", msg)
 }
 
@@ -239,6 +243,11 @@ final class ProcessBridge: @unchecked Sendable {
                 }
                 dlog("[Bridge] Reader: got \(data.count) bytes")
                 buffer.append(data)
+                if buffer.count > 10_000_000 {
+                    dlog("[Bridge] ERROR: buffer exceeded 10MB, clearing")
+                    buffer.removeAll()
+                    continue
+                }
 
                 while let newlineIndex = buffer.firstIndex(of: newline) {
                     let lineData = buffer[buffer.startIndex..<newlineIndex]
@@ -247,11 +256,7 @@ final class ProcessBridge: @unchecked Sendable {
                     let lineStr = String(data: Data(lineData), encoding: .utf8) ?? "<non-utf8>"
                     if let event = ServerEvent.parse(json: Data(lineData)) {
                         dlog("[Bridge] Parsed: \(lineStr.prefix(80))")
-                        if continuation != nil {
-                            continuation!.yield(event)
-                        } else {
-                            dlog("[Bridge] ERROR: continuation is nil!")
-                        }
+                        continuation?.yield(event)
                     } else if !lineStr.isEmpty {
                         dlog("[Bridge] FAILED to parse: \(lineStr.prefix(120))")
                     }

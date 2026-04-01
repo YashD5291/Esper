@@ -169,6 +169,7 @@ final class TranscriptionEngine {
     // MARK: - Event Consumption
 
     private func startConsuming() {
+        guard eventTask == nil else { return }
         dlog("[Engine] startConsuming: creating event loop task")
         eventTask = Task { [weak self] in
             guard let self else { dlog("[Engine] startConsuming: self is nil, exiting"); return }
@@ -224,7 +225,8 @@ final class TranscriptionEngine {
                 errorMessage = "Python crashed (exit \(exitCode)). Restarting (\(restartAttempts)/\(Self.maxRestartAttempts))..."
                 Task { @MainActor [weak self] in
                     try? await Task.sleep(for: .seconds(2))
-                    guard let self, self.restartAttempts <= Self.maxRestartAttempts else { return }
+                    guard let self else { return }
+                    guard self.restartAttempts <= Self.maxRestartAttempts else { return }
                     self.restart()
                 }
             } else {
