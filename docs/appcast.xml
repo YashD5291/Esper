@@ -6,22 +6,24 @@
     <description>Esper app updates</description>
     <language>en</language>
     <item>
-      <title>Version 3.1.0</title>
-      <sparkle:version>2</sparkle:version>
-      <sparkle:shortVersionString>3.1.0</sparkle:shortVersionString>
+      <title>Version 3.1.1</title>
+      <sparkle:version>3</sparkle:version>
+      <sparkle:shortVersionString>3.1.1</sparkle:shortVersionString>
       <description><![CDATA[
         <ul>
-          <li>Sparkle auto-update integration</li>
-          <li>Fixed overlay blink during live transcription</li>
-          <li>Rendering hardening for overlay panel</li>
-          <li>Fixed legacy UI on macOS 16 (disabled hardened runtime for ad-hoc builds)</li>
+          <li>Fix crash risks from force unwraps</li>
+          <li>Prevent deadlocks with bounded queues</li>
+          <li>Add exponential backoff on worker failures</li>
+          <li>Fix race conditions in energy thread and device switching</li>
+          <li>Harden pipe protocol with truncation detection</li>
+          <li>Release script rollback and validation improvements</li>
         </ul>
       ]]></description>
-      <pubDate>Tue, 01 Apr 2026 00:00:00 +0000</pubDate>
+      <pubDate>Tue, 01 Apr 2026 14:30:00 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v3.1.0/Esper-3.1.0-arm64.dmg"
-        sparkle:edSignature="VhOgHXMgN9CBbngovEN2LO27EIsP2mtTdJ1wcWUvhTl/Feo1XY4zlWSWw6x2dRA9dvfCumY4Ir0MgzYKLp5OCA=="
-        length="1686858912"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.1.1/Esper-3.1.1-arm64.dmg"
+        sparkle:edSignature="4B9MZMpjHe/1HWwZ2SSMjoFxo4/l5NJx2DJKCFJv/ILWPKsNp5OHJ8seNHdWQ2mUHCLvP30QDYsa+vIYKmQECg=="
+        length="1687897353"
         type="application/octet-stream"
       />
     </item>
