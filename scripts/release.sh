@@ -41,13 +41,8 @@ if [ -z "$ED_SIG" ] || [ -z "$LENGTH" ]; then
     exit 1
 fi
 
-# Get current build number and increment
-CURRENT_BUILD=$(grep -o '<sparkle:version>[0-9]*</sparkle:version>' "$APPCAST" | head -1 | grep -o '[0-9]*')
-if [ -z "$CURRENT_BUILD" ]; then
-    echo "Error: Could not parse build number from appcast.xml"
-    exit 1
-fi
-NEW_BUILD=$((CURRENT_BUILD + 1))
+# Build number = git commit count (must match CURRENT_PROJECT_VERSION in build-dmg.sh)
+NEW_BUILD=$(git rev-list --count HEAD)
 PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S +0000")
 DMG_NAME="Esper-${VERSION}-arm64.dmg"
 
