@@ -22,7 +22,7 @@ if [ -z "$SIGN_TOOL" ]; then
 fi
 
 # Verify notarization credentials exist before spending time on the build
-xcrun notarytool history --keychain-profile "EsperNotary" --page-size 1 >/dev/null 2>&1 \
+xcrun notarytool history --keychain-profile "EsperNotary" >/dev/null 2>&1 \
     || { echo "Error: Keychain profile 'EsperNotary' not found. Run: xcrun notarytool store-credentials EsperNotary ..."; exit 1; }
 
 echo "=== Building Full DMG (PyInstaller + Swift) ==="
