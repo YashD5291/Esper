@@ -6,24 +6,21 @@
     <description>Esper app updates</description>
     <language>en</language>
     <item>
-      <title>Version 3.1.1</title>
-      <sparkle:version>213</sparkle:version>
-      <sparkle:shortVersionString>3.1.1</sparkle:shortVersionString>
+      <title>Version 3.2.0</title>
+      <sparkle:version>217</sparkle:version>
+      <sparkle:shortVersionString>3.2.0</sparkle:shortVersionString>
       <description><![CDATA[
         <ul>
-          <li>Fix crash risks from force unwraps</li>
-          <li>Prevent deadlocks with bounded queues</li>
-          <li>Add exponential backoff on worker failures</li>
-          <li>Fix race conditions in energy thread and device switching</li>
-          <li>Harden pipe protocol with truncation detection</li>
-          <li>Release script rollback and validation improvements</li>
+          <li>Developer ID signing and Apple notarization</li>
+          <li>Hardened runtime enabled</li>
+          <li>Seamless Sparkle auto-update install</li>
         </ul>
       ]]></description>
-      <pubDate>Tue, 01 Apr 2026 14:30:00 +0000</pubDate>
+      <pubDate>Thu, 02 Apr 2026 18:06:37 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v3.1.1/Esper-3.1.1-arm64.dmg"
-        sparkle:edSignature="4B9MZMpjHe/1HWwZ2SSMjoFxo4/l5NJx2DJKCFJv/ILWPKsNp5OHJ8seNHdWQ2mUHCLvP30QDYsa+vIYKmQECg=="
-        length="1687897353"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.2.0/Esper-3.2.0-arm64.dmg"
+        sparkle:edSignature="HJK5fEg0fNPjGTgh489RUJihl11c7BTe+4k+rCjvEt+9zvosbO7CBXSs18qGlW9hBeW2670Eu+5QfV5PEUhnBg=="
+        length="1687494060"
         type="application/octet-stream"
       />
     </item>
