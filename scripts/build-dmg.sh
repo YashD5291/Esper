@@ -81,6 +81,17 @@ cp -R "$FROZEN_DIR" "$RESOURCES/esper-server"
 # Add Applications symlink for drag-to-install DMG experience
 ln -s /Applications "$STAGING/Applications"
 
+# ── 4b. Thin Sparkle to arm64-only (ships universal but app is arm64-only) ──
+echo "==> Thinning Sparkle framework to arm64..."
+SPARKLE_FW="$APP/Contents/Frameworks/Sparkle.framework"
+if [[ -d "$SPARKLE_FW" ]]; then
+    while read -r f; do
+        if file "$f" | grep -q "Mach-O" && lipo -info "$f" 2>/dev/null | grep -q "x86_64"; then
+            lipo "$f" -thin arm64 -output "$f"
+        fi
+    done < <(find "$SPARKLE_FW" -type f \( -perm +111 -o -name "*.dylib" \))
+fi
+
 # ── 5. Sign the app bundle ──────────────────────────────────────────────────
 echo "==> Signing app bundle..."
 
