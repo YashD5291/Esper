@@ -1,3 +1,4 @@
+import KeyboardShortcuts
 import QuartzCore
 import Sparkle
 import SwiftUI
@@ -37,6 +38,14 @@ struct EsperApp: App {
         launched = true
         engine.launch()
         overlayController.bind(engine: engine, settings: engine.settings)
+
+        KeyboardShortcuts.onKeyDown(for: .toggleListening) { [self] in
+            if engine.status == .listening {
+                engine.stopListening()
+            } else if engine.status == .idle {
+                engine.startListening()
+            }
+        }
     }
 
     init() {
