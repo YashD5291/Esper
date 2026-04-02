@@ -57,6 +57,14 @@ Open `EsperApp/EsperApp.xcodeproj` in Xcode and hit Cmd+R.
 
 ---
 
+## Global Hotkey
+
+Press **Option+Space** from any app to toggle transcription on/off. No need to switch to the Esper window.
+
+Customize the shortcut in **Settings > Shortcuts**.
+
+---
+
 ## How It Works
 
 ```
