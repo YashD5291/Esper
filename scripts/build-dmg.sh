@@ -97,25 +97,14 @@ if [[ "$SIGN_IDENTITY" != "-" ]]; then
     CODESIGN_ARGS+=(--options runtime --timestamp)
 fi
 
-# Entitlements for the frozen Python server (needs executable memory for numpy/scipy)
 SERVER_ENTITLEMENTS="$PROJECT_DIR/scripts/esper-server.entitlements"
-cat > "$SERVER_ENTITLEMENTS" << 'ENTEOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>com.apple.security.cs.disable-library-validation</key>
-	<true/>
-	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
-	<true/>
-</dict>
-</plist>
-ENTEOF
 
 # Sign ALL Mach-O files inside the bundle (inside-out: deepest first)
 echo "    Signing embedded binaries..."
 while read -r f; do
-    file "$f" | grep -q "Mach-O" && codesign "${CODESIGN_ARGS[@]}" "$f"
+    if file "$f" | grep -q "Mach-O"; then
+        codesign "${CODESIGN_ARGS[@]}" "$f"
+    fi
 done < <(find "$APP/Contents" -type f \( -name "*.dylib" -o -name "*.so" -o -perm +111 \))
 
 # Sign the frozen server binary with its own entitlements
