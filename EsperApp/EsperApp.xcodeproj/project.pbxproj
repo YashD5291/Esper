@@ -29,6 +29,7 @@
 		A100000018 /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000019; };
 		A100000019 /* UpdateSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000020; };
 		A100000022 /* GlobalHotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000021; };
+		A100000023 /* ShortcutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000022; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* OverlayPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -67,6 +68,7 @@
 		B100000019 /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		B100000020 /* UpdateSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTab.swift; sourceTree = "<group>"; };
 		B100000021 /* GlobalHotkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkey.swift; sourceTree = "<group>"; };
+		B100000022 /* ShortcutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsTab.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
@@ -133,6 +135,7 @@
 				B100000018 /* OverlaySettingsTab.swift */,
 				B100000019 /* CheckForUpdatesView.swift */,
 				B100000020 /* UpdateSettingsTab.swift */,
+				B100000022 /* ShortcutsTab.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -256,6 +259,7 @@
 				A100000018 /* CheckForUpdatesView.swift in Sources */,
 				A100000019 /* UpdateSettingsTab.swift in Sources */,
 				A100000022 /* GlobalHotkey.swift in Sources */,
+				A100000023 /* ShortcutsTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
