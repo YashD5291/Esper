@@ -1,43 +1,74 @@
+import KeyboardShortcuts
 import Sparkle
 import SwiftUI
+
+enum SettingsTab: String, CaseIterable, Identifiable {
+    case general = "General"
+    case shortcuts = "Shortcuts"
+    case telegram = "Telegram"
+    case overlay = "Overlay"
+    case updates = "Updates"
+    case advanced = "Advanced"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .general: "gear"
+        case .shortcuts: "keyboard"
+        case .telegram: "paperplane"
+        case .overlay: "text.bubble"
+        case .updates: "arrow.triangle.2.circlepath"
+        case .advanced: "wrench.and.screwdriver"
+        }
+    }
+}
 
 struct SettingsView: View {
     let engine: TranscriptionEngine
     var overlayController: OverlayController?
     let updater: SPUUpdater
 
+    @State private var selectedTab: SettingsTab = .general
+
     var body: some View {
-        TabView {
-            GeneralTab(
-                settings: engine.settings,
-                devices: engine.devices,
-                selectedDevice: engine.selectedDevice,
-                onSelectDevice: { engine.setDevice($0) },
-                onRefreshDevices: { engine.refreshDevices() }
-            )
-            .tabItem { Label("General", systemImage: "gear") }
-
-            TelegramTab(
-                settings: engine.settings,
-                onTestTelegram: { botToken, chatId in
-                    engine.testTelegram(botToken: botToken, chatId: chatId)
-                },
-                telegramTestResult: engine.telegramTestResult
-            )
-            .tabItem { Label("Telegram", systemImage: "paperplane") }
-
-            OverlaySettingsTab(settings: engine.settings, overlayController: overlayController)
-                .tabItem { Label("Overlay", systemImage: "text.bubble") }
-
-            UpdateSettingsTab(updater: updater)
-                .tabItem { Label("Updates", systemImage: "arrow.triangle.2.circlepath") }
-
-            AdvancedTab(settings: engine.settings)
-            .tabItem { Label("Advanced", systemImage: "wrench.and.screwdriver") }
+        NavigationSplitView {
+            List(SettingsTab.allCases, selection: $selectedTab) { tab in
+                Label(tab.rawValue, systemImage: tab.icon)
+                    .tag(tab)
+            }
+            .listStyle(.sidebar)
+            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+        } detail: {
+            switch selectedTab {
+            case .general:
+                GeneralTab(
+                    settings: engine.settings,
+                    devices: engine.devices,
+                    selectedDevice: engine.selectedDevice,
+                    onSelectDevice: { engine.setDevice($0) },
+                    onRefreshDevices: { engine.refreshDevices() }
+                )
+            case .shortcuts:
+                ShortcutsTab()
+            case .telegram:
+                TelegramTab(
+                    settings: engine.settings,
+                    onTestTelegram: { botToken, chatId in
+                        engine.testTelegram(botToken: botToken, chatId: chatId)
+                    },
+                    telegramTestResult: engine.telegramTestResult
+                )
+            case .overlay:
+                OverlaySettingsTab(settings: engine.settings, overlayController: overlayController)
+            case .updates:
+                UpdateSettingsTab(updater: updater)
+            case .advanced:
+                AdvancedTab(settings: engine.settings)
+            }
         }
-        .frame(minWidth: 460, minHeight: 320)
+        .frame(minWidth: 560, minHeight: 400)
         .onAppear {
-            // Make Settings window resizable (Settings scene doesn't support this natively)
             DispatchQueue.main.async {
                 if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.identifier?.rawValue == "com_apple_SwiftUI_Settings_window" }) {
                     window.styleMask.insert(.resizable)
