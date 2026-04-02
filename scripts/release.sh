@@ -21,6 +21,10 @@ if [ -z "$SIGN_TOOL" ]; then
     exit 1
 fi
 
+# Verify notarization credentials exist before spending time on the build
+xcrun notarytool history --keychain-profile "EsperNotary" --page-size 1 >/dev/null 2>&1 \
+    || { echo "Error: Keychain profile 'EsperNotary' not found. Run: xcrun notarytool store-credentials EsperNotary ..."; exit 1; }
+
 echo "=== Building Full DMG (PyInstaller + Swift) ==="
 "$PROJECT_DIR/scripts/build-dmg.sh" --version "$VERSION"
 
@@ -29,7 +33,21 @@ if [ ! -f "$DMG_PATH" ]; then
     exit 1
 fi
 
-echo "=== Signing DMG with EdDSA ==="
+echo "=== Notarizing DMG ==="
+NOTARY_OUTPUT=$(xcrun notarytool submit "$DMG_PATH" --keychain-profile "EsperNotary" --wait --timeout 30m 2>&1)
+echo "$NOTARY_OUTPUT"
+if echo "$NOTARY_OUTPUT" | grep -q "status: Accepted"; then
+    echo "=== Stapling notarization ticket ==="
+    xcrun stapler staple "$DMG_PATH"
+    # Regenerate checksum after stapling (stapling modifies the DMG)
+    shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"
+else
+    SUBMISSION_ID=$(echo "$NOTARY_OUTPUT" | grep -o 'id: [a-f0-9-]*' | head -1 | cut -d' ' -f2)
+    echo "Error: Notarization failed. Run: xcrun notarytool log $SUBMISSION_ID --keychain-profile EsperNotary"
+    exit 1
+fi
+
+echo "=== Signing DMG with EdDSA (for Sparkle) ==="
 SIGN_OUTPUT=$("$SIGN_TOOL" "$DMG_PATH")
 echo "$SIGN_OUTPUT"
 

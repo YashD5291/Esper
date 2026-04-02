@@ -83,24 +83,61 @@ ln -s /Applications "$STAGING/Applications"
 
 # ── 5. Sign the app bundle ──────────────────────────────────────────────────
 echo "==> Signing app bundle..."
-# TODO: For notarization, replace '--sign -' with '--sign "Developer ID Application: ..."'
-# then run: xcrun notarytool submit <dmg> --apple-id <email> --team-id <team>
 
 # Detect signing identity — use Developer ID if available, else ad-hoc
-SIGN_IDENTITY="-"
-CODESIGN_FLAGS="--force --sign $SIGN_IDENTITY"
+SIGN_IDENTITY=$(security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | sed 's/.*"\(.*\)"/\1/')
+if [[ -z "$SIGN_IDENTITY" ]]; then
+    echo "WARNING: No Developer ID certificate found, using ad-hoc signing (notarization will not be possible)"
+    SIGN_IDENTITY="-"
+fi
+echo "    Signing with: $SIGN_IDENTITY"
+
+CODESIGN_ARGS=(--force --sign "$SIGN_IDENTITY")
 if [[ "$SIGN_IDENTITY" != "-" ]]; then
-    # Hardened runtime only works with a real developer certificate
-    CODESIGN_FLAGS="$CODESIGN_FLAGS --options runtime"
+    CODESIGN_ARGS+=(--options runtime --timestamp)
 fi
 
-# Sign all Mach-O files inside the frozen server directory
-find "$RESOURCES/esper-server" -type f | while read -r f; do
-    file "$f" | grep -q "Mach-O" && codesign $CODESIGN_FLAGS "$f"
-done
+# Entitlements for the frozen Python server (needs executable memory for numpy/scipy)
+SERVER_ENTITLEMENTS="$PROJECT_DIR/scripts/esper-server.entitlements"
+cat > "$SERVER_ENTITLEMENTS" << 'ENTEOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+</dict>
+</plist>
+ENTEOF
 
-# Sign the app bundle with entitlements (must be last)
-codesign $CODESIGN_FLAGS --entitlements "$ENTITLEMENTS" "$APP"
+# Sign ALL Mach-O files inside the bundle (inside-out: deepest first)
+echo "    Signing embedded binaries..."
+while read -r f; do
+    file "$f" | grep -q "Mach-O" && codesign "${CODESIGN_ARGS[@]}" "$f"
+done < <(find "$APP/Contents" -type f \( -name "*.dylib" -o -name "*.so" -o -perm +111 \))
+
+# Sign the frozen server binary with its own entitlements
+codesign "${CODESIGN_ARGS[@]}" --entitlements "$SERVER_ENTITLEMENTS" "$RESOURCES/esper-server/esper-server"
+
+# Sign XPC services
+while read -r xpc; do
+    codesign "${CODESIGN_ARGS[@]}" "$xpc"
+done < <(find "$APP/Contents" -name "*.xpc" -type d)
+
+# Sign embedded .app bundles (Sparkle Updater.app)
+while read -r inner_app; do
+    codesign "${CODESIGN_ARGS[@]}" "$inner_app"
+done < <(find "$APP/Contents" -depth -name "*.app" -type d)
+
+# Sign frameworks
+while read -r fw; do
+    codesign "${CODESIGN_ARGS[@]}" "$fw"
+done < <(find "$APP/Contents/Frameworks" -depth -name "*.framework" -type d)
+
+# Sign the main app bundle with entitlements (must be last)
+codesign "${CODESIGN_ARGS[@]}" --entitlements "$ENTITLEMENTS" "$APP"
 
 # ── 6. Verify bundle ────────────────────────────────────────────────────────
 echo "==> Verifying bundle..."

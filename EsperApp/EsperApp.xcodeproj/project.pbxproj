@@ -312,7 +312,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Re-sign embedded Sparkle framework to match ad-hoc app signing\nif [ -d \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\" ]; then\n    codesign --force --deep --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\"\nfi\n";
+			shellScript = "# Re-sign embedded Sparkle framework (build-dmg.sh re-signs everything for release)\nif [ -d \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\" ]; then\n    find \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\" -type f -perm +111 | while read f; do\n        file \"$f\" | grep -q Mach-O && codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$f\"\n    done\n    codesign --force --sign \"${EXPANDED_CODE_SIGN_IDENTITY:--}\" \"$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/Sparkle.framework\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -450,7 +450,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EsperApp/Info.plist;
 				INFOPLIST_KEY_LSUIElement = NO;
@@ -477,7 +477,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_APP_SANDBOX = NO;
-				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EsperApp/Info.plist;
 				INFOPLIST_KEY_LSUIElement = NO;
