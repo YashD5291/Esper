@@ -244,6 +244,7 @@ EsperApp/
     ProcessBridge.swift          Python subprocess management (NSLock, bounded stream)
     TranscriptionEngine.swift    @Observable state + event consumption + watchdog
     TranscriptPanel.swift        Floating NSPanel (vibrancy, click-through, draggable)
+    GlobalHotkey.swift           KeyboardShortcuts name definition (Option+Space default)
     Helpers/
       KeychainHelper.swift       Keychain read/write (for future use with Developer ID)
     Models/
@@ -257,7 +258,8 @@ EsperApp/
       TranscriptOverlayView.swift  Floating overlay SwiftUI content + OverlayViewModel
       AudioLevelMeter.swift      Real-time audio meter
       StatusBadge.swift          Status indicator
-      SettingsView.swift         App settings (4 tabs)
+      SettingsView.swift         App settings (6 tabs, sidebar navigation)
+      ShortcutsTab.swift         Global hotkey configuration (KeyboardShortcuts.Recorder)
       OverlaySettingsTab.swift   Overlay config (position, appearance, preview)
   EsperAppTests/
     ProtocolTests.swift          25 XCTests for JSON event parsing

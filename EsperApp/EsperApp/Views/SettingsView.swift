@@ -1,4 +1,3 @@
-import KeyboardShortcuts
 import Sparkle
 import SwiftUI
 
