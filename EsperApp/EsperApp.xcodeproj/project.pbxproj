@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A100000020 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP00000002 /* Sparkle */; };
+		A100000021 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = KS00000002 /* KeyboardShortcuts */; };
 		A100000001 /* EsperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001; };
 		A100000002 /* ProcessBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002; };
 		A100000003 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000003; };
@@ -172,6 +173,7 @@
 			name = EsperApp;
 			packageProductDependencies = (
 				SP00000002 /* Sparkle */,
+				KS00000002 /* KeyboardShortcuts */,
 			);
 			productName = EsperApp;
 			productReference = C100000001 /* EsperApp.app */;
@@ -218,6 +220,7 @@
 			projectRoot = "";
 			packageReferences = (
 				SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				KS00000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			targets = (
 				E100000001 /* EsperApp */,
@@ -271,6 +274,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100000020 /* Sparkle in Frameworks */,
+				A100000021 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -570,6 +574,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		KS00000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -577,6 +589,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		KS00000002 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = KS00000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
 
