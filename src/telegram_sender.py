@@ -10,6 +10,7 @@ import logging
 import queue
 import threading
 import time
+from typing import Callable
 
 import httpx
 
@@ -27,10 +28,18 @@ class TelegramSender:
     utterance is sent as a separate Telegram message.
     """
 
-    def __init__(self, bot_token: str, chat_id: str) -> None:
+    def __init__(
+        self,
+        bot_token: str,
+        chat_id: str,
+        on_sent: Callable[[str, int], None] | None = None,
+        on_failed: Callable[[str, str], None] | None = None,
+    ) -> None:
         self._base_url = f"https://api.telegram.org/bot{bot_token}"
         self._chat_id = chat_id
-        self._queue: queue.Queue[str | None] = queue.Queue(maxsize=100)
+        self._on_sent = on_sent
+        self._on_failed = on_failed
+        self._queue: queue.Queue[tuple[str, int] | None] = queue.Queue(maxsize=100)
         self._thread = threading.Thread(target=self._loop, daemon=True, name="telegram-sender")
         self._thread.start()
 
@@ -40,8 +49,9 @@ class TelegramSender:
         """Enqueue utterance text for sending. One message per utterance (D-03)."""
         text = update.text.strip()
         if text:
+            sentence_index = len(update.sentences) - 1 if update.sentences else 0
             try:
-                self._queue.put_nowait(text)
+                self._queue.put_nowait((text, sentence_index))
             except queue.Full:
                 log.warning("Telegram queue full — dropping message: %s", text[:60])
 
@@ -54,11 +64,12 @@ class TelegramSender:
                 item = self._queue.get()
                 if item is None:
                     break
-                self._send_message(client, item)
+                text, sentence_index = item
+                self._send_message(client, text, sentence_index)
         finally:
             client.close()
 
-    def _send_message(self, client: httpx.Client, text: str):
+    def _send_message(self, client: httpx.Client, text: str, sentence_index: int = 0):
         if len(text) > 4096:
             log.warning("Truncating message from %d to 4096 chars", len(text))
             text = text[:4093] + "..."
@@ -73,10 +84,14 @@ class TelegramSender:
                         body = resp.json()
                         if body.get("ok"):
                             log.debug("Sent: %s", text[:40])
+                            if self._on_sent:
+                                self._on_sent(text, sentence_index)
                             return
                         log.warning("Telegram API returned ok=false: %s", body.get("description", "unknown"))
                     except (ValueError, KeyError):
                         log.debug("Sent (no body check): %s", text[:40])
+                        if self._on_sent:
+                            self._on_sent(text, sentence_index)
                         return
                 if resp.status_code == 429:
                     try:
@@ -96,6 +111,8 @@ class TelegramSender:
                         "Telegram API %d (non-retryable): %s",
                         resp.status_code, resp.text[:200]
                     )
+                    if self._on_failed:
+                        self._on_failed(text, f"HTTP {resp.status_code}: {resp.text[:200]}")
                     return  # Don't retry 4xx errors
                 log.warning(
                     "Telegram API %d: %s", resp.status_code, resp.text[:200]
@@ -106,6 +123,8 @@ class TelegramSender:
                 )
             time.sleep(config.TELEGRAM_BACKOFF_BASE * (2**attempt))
         log.error("Failed to send after %d attempts: %s", config.TELEGRAM_MAX_RETRIES, text[:60])
+        if self._on_failed:
+            self._on_failed(text, f"Failed after {config.TELEGRAM_MAX_RETRIES} retries")
 
     # -- lifecycle --
 

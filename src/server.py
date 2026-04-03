@@ -214,7 +214,17 @@ def _do_start(data: dict):
             from .telegram_sender import TelegramSender
             config.TELEGRAM_BOT_TOKEN = bot_token
             config.TELEGRAM_CHAT_ID = chat_id
-            _telegram_sender = TelegramSender(bot_token, chat_id)
+            def _on_telegram_sent(text: str, sentence_index: int):
+                _send("telegram_sent", {"text": text, "sentence_index": sentence_index})
+
+            def _on_telegram_failed(text: str, error: str):
+                _send("telegram_failed", {"text": text, "error": error})
+
+            _telegram_sender = TelegramSender(
+                bot_token, chat_id,
+                on_sent=_on_telegram_sent,
+                on_failed=_on_telegram_failed,
+            )
             log.info("Telegram sender configured")
 
     # Create WhisperTranscriber — subprocess handles model loading and ready signaling
