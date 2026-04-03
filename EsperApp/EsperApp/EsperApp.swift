@@ -3,8 +3,28 @@ import QuartzCore
 import Sparkle
 import SwiftUI
 
+extension Notification.Name {
+    static let reopenMainWindow = Notification.Name("reopenMainWindow")
+}
+
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // MenuBarExtra makes hasVisibleWindows unreliable — it reports true even
+        // when no real windows are on screen. Check for actual visible windows instead.
+        let hasRealWindow = sender.windows.contains { window in
+            window.isVisible && !window.className.contains("StatusBar") && !(window is NSPanel)
+        }
+        if !hasRealWindow {
+            NotificationCenter.default.post(name: .reopenMainWindow, object: nil)
+        }
+        sender.activate(ignoringOtherApps: true)
+        return true
+    }
+}
+
 @main
 struct EsperApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var engine = TranscriptionEngine()
     @State private var launched = false
     @State private var overlayController = OverlayController()
@@ -24,6 +44,9 @@ struct EsperApp: App {
                 .onAppear {
                     ensureLaunched()
                     NSApp.activate(ignoringOtherApps: true)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .reopenMainWindow)) { _ in
+                    openWindow(id: "main")
                 }
         }
         .defaultSize(width: 520, height: 640)
