@@ -93,6 +93,7 @@ final class OverlayController {
     private var panelCreated = false
     private var updateTask: Task<Void, Never>?
     private var lastColorHex: String = ""
+    private var panelVisible = false
     var previewMode = false
 
     func bind(engine: TranscriptionEngine, settings: AppSettings) {
@@ -113,13 +114,14 @@ final class OverlayController {
         if shouldShow {
             ensurePanel(settings: settings)
 
-            // Suppress implicit Core Animation layer transitions during SwiftUI updates
             CATransaction.begin()
             CATransaction.setDisableActions(true)
 
-            // Only mutate when values actually changed to avoid unnecessary SwiftUI diffs
             let newLines = overlayLines(engine: engine, settings: settings)
             if newLines != viewModel.lines { viewModel.lines = newLines }
+
+            let newStatus = engine.status
+            if newStatus != viewModel.engineStatus { viewModel.engineStatus = newStatus }
 
             let newSize = settings.overlayFontSize
             if newSize != viewModel.fontSize { viewModel.fontSize = newSize }
@@ -133,21 +135,23 @@ final class OverlayController {
                 viewModel.textColor = settings.parsedOverlayColor
             }
 
+            viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
+
             CATransaction.commit()
 
-            let isDraggable = !settings.overlayLockPosition
-            panel?.setDraggable(isDraggable)
-
-            if !(panel?.isVisible ?? false) {
-                if settings.overlayDragX >= 0, settings.overlayDragY >= 0 {
+            if !panelVisible {
+                let locked = settings.overlayLockPosition
+                if !locked, settings.overlayDragX >= 0, settings.overlayDragY >= 0 {
                     panel?.repositionToCoordinate(x: settings.overlayDragX, y: settings.overlayDragY)
                 } else {
                     panel?.reposition(to: settings.parsedOverlayPosition)
                 }
-                panel?.orderFrontRegardless()
+                panel?.animateIn()
+                panelVisible = true
             }
-        } else {
-            panel?.orderOut(nil)
+        } else if panelVisible {
+            panel?.animateOut()
+            panelVisible = false
         }
     }
 
@@ -161,12 +165,41 @@ final class OverlayController {
         )
         let host = NSHostingView(rootView: TranscriptOverlayView(viewModel: viewModel))
         panel.setSwiftUIContent(host)
+        panel.installTrackingArea()
+
         panel.onDragEnd = { origin in
             settings.overlayDragX = origin.x
             settings.overlayDragY = origin.y
         }
+        panel.onHoverChanged = { [weak self] hovering in
+            self?.viewModel.isHovering = hovering
+        }
+        panel.onContextAction = { [weak self] action in
+            self?.handleContextAction(action, settings: settings)
+        }
+
         self.panel = panel
         panelCreated = true
+    }
+
+    private func handleContextAction(_ action: OverlayContextAction, settings: AppSettings) {
+        switch action {
+        case .textSize(let size):
+            settings.overlayTextSize = size
+            settings.overlayPreset = "custom"
+        case .opacity(let value):
+            settings.overlayOpacity = value
+            settings.overlayPreset = "custom"
+        case .preset(let preset):
+            preset.apply(to: settings)
+        case .position(let pos):
+            settings.overlayPosition = pos.rawValue
+            panel?.reposition(to: pos)
+        case .lockPosition:
+            settings.overlayLockPosition.toggle()
+        case .openSettings:
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        }
     }
 
     private static let sampleLines = [
@@ -177,26 +210,36 @@ final class OverlayController {
 
     private func overlayLines(engine: TranscriptionEngine, settings: AppSettings) -> [OverlayLine] {
         let maxLines = settings.overlayMaxLines
+        let telegramEnabled = settings.telegramEnabled && !settings.telegramBotToken.isEmpty
+
         if previewMode && engine.status != .listening {
             return Self.sampleLines.prefix(maxLines).enumerated().map { i, text in
-                OverlayLine(id: "sample-\(i)", text: text, state: .finalized, confidence: 1.0)
+                let state: LineState = i == 0 ? .sent : (i == 1 ? .queued : .draft)
+                return OverlayLine(id: "sample-\(i)", text: text, state: state, confidence: 1.0)
             }
         }
 
         let sentenceCount = engine.sentences.count
-        var raw: [(id: String, text: String, state: LineState)] = engine.sentences.suffix(maxLines).enumerated().map { i, text in
+        var raw: [OverlayLine] = engine.sentences.suffix(maxLines).enumerated().map { i, text in
             let globalIndex = sentenceCount - min(maxLines, sentenceCount) + i
-            return (id: "s-\(globalIndex)", text: text, state: .finalized)
+            let state: LineState
+            if engine.sentSentenceIndices.contains(globalIndex) {
+                state = .sent
+            } else if telegramEnabled {
+                state = .queued
+            } else {
+                state = .finalized
+            }
+            return OverlayLine(id: "s-\(globalIndex)", text: text, state: state, confidence: 1.0)
         }
 
         let current = engine.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !current.isEmpty, current != raw.last?.text {
             if raw.count >= maxLines { raw.removeFirst() }
-            raw.append((id: "current", text: current, state: .draft))
+            let confidence = 1.0 - engine.lastNoSpeechProb
+            raw.append(OverlayLine(id: "current", text: current, state: .draft, confidence: confidence))
         }
 
-        return raw.map { item in
-            OverlayLine(id: item.id, text: item.text, state: item.state, confidence: 1.0)
-        }
+        return raw
     }
 }

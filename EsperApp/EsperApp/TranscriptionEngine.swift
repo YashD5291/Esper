@@ -16,6 +16,9 @@ final class TranscriptionEngine {
     var sentences: [String] = []
     var errorMessage: String?
     var telegramTestResult: TelegramTestResult?
+    var sentSentenceIndices: Set<Int> = []
+    var failedSentenceIndices: Set<Int> = []
+    var lastNoSpeechProb: Double = 0.0
 
     // Dependencies
     let bridge = ProcessBridge()
@@ -99,6 +102,9 @@ final class TranscriptionEngine {
         finalizedText = ""
         sentences = []
         errorMessage = nil
+        sentSentenceIndices = []
+        failedSentenceIndices = []
+        lastNoSpeechProb = 0.0
 
         // If bridge isn't running yet, launch it and retry after it's ready
         if !bridge.isRunning {
@@ -209,6 +215,7 @@ final class TranscriptionEngine {
             currentText = payload.text
             finalizedText = payload.finalizedText
             sentences = payload.sentences
+            lastNoSpeechProb = payload.noSpeechProb
 
         case .energy(let level):
             energyLevel = level
@@ -216,8 +223,11 @@ final class TranscriptionEngine {
         case .telegramTest(let success, let error):
             telegramTestResult = TelegramTestResult(success: success, error: error)
 
-        case .telegramSent, .telegramFailed:
-            break // Handled by overlay (future task)
+        case .telegramSent(_, let index):
+            sentSentenceIndices.insert(index)
+
+        case .telegramFailed(let text, let error):
+            NSLog("[Engine] Telegram send failed: %@ — %@", text, error)
 
         case .crashed(let exitCode):
             cancelWatchdog()
