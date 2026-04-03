@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		A100000020 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = SP00000002 /* Sparkle */; };
+		A100000021 /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = KS00000002 /* KeyboardShortcuts */; };
 		A100000001 /* EsperApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000001; };
 		A100000002 /* ProcessBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000002; };
 		A100000003 /* TranscriptionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000003; };
@@ -27,6 +28,8 @@
 		A100000017 /* OverlaySettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000018; };
 		A100000018 /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000019; };
 		A100000019 /* UpdateSettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000020; };
+		A100000022 /* GlobalHotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000021; };
+		A100000023 /* ShortcutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000022; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000002 /* OverlayPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
@@ -64,6 +67,8 @@
 		B100000018 /* OverlaySettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettingsTab.swift; sourceTree = "<group>"; };
 		B100000019 /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		B100000020 /* UpdateSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTab.swift; sourceTree = "<group>"; };
+		B100000021 /* GlobalHotkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkey.swift; sourceTree = "<group>"; };
+		B100000022 /* ShortcutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsTab.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
@@ -86,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				B100000001 /* EsperApp.swift */,
+				B100000021 /* GlobalHotkey.swift */,
 				B100000002 /* ProcessBridge.swift */,
 				B100000003 /* TranscriptionEngine.swift */,
 				B100000016 /* TranscriptPanel.swift */,
@@ -129,6 +135,7 @@
 				B100000018 /* OverlaySettingsTab.swift */,
 				B100000019 /* CheckForUpdatesView.swift */,
 				B100000020 /* UpdateSettingsTab.swift */,
+				B100000022 /* ShortcutsTab.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -172,6 +179,7 @@
 			name = EsperApp;
 			packageProductDependencies = (
 				SP00000002 /* Sparkle */,
+				KS00000002 /* KeyboardShortcuts */,
 			);
 			productName = EsperApp;
 			productReference = C100000001 /* EsperApp.app */;
@@ -218,6 +226,7 @@
 			projectRoot = "";
 			packageReferences = (
 				SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				KS00000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */,
 			);
 			targets = (
 				E100000001 /* EsperApp */,
@@ -249,6 +258,8 @@
 				A100000017 /* OverlaySettingsTab.swift in Sources */,
 				A100000018 /* CheckForUpdatesView.swift in Sources */,
 				A100000019 /* UpdateSettingsTab.swift in Sources */,
+				A100000022 /* GlobalHotkey.swift in Sources */,
+				A100000023 /* ShortcutsTab.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -271,6 +282,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A100000020 /* Sparkle in Frameworks */,
+				A100000021 /* KeyboardShortcuts in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -570,6 +582,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		KS00000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sindresorhus/KeyboardShortcuts";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -577,6 +597,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = SP00000001 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		KS00000002 /* KeyboardShortcuts */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = KS00000001 /* XCRemoteSwiftPackageReference "KeyboardShortcuts" */;
+			productName = KeyboardShortcuts;
 		};
 /* End XCSwiftPackageProductDependency section */
 

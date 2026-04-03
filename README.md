@@ -26,11 +26,7 @@
 
 1. Download [**Esper.dmg**](https://github.com/YashD5291/Esper/releases/latest) from the latest release
 2. Open the DMG and drag **Esper** to **Applications**
-3. Open Terminal and run:
-   ```
-   xattr -cr /Applications/Esper.app
-   ```
-4. Open Esper from Applications or Launchpad
+3. Open Esper from Applications or Launchpad
 
 **Requirements:** macOS 14+ (Sonoma), Apple Silicon (M1/M2/M3/M4)
 
@@ -54,6 +50,14 @@ Select your mic from the device picker, speak, see transcriptions.
 ### SwiftUI App (from source)
 
 Open `EsperApp/EsperApp.xcodeproj` in Xcode and hit Cmd+R.
+
+---
+
+## Global Hotkey
+
+Press **Option+Space** from any app to toggle transcription on/off. No need to switch to the Esper window.
+
+Customize the shortcut in **Settings > Shortcuts**.
 
 ---
 
@@ -236,6 +240,7 @@ EsperApp/
     ProcessBridge.swift          Python subprocess management (NSLock, bounded stream)
     TranscriptionEngine.swift    @Observable state + event consumption + watchdog
     TranscriptPanel.swift        Floating NSPanel (vibrancy, click-through, draggable)
+    GlobalHotkey.swift           KeyboardShortcuts name definition (Option+Space default)
     Helpers/
       KeychainHelper.swift       Keychain read/write (for future use with Developer ID)
     Models/
@@ -249,7 +254,8 @@ EsperApp/
       TranscriptOverlayView.swift  Floating overlay SwiftUI content + OverlayViewModel
       AudioLevelMeter.swift      Real-time audio meter
       StatusBadge.swift          Status indicator
-      SettingsView.swift         App settings (4 tabs)
+      SettingsView.swift         App settings (6 tabs, sidebar navigation)
+      ShortcutsTab.swift         Global hotkey configuration (KeyboardShortcuts.Recorder)
       OverlaySettingsTab.swift   Overlay config (position, appearance, preview)
   EsperAppTests/
     ProtocolTests.swift          25 XCTests for JSON event parsing
