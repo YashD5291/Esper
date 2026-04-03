@@ -6,21 +6,22 @@
     <description>Esper app updates</description>
     <language>en</language>
     <item>
-      <title>Version 3.2.0</title>
-      <sparkle:version>217</sparkle:version>
-      <sparkle:shortVersionString>3.2.0</sparkle:shortVersionString>
+      <title>Version 3.3.0</title>
+      <sparkle:version>233</sparkle:version>
+      <sparkle:shortVersionString>3.3.0</sparkle:shortVersionString>
       <description><![CDATA[
         <ul>
-          <li>Developer ID signing and Apple notarization</li>
-          <li>Hardened runtime enabled</li>
-          <li>Seamless Sparkle auto-update install</li>
+          <li>Global hotkey (Option+Space) to toggle transcription from any app</li>
+          <li>Redesigned Settings with vertical sidebar</li>
+          <li>Configurable shortcut in Settings &gt; Shortcuts</li>
+          <li>Fixed dock icon not reopening main window</li>
         </ul>
       ]]></description>
-      <pubDate>Thu, 02 Apr 2026 18:06:37 +0000</pubDate>
+      <pubDate>Fri, 03 Apr 2026 11:13:33 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v3.2.0/Esper-3.2.0-arm64.dmg"
-        sparkle:edSignature="HJK5fEg0fNPjGTgh489RUJihl11c7BTe+4k+rCjvEt+9zvosbO7CBXSs18qGlW9hBeW2670Eu+5QfV5PEUhnBg=="
-        length="1687494060"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.3.0/Esper-3.3.0-arm64.dmg"
+        sparkle:edSignature="5AJZbyr9yLkxD/hI4mTY0kJvBZUF+vL6PTmwFZDx/Cq/6Gz16FCdytc+kRRrgljyrokTkaRtKrUHdoYNLqNPAQ=="
+        length="1684351721"
         type="application/octet-stream"
       />
     </item>
