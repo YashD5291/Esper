@@ -5,9 +5,10 @@ import SwiftUI
 final class AppSettingsOverlayTests: XCTestCase {
 
     private let overlayKeys = [
-        "overlayEnabled", "overlayPlacementMode", "overlayPosition",
+        "overlayEnabled", "overlayPosition",
         "overlayTextSize", "overlayTextColor", "overlayMaxLines",
         "overlayOpacity", "overlayDragX", "overlayDragY",
+        "overlayPreset", "overlayShowTelegramStatus", "overlayLockPosition",
     ]
 
     override func setUp() {
@@ -32,6 +33,9 @@ final class AppSettingsOverlayTests: XCTestCase {
         XCTAssertEqual(settings.overlayTextColor, "#FFFFFF")
         XCTAssertEqual(settings.overlayMaxLines, 3)
         XCTAssertEqual(settings.overlayOpacity, 1.0, accuracy: 0.01)
+        XCTAssertEqual(settings.overlayPreset, "custom")
+        XCTAssertTrue(settings.overlayShowTelegramStatus)
+        XCTAssertFalse(settings.overlayLockPosition)
     }
 
     func testParsedOverlayPosition() {
@@ -49,11 +53,11 @@ final class AppSettingsOverlayTests: XCTestCase {
     func testOverlayFontSize() {
         let settings = AppSettings()
         settings.overlayTextSize = "small"
-        XCTAssertEqual(settings.overlayFontSize, 16)
+        XCTAssertEqual(settings.overlayFontSize, 13)
         settings.overlayTextSize = "medium"
-        XCTAssertEqual(settings.overlayFontSize, 20)
+        XCTAssertEqual(settings.overlayFontSize, 15)
         settings.overlayTextSize = "large"
-        XCTAssertEqual(settings.overlayFontSize, 26)
+        XCTAssertEqual(settings.overlayFontSize, 22)
     }
 
     func testParsedOverlayColor() {

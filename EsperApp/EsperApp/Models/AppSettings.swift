@@ -20,9 +20,6 @@ final class AppSettings {
     @AppStorage("overlayEnabled") var overlayEnabled: Bool = false
 
     @ObservationIgnored
-    @AppStorage("overlayPlacementMode") var overlayPlacementMode: String = "draggable"
-
-    @ObservationIgnored
     @AppStorage("overlayPosition") var overlayPosition: String = "bottomCenter"
 
     @ObservationIgnored
@@ -43,6 +40,15 @@ final class AppSettings {
     @ObservationIgnored
     @AppStorage("overlayOpacity") var overlayOpacity: Double = 1.0
 
+    @ObservationIgnored
+    @AppStorage("overlayPreset") var overlayPreset: String = "custom"
+
+    @ObservationIgnored
+    @AppStorage("overlayShowTelegramStatus") var overlayShowTelegramStatus: Bool = true
+
+    @ObservationIgnored
+    @AppStorage("overlayLockPosition") var overlayLockPosition: Bool = false
+
     // MARK: - Overlay Computed Helpers
 
     var parsedOverlayPosition: OverlayPosition {
@@ -51,9 +57,9 @@ final class AppSettings {
 
     var overlayFontSize: CGFloat {
         switch overlayTextSize {
-        case "small": return 16
-        case "large": return 26
-        default: return 20
+        case "small": return 13
+        case "large": return 22
+        default: return 15
         }
     }
 
