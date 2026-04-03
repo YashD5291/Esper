@@ -7,7 +7,7 @@ on:
 
 jobs:
   release:
-    runs-on: macos-14
+    runs-on: macos-15
     permissions:
       contents: write
     steps:
@@ -17,7 +17,7 @@ jobs:
 
       - name: Select Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode_16.1.app || sudo xcode-select -s /Applications/Xcode_16.0.app || sudo xcode-select -s /Applications/Xcode.app
+          sudo xcode-select -s /Applications/Xcode_16.3.app || sudo xcode-select -s /Applications/Xcode_16.2.app || sudo xcode-select -s /Applications/Xcode.app
           xcodebuild -version
 
       - name: Set up Python
@@ -71,11 +71,7 @@ jobs:
 
             1. Download `Esper-${{ steps.version.outputs.version }}-arm64.dmg` below
             2. Open the DMG, drag **Esper** to Applications
-            3. Open Terminal and run:
-               ```
-               xattr -cr /Applications/Esper.app
-               ```
-            4. Open Esper from Applications
+            3. Open Esper from Applications or Launchpad
 
             **Requirements:** macOS 14+ (Sonoma), Apple Silicon (M1/M2/M3/M4)
 
