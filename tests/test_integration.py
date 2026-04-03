@@ -96,7 +96,7 @@ def test_transcription_update_fields():
 # -- Test 3: Telegram sender receives update ---------------------------------
 
 def test_telegram_sender_receives_update():
-    """TelegramSender.on_update enqueues update.text as a string."""
+    """TelegramSender.on_update enqueues (text, sentence_index) tuple."""
     with patch("src.telegram_sender.httpx.Client"):
         sender = TelegramSender("fake-token", "12345")
         sender.stop()
@@ -108,4 +108,4 @@ def test_telegram_sender_receives_update():
 
     assert not sender._queue.empty(), "Expected on_update to enqueue text"
     item = sender._queue.get_nowait()
-    assert item == "Hello world", f"Expected 'Hello world', got {item!r}"
+    assert item == ("Hello world", 0), f"Expected ('Hello world', 0), got {item!r}"

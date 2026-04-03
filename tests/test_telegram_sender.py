@@ -148,17 +148,20 @@ class TestPerUtteranceSend:
 
         assert sent == ["hello there"], f"Expected ['hello there'], got {sent}"
 
-    def test_queue_type_annotation_is_str(self):
-        """TelegramSender._queue holds str items (not TranscriptionUpdate)."""
+    def test_queue_type_annotation_is_tuple(self):
+        """TelegramSender._queue holds (str, int) tuples (not raw TranscriptionUpdate)."""
         with patch("src.telegram_sender.httpx.Client"):
             sender = _make_sender()
 
-        # The queue should be Queue[str | None], not Queue[TranscriptionUpdate | ...]
-        # We verify by checking that on_update puts a str into the queue
+        # The queue should be Queue[tuple[str, int] | None]
+        # We verify by checking that on_update puts a tuple into the queue
         sender.on_update(TranscriptionUpdate(text="test"))
         try:
             item = sender._queue.get(timeout=0.5)
-            assert isinstance(item, str), f"Expected str item in queue, got {type(item)}: {item!r}"
+            assert isinstance(item, tuple), f"Expected tuple item in queue, got {type(item)}: {item!r}"
+            assert len(item) == 2, f"Expected 2-element tuple, got {len(item)}"
+            assert isinstance(item[0], str), f"Expected str as first element, got {type(item[0])}"
+            assert isinstance(item[1], int), f"Expected int as second element, got {type(item[1])}"
         finally:
             sender.stop()
             sender.wait(timeout=1.0)
@@ -318,3 +321,117 @@ class TestHardening:
         assert len(sent) == 1, f"Expected 1 message, got {len(sent)}"
         assert len(sent[0]) == 4096, f"Expected 4096 chars, got {len(sent[0])}"
         assert sent[0].endswith("..."), "Truncated message should end with '...'"
+
+
+class TestSendCallbacks:
+    """Tests for on_sent / on_failed callback support."""
+
+    def test_on_sent_callback_fires_on_success(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        sent_calls = []
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            sender = TelegramSender("fake-token", "12345",
+                                    on_sent=lambda text, idx: sent_calls.append((text, idx)))
+            sender.on_update(TranscriptionUpdate(
+                text="Hello world.",
+                sentences=["Hello world."],
+            ))
+            sender.stop()
+            sender.wait(timeout=5)
+
+        assert len(sent_calls) == 1
+        assert sent_calls[0][0] == "Hello world."
+
+    def test_on_failed_callback_fires_after_max_retries(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 500
+        mock_response.text = "Internal Server Error"
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        failed_calls = []
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            with patch("src.telegram_sender.time.sleep"):
+                sender = TelegramSender("fake-token", "12345",
+                                        on_failed=lambda text, err: failed_calls.append((text, err)))
+                sender.on_update(TranscriptionUpdate(text="fail"))
+                sender.stop()
+                sender.wait(timeout=10)
+
+        assert len(failed_calls) == 1
+        assert failed_calls[0][0] == "fail"
+
+    def test_callbacks_default_to_none(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            sender = TelegramSender("fake-token", "12345")
+            sender.on_update(TranscriptionUpdate(text="test"))
+            sent = _drain(sender, mock_client)
+
+        assert sent == ["test"]
+
+    def test_on_sent_receives_sentence_index(self):
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"ok": True}
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        sent_calls = []
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            sender = TelegramSender("fake-token", "12345",
+                                    on_sent=lambda text, idx: sent_calls.append((text, idx)))
+            sender.on_update(TranscriptionUpdate(
+                text="First.",
+                sentences=["First."],
+            ))
+            sender.on_update(TranscriptionUpdate(
+                text="Second.",
+                sentences=["First.", "Second."],
+            ))
+            sender.stop()
+            sender.wait(timeout=5)
+
+        assert len(sent_calls) == 2
+        assert sent_calls[0] == ("First.", 0)
+        assert sent_calls[1] == ("Second.", 1)
+
+    def test_on_failed_callback_fires_on_non_retryable_4xx(self):
+        """on_failed fires on non-retryable 4xx errors (e.g. 401)."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.text = "Unauthorized"
+
+        mock_client = MagicMock()
+        mock_client.post.return_value = mock_response
+
+        failed_calls = []
+
+        with patch("src.telegram_sender.httpx.Client", return_value=mock_client):
+            with patch("src.telegram_sender.time.sleep"):
+                sender = TelegramSender("fake-token", "12345",
+                                        on_failed=lambda text, err: failed_calls.append((text, err)))
+                sender.on_update(TranscriptionUpdate(text="unauthorized"))
+                sender.stop()
+                sender.wait(timeout=5)
+
+        assert len(failed_calls) == 1
+        assert failed_calls[0][0] == "unauthorized"
+        assert "401" in failed_calls[0][1] or "Unauthorized" in failed_calls[0][1]

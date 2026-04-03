@@ -152,6 +152,36 @@ final class ProtocolTests: XCTestCase {
         XCTAssertNil(event)
     }
 
+    // MARK: - Telegram Sent
+
+    func testTelegramSentParsed() throws {
+        let json = #"{"event":"telegram_sent","v":1,"data":{"text":"hello","sentence_index":0}}"#.data(using: .utf8)!
+        let event = ServerEvent.parse(json: json)
+        guard case .telegramSent(let text, let index) = event else { return XCTFail("Expected .telegramSent") }
+        XCTAssertEqual(text, "hello")
+        XCTAssertEqual(index, 0)
+    }
+
+    func testTelegramSentMissingFieldsReturnsNil() throws {
+        let json = #"{"event":"telegram_sent","v":1,"data":{}}"#.data(using: .utf8)!
+        let event = ServerEvent.parse(json: json)
+        XCTAssertNil(event)
+    }
+
+    func testTelegramFailedParsed() throws {
+        let json = #"{"event":"telegram_failed","v":1,"data":{"text":"hello","error":"timeout"}}"#.data(using: .utf8)!
+        let event = ServerEvent.parse(json: json)
+        guard case .telegramFailed(let text, let error) = event else { return XCTFail("Expected .telegramFailed") }
+        XCTAssertEqual(text, "hello")
+        XCTAssertEqual(error, "timeout")
+    }
+
+    func testTelegramFailedMissingFieldsReturnsNil() throws {
+        let json = #"{"event":"telegram_failed","v":1,"data":{}}"#.data(using: .utf8)!
+        let event = ServerEvent.parse(json: json)
+        XCTAssertNil(event)
+    }
+
     // MARK: - Crashed
 
     func testCrashedParsed() throws {

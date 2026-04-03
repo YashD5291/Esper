@@ -60,6 +60,8 @@ enum ServerEvent {
     case transcript(TranscriptionPayload)
     case energy(Double)
     case telegramTest(Bool, String?)
+    case telegramSent(String, Int)      // text, sentence_index
+    case telegramFailed(String, String) // text, error
     case crashed(Int32)
     case error(String)
     case unknown
@@ -123,6 +125,18 @@ enum ServerEvent {
                   let success = d["success"] as? Bool else { return nil }
             let error = d["error"] as? String
             return .telegramTest(success, error)
+
+        case "telegram_sent":
+            guard let d = payload as? [String: Any],
+                  let text = d["text"] as? String,
+                  let index = d["sentence_index"] as? Int else { return nil }
+            return .telegramSent(text, index)
+
+        case "telegram_failed":
+            guard let d = payload as? [String: Any],
+                  let text = d["text"] as? String,
+                  let error = d["error"] as? String else { return nil }
+            return .telegramFailed(text, error)
 
         case "crashed":
             let code = (payload as? Int32) ?? -1

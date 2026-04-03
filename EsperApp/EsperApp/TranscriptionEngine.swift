@@ -216,6 +216,9 @@ final class TranscriptionEngine {
         case .telegramTest(let success, let error):
             telegramTestResult = TelegramTestResult(success: success, error: error)
 
+        case .telegramSent, .telegramFailed:
+            break // Handled by overlay (future task)
+
         case .crashed(let exitCode):
             cancelWatchdog()
             status = .idle
