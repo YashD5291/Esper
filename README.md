@@ -26,11 +26,7 @@
 
 1. Download [**Esper.dmg**](https://github.com/YashD5291/Esper/releases/latest) from the latest release
 2. Open the DMG and drag **Esper** to **Applications**
-3. Open Terminal and run:
-   ```
-   xattr -cr /Applications/Esper.app
-   ```
-4. Open Esper from Applications or Launchpad
+3. Open Esper from Applications or Launchpad
 
 **Requirements:** macOS 14+ (Sonoma), Apple Silicon (M1/M2/M3/M4)
 
