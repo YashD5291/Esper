@@ -108,8 +108,9 @@ final class OverlayController {
     }
 
     private func update(engine: TranscriptionEngine, settings: AppSettings) {
+        let hasContent = !engine.sentences.isEmpty || !engine.currentText.isEmpty
         let shouldShow = settings.overlayEnabled &&
-            (engine.status == .listening || engine.status == .transcribing || previewMode)
+            (engine.status == .listening || engine.status == .transcribing || hasContent || previewMode)
 
         if shouldShow {
             ensurePanel(settings: settings)
@@ -134,6 +135,9 @@ final class OverlayController {
                 lastColorHex = newColorHex
                 viewModel.textColor = settings.parsedOverlayColor
             }
+
+            let newMaxLines = settings.overlayMaxLines
+            if newMaxLines != viewModel.maxLines { viewModel.maxLines = newMaxLines }
 
             viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
 
@@ -171,9 +175,7 @@ final class OverlayController {
             settings.overlayDragX = origin.x
             settings.overlayDragY = origin.y
         }
-        panel.onHoverChanged = { [weak self] hovering in
-            self?.viewModel.isHovering = hovering
-        }
+        panel.onHoverChanged = { _ in }
         panel.onContextAction = { [weak self] action in
             self?.handleContextAction(action, settings: settings)
         }
@@ -219,23 +221,20 @@ final class OverlayController {
             }
         }
 
-        let sentenceCount = engine.sentences.count
-        var raw: [OverlayLine] = engine.sentences.suffix(maxLines).enumerated().map { i, text in
-            let globalIndex = sentenceCount - min(maxLines, sentenceCount) + i
+        var raw: [OverlayLine] = engine.sentences.enumerated().map { i, text in
             let state: LineState
-            if engine.sentSentenceIndices.contains(globalIndex) {
+            if engine.sentSentenceIndices.contains(i) {
                 state = .sent
             } else if telegramEnabled {
                 state = .queued
             } else {
                 state = .finalized
             }
-            return OverlayLine(id: "s-\(globalIndex)", text: text, state: state, confidence: 1.0)
+            return OverlayLine(id: "s-\(i)", text: text, state: state, confidence: 1.0)
         }
 
         let current = engine.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !current.isEmpty, current != raw.last?.text {
-            if raw.count >= maxLines { raw.removeFirst() }
             let confidence = 1.0 - engine.lastNoSpeechProb
             raw.append(OverlayLine(id: "current", text: current, state: .draft, confidence: confidence))
         }

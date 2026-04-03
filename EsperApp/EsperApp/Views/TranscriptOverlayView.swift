@@ -20,7 +20,7 @@ final class OverlayViewModel {
     var fontSize: CGFloat = 15
     var textColor: Color = .white
     var opacity: Double = 1.0
-    var isHovering: Bool = false
+    var maxLines: Int = 3
     var showTelegramStatus: Bool = true
 }
 
@@ -36,23 +36,36 @@ struct OverlayLine: Identifiable, Equatable {
 struct TranscriptOverlayView: View {
     let viewModel: OverlayViewModel
 
+    /// Visible height: maxLines * (fontSize * lineHeight + spacing) + padding
+    private var maxHeight: CGFloat {
+        let lineHeight = viewModel.fontSize * 1.4
+        let spacing: CGFloat = 6
+        let padding: CGFloat = 28 // vertical padding top + bottom
+        return CGFloat(viewModel.maxLines) * (lineHeight + spacing) - spacing + padding
+    }
+
     var body: some View {
         HStack(spacing: 0) {
             statusStrip
-            VStack(alignment: .leading, spacing: 0) {
-                if viewModel.isHovering {
-                    toolbar
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(viewModel.lines) { line in
+                            lineView(line)
+                        }
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    ForEach(viewModel.lines) { line in
-                        lineView(line)
+                .onChange(of: viewModel.lines.last?.id) { _, newID in
+                    if let id = newID {
+                        proxy.scrollTo(id, anchor: .bottom)
                     }
                 }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 14)
             }
         }
         .frame(width: 560, alignment: .leading)
+        .frame(maxHeight: maxHeight)
         .compositingGroup()
         .opacity(viewModel.opacity)
         .transaction { $0.disablesAnimations = true }
@@ -74,46 +87,6 @@ struct TranscriptOverlayView: View {
         case .idle: .gray
         default: .red
         }
-    }
-
-    // MARK: - Toolbar
-
-    private var toolbar: some View {
-        HStack(spacing: 6) {
-            Spacer()
-            toolbarButton("☰ drag")
-            toolbarButton("📋 copy last") {
-                if let last = viewModel.lines.last(where: { $0.state != .draft }) {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(last.text, forType: .string)
-                }
-            }
-            toolbarButton("📋 copy all") {
-                let all = viewModel.lines.map(\.text).joined(separator: "\n")
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(all, forType: .string)
-            }
-        }
-        .padding(.horizontal, 18)
-        .padding(.top, 10)
-        .padding(.bottom, 4)
-    }
-
-    private func toolbarButton(_ label: String, action: (() -> Void)? = nil) -> some View {
-        Button(action: { action?() }) {
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(.white.opacity(0.65))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 3)
-                .background(.white.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 6))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(.white.opacity(0.06), lineWidth: 1)
-                )
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Line Rendering

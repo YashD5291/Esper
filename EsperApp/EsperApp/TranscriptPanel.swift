@@ -43,10 +43,8 @@ final class TranscriptPanel: NSPanel {
         backgroundLayer.frame = rootLayer.bounds
         rootLayer.addSublayer(backgroundLayer)
 
-        rootLayer.shadowColor = NSColor.black.withAlphaComponent(0.3).cgColor
-        rootLayer.shadowOffset = CGSize(width: 0, height: -4)
-        rootLayer.shadowRadius = 20
-        rootLayer.shadowOpacity = 1
+        rootLayer.cornerRadius = 12
+        rootLayer.masksToBounds = true
     }
 
     override var canBecomeKey: Bool { false }
