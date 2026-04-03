@@ -120,7 +120,7 @@ struct TranscriptOverlayView: View {
             .font(.system(size: viewModel.fontSize, weight: .medium))
             .tracking(0.3)
             .lineSpacing(viewModel.fontSize * 0.4)
-            .foregroundStyle(.white.opacity(lineOpacity(line, isLowConfidence: isLowConfidence)))
+            .foregroundStyle(viewModel.textColor.opacity(lineOpacity(line, isLowConfidence: isLowConfidence)))
         }
         .id(line.id)
     }

@@ -141,6 +141,8 @@ final class OverlayController {
 
             viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
 
+            panel?.isPositionLocked = settings.overlayLockPosition
+
             CATransaction.commit()
 
             if !panelVisible {

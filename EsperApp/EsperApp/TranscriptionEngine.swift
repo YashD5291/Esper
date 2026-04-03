@@ -17,7 +17,6 @@ final class TranscriptionEngine {
     var errorMessage: String?
     var telegramTestResult: TelegramTestResult?
     var sentSentenceIndices: Set<Int> = []
-    var failedSentenceIndices: Set<Int> = []
     var lastNoSpeechProb: Double = 0.0
 
     // Dependencies
@@ -103,7 +102,6 @@ final class TranscriptionEngine {
         sentences = []
         errorMessage = nil
         sentSentenceIndices = []
-        failedSentenceIndices = []
         lastNoSpeechProb = 0.0
 
         // If bridge isn't running yet, launch it and retry after it's ready

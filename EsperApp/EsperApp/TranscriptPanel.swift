@@ -5,6 +5,7 @@ final class TranscriptPanel: NSPanel {
     var onDragEnd: ((NSPoint) -> Void)?
     var onHoverChanged: ((Bool) -> Void)?
     var onContextAction: ((OverlayContextAction) -> Void)?
+    var isPositionLocked: Bool = false
 
     private var trackingArea: NSTrackingArea?
     private var isMouseInside = false
@@ -83,7 +84,7 @@ final class TranscriptPanel: NSPanel {
         guard !isMouseInside else { return }
         isMouseInside = true
         ignoresMouseEvents = false
-        isMovableByWindowBackground = true
+        isMovableByWindowBackground = !isPositionLocked
         onHoverChanged?(true)
     }
 
@@ -179,13 +180,6 @@ final class TranscriptPanel: NSPanel {
     @objc private func contextMenuAction(_ sender: NSMenuItem) {
         guard let action = (sender.representedObject as? ActionBox)?.action else { return }
         onContextAction?(action)
-    }
-
-    // MARK: - Legacy (removed in Task 6)
-
-    func setDraggable(_ draggable: Bool) {
-        ignoresMouseEvents = !draggable
-        isMovableByWindowBackground = draggable
     }
 
     // MARK: - Positioning
