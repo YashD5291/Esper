@@ -6,7 +6,7 @@ struct OverlaySettingsTab: View {
 
     // Local state mirrors @AppStorage (which is @ObservationIgnored)
     @State private var enabled = false
-    @State private var placementMode = "draggable"
+    @State private var lockPosition = false
     @State private var position = "bottomCenter"
     @State private var textSize = "medium"
     @State private var textColor = "#FFFFFF"
@@ -21,15 +21,9 @@ struct OverlaySettingsTab: View {
 
             if enabled {
                 Section("Placement") {
-                    Picker("Mode", selection: $placementMode) {
-                        Text("Fixed").tag("fixed")
-                        Text("Draggable").tag("draggable")
-                    }
-                    .pickerStyle(.segmented)
+                    Toggle("Lock Position", isOn: $lockPosition)
 
-                    if placementMode == "fixed" {
-                        positionPicker
-                    } else {
+                    if !lockPosition {
                         Text("Drag the overlay to any position on screen")
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -51,7 +45,7 @@ struct OverlaySettingsTab: View {
         }
         .onDisappear { overlayController?.previewMode = false }
         .onChange(of: enabled) { _, val in settings.overlayEnabled = val }
-        .onChange(of: placementMode) { _, val in settings.overlayPlacementMode = val }
+        .onChange(of: lockPosition) { _, val in settings.overlayLockPosition = val }
         .onChange(of: position) { _, val in settings.overlayPosition = val }
         .onChange(of: textSize) { _, val in settings.overlayTextSize = val }
         .onChange(of: textColor) { _, val in settings.overlayTextColor = val }
@@ -61,7 +55,7 @@ struct OverlaySettingsTab: View {
 
     private func loadFromSettings() {
         enabled = settings.overlayEnabled
-        placementMode = settings.overlayPlacementMode
+        lockPosition = settings.overlayLockPosition
         position = settings.overlayPosition
         textSize = settings.overlayTextSize
         textColor = settings.overlayTextColor

@@ -135,18 +135,14 @@ final class OverlayController {
 
             CATransaction.commit()
 
-            let isDraggable = settings.overlayPlacementMode == "draggable"
+            let isDraggable = !settings.overlayLockPosition
             panel?.setDraggable(isDraggable)
 
-            if !isDraggable {
-                panel?.reposition(to: settings.parsedOverlayPosition)
-            }
-
             if !(panel?.isVisible ?? false) {
-                if isDraggable, settings.overlayDragX >= 0, settings.overlayDragY >= 0 {
+                if settings.overlayDragX >= 0, settings.overlayDragY >= 0 {
                     panel?.repositionToCoordinate(x: settings.overlayDragX, y: settings.overlayDragY)
-                } else if isDraggable {
-                    panel?.reposition(to: .bottomCenter)
+                } else {
+                    panel?.reposition(to: settings.parsedOverlayPosition)
                 }
                 panel?.orderFrontRegardless()
             }
@@ -158,7 +154,7 @@ final class OverlayController {
     private func ensurePanel(settings: AppSettings) {
         guard !panelCreated else { return }
         let panel = TranscriptPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 660, height: 140),
+            contentRect: NSRect(x: 0, y: 0, width: 560, height: 140),
             styleMask: [],
             backing: .buffered,
             defer: false
@@ -183,26 +179,24 @@ final class OverlayController {
         let maxLines = settings.overlayMaxLines
         if previewMode && engine.status != .listening {
             return Self.sampleLines.prefix(maxLines).enumerated().map { i, text in
-                OverlayLine(id: "sample-\(i)", text: text, dimmed: i == 0 && maxLines > 1)
+                OverlayLine(id: "sample-\(i)", text: text, state: .finalized, confidence: 1.0)
             }
         }
 
         let sentenceCount = engine.sentences.count
-        var raw: [(id: String, text: String)] = engine.sentences.suffix(maxLines).enumerated().map { i, text in
+        var raw: [(id: String, text: String, state: LineState)] = engine.sentences.suffix(maxLines).enumerated().map { i, text in
             let globalIndex = sentenceCount - min(maxLines, sentenceCount) + i
-            return (id: "s-\(globalIndex)", text: text)
+            return (id: "s-\(globalIndex)", text: text, state: .finalized)
         }
 
         let current = engine.currentText.trimmingCharacters(in: .whitespacesAndNewlines)
         if !current.isEmpty, current != raw.last?.text {
             if raw.count >= maxLines { raw.removeFirst() }
-            raw.append((id: "current", text: current))
+            raw.append((id: "current", text: current, state: .draft))
         }
 
-        let total = raw.count
-        return raw.enumerated().map { i, item in
-            let dimmed = total > 1 && i < total - 1
-            return OverlayLine(id: item.id, text: item.text, dimmed: dimmed)
+        return raw.map { item in
+            OverlayLine(id: item.id, text: item.text, state: item.state, confidence: 1.0)
         }
     }
 }
