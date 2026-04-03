@@ -31,16 +31,19 @@ struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .general
 
     var body: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             List(SettingsTab.allCases, selection: $selectedTab) { tab in
                 Label(tab.rawValue, systemImage: tab.icon)
                     .tag(tab)
             }
             .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
-        } detail: {
-            switch selectedTab {
-            case .general:
+            .frame(width: 180)
+
+            Divider()
+
+            Group {
+                switch selectedTab {
+                case .general:
                 GeneralTab(
                     settings: engine.settings,
                     devices: engine.devices,
@@ -65,6 +68,8 @@ struct SettingsView: View {
             case .advanced:
                 AdvancedTab(settings: engine.settings)
             }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 560, minHeight: 400)
         .onAppear {
