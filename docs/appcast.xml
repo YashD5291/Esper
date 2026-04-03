@@ -6,19 +6,25 @@
     <description>Esper app updates</description>
     <language>en</language>
     <item>
-      <title>Version --version</title>
-      <sparkle:version>247</sparkle:version>
-      <sparkle:shortVersionString>--version</sparkle:shortVersionString>
+      <title>Version 3.4.0</title>
+      <sparkle:version>248</sparkle:version>
+      <sparkle:shortVersionString>3.4.0</sparkle:shortVersionString>
       <description><![CDATA[
         <ul>
-          <li>3.4.0</li>
+          <li>Overlay UX redesign: solid dark background</li>
+          <li>draft/finalized text states</li>
+          <li>status strip</li>
+          <li>Telegram delivery indicators</li>
+          <li>context menu</li>
+          <li>presets</li>
+          <li>scrollable history</li>
         </ul>
       ]]></description>
-      <pubDate>Fri, 03 Apr 2026 18:59:19 +0000</pubDate>
+      <pubDate>Fri, 03 Apr 2026 19:23:51 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v--version/Esper---version-arm64.dmg"
-        sparkle:edSignature="i5ieI4U8YoPIWixieBl7bOE47JTxlvHfvvwN4UIOi/XYF+mnDhXYty/6uL/ldCvhKDQaI23cMqZ3gr6cGF+MBA=="
-        length="1684396993"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.4.0/Esper-3.4.0-arm64.dmg"
+        sparkle:edSignature="Tohdl7SfsQWm6g1MnYCnlejEwjoSk17RQIEoWYnvg+LT5l3DszeQSZC8s70NO6aBdTagc8lE3o0Sfh7OiHIhCg=="
+        length="1679371123"
         type="application/octet-stream"
       />
     </item>
