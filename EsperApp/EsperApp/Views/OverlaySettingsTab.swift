@@ -11,6 +11,9 @@ struct OverlaySettingsTab: View {
     @State private var maxLines = 3
     @State private var opacity = 1.0
     @State private var showTelegramStatus = true
+    @State private var autoDismiss = false
+    @State private var autoDismissSeconds = 30
+    @State private var flowButtonEnabled = true
 
     var body: some View {
         Form {
@@ -38,6 +41,25 @@ struct OverlaySettingsTab: View {
                 Section("Indicators") {
                     Toggle("Show Telegram Status", isOn: $showTelegramStatus)
                     Text("Show sent/queued indicators on each line when Telegram is enabled")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Dismiss") {
+                    Toggle("Auto-dismiss after stopping", isOn: $autoDismiss)
+                    if autoDismiss {
+                        Picker("After", selection: $autoDismissSeconds) {
+                            Text("10 seconds").tag(10)
+                            Text("30 seconds").tag(30)
+                            Text("60 seconds").tag(60)
+                            Text("2 minutes").tag(120)
+                        }
+                    }
+                }
+
+                Section("Flow Button") {
+                    Toggle("Show Flow Button", isOn: $flowButtonEnabled)
+                    Text("Floating button for quick start/stop. You can also use Option+Space.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -71,6 +93,9 @@ struct OverlaySettingsTab: View {
         .onChange(of: maxLines) { _, val in settings.overlayMaxLines = val; switchToCustom() }
         .onChange(of: opacity) { _, val in settings.overlayOpacity = val; switchToCustom() }
         .onChange(of: showTelegramStatus) { _, val in settings.overlayShowTelegramStatus = val }
+        .onChange(of: autoDismiss) { _, val in settings.overlayAutoDismiss = val }
+        .onChange(of: autoDismissSeconds) { _, val in settings.overlayAutoDismissSeconds = val }
+        .onChange(of: flowButtonEnabled) { _, val in settings.flowButtonEnabled = val }
     }
 
     private func loadFromSettings() {
@@ -81,6 +106,9 @@ struct OverlaySettingsTab: View {
         maxLines = settings.overlayMaxLines
         opacity = settings.overlayOpacity
         showTelegramStatus = settings.overlayShowTelegramStatus
+        autoDismiss = settings.overlayAutoDismiss
+        autoDismissSeconds = settings.overlayAutoDismissSeconds
+        flowButtonEnabled = settings.flowButtonEnabled
     }
 
     private func switchToCustom() {
