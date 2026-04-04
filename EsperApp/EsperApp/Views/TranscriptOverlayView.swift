@@ -22,6 +22,13 @@ final class OverlayViewModel {
     var opacity: Double = 1.0
     var maxLines: Int = 3
     var showTelegramStatus: Bool = true
+    var energyLevel: Double = 0.0
+    var devices: [AudioDevice] = []
+    var selectedDevice: Int? = nil
+    var errorMessage: String? = nil
+    var onSelectDevice: ((Int) -> Void)?
+    var onDismiss: (() -> Void)?
+    var onOpenSettings: (() -> Void)?
 }
 
 struct OverlayLine: Identifiable, Equatable {
@@ -40,27 +47,35 @@ struct TranscriptOverlayView: View {
     private var maxHeight: CGFloat {
         let lineHeight = viewModel.fontSize * 1.4
         let spacing: CGFloat = 6
-        let padding: CGFloat = 28 // vertical padding top + bottom
-        return CGFloat(viewModel.maxLines) * (lineHeight + spacing) - spacing + padding
+        let padding: CGFloat = 28
+        let topBarHeight: CGFloat = 32
+        let errorHeight: CGFloat = viewModel.errorMessage != nil ? 34 : 0
+        return topBarHeight + CGFloat(viewModel.maxLines) * (lineHeight + spacing) - spacing + padding + errorHeight
     }
 
     var body: some View {
         HStack(spacing: 0) {
             statusStrip
-            ScrollViewReader { proxy in
-                ScrollView(.vertical, showsIndicators: true) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(viewModel.lines) { line in
-                            lineView(line)
+            VStack(spacing: 0) {
+                topBar
+                ScrollViewReader { proxy in
+                    ScrollView(.vertical, showsIndicators: true) {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ForEach(viewModel.lines) { line in
+                                lineView(line)
+                            }
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 14)
+                    }
+                    .onChange(of: viewModel.lines.last?.id) { _, newID in
+                        if let id = newID {
+                            proxy.scrollTo(id, anchor: .bottom)
                         }
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 14)
                 }
-                .onChange(of: viewModel.lines.last?.id) { _, newID in
-                    if let id = newID {
-                        proxy.scrollTo(id, anchor: .bottom)
-                    }
+                if let error = viewModel.errorMessage {
+                    errorBar(error)
                 }
             }
         }
@@ -69,6 +84,86 @@ struct TranscriptOverlayView: View {
         .compositingGroup()
         .opacity(viewModel.opacity)
         .transaction { $0.disablesAnimations = true }
+    }
+
+    // MARK: - Top Bar
+
+    private var topBar: some View {
+        HStack(spacing: 8) {
+            // Audio level meter
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(.white.opacity(0.08))
+                .frame(width: 80, height: 3)
+                .overlay(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(.green)
+                        .frame(width: 80 * min(viewModel.energyLevel * 3, 1.0), height: 3)
+                }
+
+            Spacer()
+
+            // Device picker
+            if !viewModel.devices.isEmpty {
+                Picker("", selection: Binding(
+                    get: { viewModel.selectedDevice ?? -1 },
+                    set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
+                )) {
+                    ForEach(viewModel.devices) { device in
+                        Text(device.name).tag(device.index)
+                    }
+                }
+                .labelsHidden()
+                .fixedSize()
+                .font(.system(size: 10))
+                .controlSize(.mini)
+            }
+
+            // Gear icon
+            Button(action: { viewModel.onOpenSettings?() }) {
+                Image(systemName: "gear")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+            .buttonStyle(.plain)
+
+            // Dismiss X
+            Button(action: { viewModel.onDismiss?() }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .frame(height: 32)
+        .background(
+            Rectangle()
+                .fill(.white.opacity(0.02))
+        )
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(.white.opacity(0.06)).frame(height: 1)
+        }
+    }
+
+    // MARK: - Error Bar
+
+    private func errorBar(_ message: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 11))
+            Text(message)
+                .font(.system(size: 12))
+                .lineLimit(2)
+        }
+        .foregroundStyle(Color(red: 1, green: 0.27, blue: 0.23))
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(red: 1, green: 0.27, blue: 0.23).opacity(0.15))
+        .overlay(alignment: .top) {
+            Rectangle().fill(Color(red: 1, green: 0.27, blue: 0.23).opacity(0.2)).frame(height: 1)
+        }
     }
 
     // MARK: - Status Strip
