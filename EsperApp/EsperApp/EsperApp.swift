@@ -33,7 +33,7 @@ struct EsperApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(engine: engine, updater: updaterController.updater)
+            MenuBarView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
                 .onAppear { ensureLaunched() }
         } label: {
             Image(systemName: engine.status == .listening ? "waveform.circle.fill" : "waveform.circle")
