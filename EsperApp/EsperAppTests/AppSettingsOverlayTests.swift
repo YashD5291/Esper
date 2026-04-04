@@ -9,6 +9,8 @@ final class AppSettingsOverlayTests: XCTestCase {
         "overlayTextSize", "overlayTextColor", "overlayMaxLines",
         "overlayOpacity", "overlayDragX", "overlayDragY",
         "overlayPreset", "overlayShowTelegramStatus", "overlayLockPosition",
+        "flowButtonEnabled", "flowButtonX",
+        "overlayAutoDismiss", "overlayAutoDismissSeconds",
     ]
 
     override func setUp() {
@@ -36,6 +38,10 @@ final class AppSettingsOverlayTests: XCTestCase {
         XCTAssertEqual(settings.overlayPreset, "custom")
         XCTAssertTrue(settings.overlayShowTelegramStatus)
         XCTAssertFalse(settings.overlayLockPosition)
+        XCTAssertTrue(settings.flowButtonEnabled)
+        XCTAssertEqual(settings.flowButtonX, -1.0, accuracy: 0.01)
+        XCTAssertFalse(settings.overlayAutoDismiss)
+        XCTAssertEqual(settings.overlayAutoDismissSeconds, 30)
     }
 
     func testParsedOverlayPosition() {

@@ -49,6 +49,18 @@ final class AppSettings {
     @ObservationIgnored
     @AppStorage("overlayLockPosition") var overlayLockPosition: Bool = false
 
+    @ObservationIgnored
+    @AppStorage("flowButtonEnabled") var flowButtonEnabled: Bool = true
+
+    @ObservationIgnored
+    @AppStorage("flowButtonX") var flowButtonX: Double = -1
+
+    @ObservationIgnored
+    @AppStorage("overlayAutoDismiss") var overlayAutoDismiss: Bool = false
+
+    @ObservationIgnored
+    @AppStorage("overlayAutoDismissSeconds") var overlayAutoDismissSeconds: Int = 30
+
     // MARK: - Overlay Computed Helpers
 
     var parsedOverlayPosition: OverlayPosition {
