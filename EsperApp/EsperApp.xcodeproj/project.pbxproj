@@ -15,9 +15,6 @@
 		A100000004 /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000004; };
 		A100000005 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005; };
 		A100000006 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006; };
-		A100000007 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000007; };
-		A100000008 /* TranscriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000008; };
-		A100000009 /* AudioLevelMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009; };
 		A100000010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010; };
 		A100000011 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011; };
 		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012; };
@@ -57,9 +54,6 @@
 		B100000004 /* Protocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
 		B100000005 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		B100000006 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
-		B100000007 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
-		B100000008 /* TranscriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptView.swift; sourceTree = "<group>"; };
-		B100000009 /* AudioLevelMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLevelMeter.swift; sourceTree = "<group>"; };
 		B100000010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B100000011 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -136,9 +130,6 @@
 			isa = PBXGroup;
 			children = (
 				B100000006 /* MenuBarView.swift */,
-				B100000007 /* MainWindowView.swift */,
-				B100000008 /* TranscriptView.swift */,
-				B100000009 /* AudioLevelMeter.swift */,
 				B100000010 /* SettingsView.swift */,
 				B100000011 /* StatusBadge.swift */,
 				B100000017 /* TranscriptOverlayView.swift */,
@@ -258,9 +249,6 @@
 				A100000004 /* Protocol.swift in Sources */,
 				A100000005 /* AppSettings.swift in Sources */,
 				A100000006 /* MenuBarView.swift in Sources */,
-				A100000007 /* MainWindowView.swift in Sources */,
-				A100000008 /* TranscriptView.swift in Sources */,
-				A100000009 /* AudioLevelMeter.swift in Sources */,
 				A100000010 /* SettingsView.swift in Sources */,
 				A100000011 /* StatusBadge.swift in Sources */,
 				A100000013 /* KeychainHelper.swift in Sources */,
