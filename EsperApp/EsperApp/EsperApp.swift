@@ -3,20 +3,9 @@ import QuartzCore
 import Sparkle
 import SwiftUI
 
-extension Notification.Name {
-    static let reopenMainWindow = Notification.Name("reopenMainWindow")
-}
-
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // MenuBarExtra makes hasVisibleWindows unreliable — it reports true even
-        // when no real windows are on screen. Check for actual visible windows instead.
-        let hasRealWindow = sender.windows.contains { window in
-            window.isVisible && !window.className.contains("StatusBar") && !(window is NSPanel)
-        }
-        if !hasRealWindow {
-            NotificationCenter.default.post(name: .reopenMainWindow, object: nil)
-        }
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         sender.activate(ignoringOtherApps: true)
         return true
     }
@@ -29,7 +18,6 @@ struct EsperApp: App {
     @State private var launched = false
     @State private var overlayController = OverlayController()
     private let updaterController: SPUStandardUpdaterController
-    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
         MenuBarExtra {
@@ -38,18 +26,6 @@ struct EsperApp: App {
         } label: {
             Image(systemName: engine.status == .listening ? "waveform.circle.fill" : "waveform.circle")
         }
-
-        WindowGroup("Esper", id: "main") {
-            MainWindowView(engine: engine)
-                .onAppear {
-                    ensureLaunched()
-                    NSApp.activate(ignoringOtherApps: true)
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .reopenMainWindow)) { _ in
-                    openWindow(id: "main")
-                }
-        }
-        .defaultSize(width: 520, height: 640)
 
         Settings {
             SettingsView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
@@ -77,9 +53,6 @@ struct EsperApp: App {
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
-        DispatchQueue.main.async { [self] in
-            openWindow(id: "main")
-        }
     }
 }
 
@@ -94,6 +67,13 @@ final class OverlayController {
     private var updateTask: Task<Void, Never>?
     private var lastColorHex: String = ""
     private var panelVisible = false
+    private var dismissed = false
+    private var autoDismissTask: Task<Void, Never>?
+
+    private var flowButton: FlowButton?
+    private let flowViewModel = FlowButtonViewModel()
+    private var flowButtonCreated = false
+
     var previewMode = false
 
     func bind(engine: TranscriptionEngine, settings: AppSettings) {
@@ -108,12 +88,23 @@ final class OverlayController {
     }
 
     private func update(engine: TranscriptionEngine, settings: AppSettings) {
+        // --- Flow Button ---
+        updateFlowButton(engine: engine, settings: settings)
+
+        // --- Overlay ---
+        let isActive = engine.status == .listening || engine.status == .transcribing
         let hasContent = !engine.sentences.isEmpty || !engine.currentText.isEmpty
-        let shouldShow = settings.overlayEnabled &&
-            (engine.status == .listening || engine.status == .transcribing || hasContent || previewMode)
+
+        if isActive && dismissed {
+            dismissed = false
+            autoDismissTask?.cancel()
+        }
+
+        let shouldShow = settings.overlayEnabled && !dismissed &&
+            (isActive || hasContent || previewMode)
 
         if shouldShow {
-            ensurePanel(settings: settings)
+            ensurePanel(engine: engine, settings: settings)
 
             CATransaction.begin()
             CATransaction.setDisableActions(true)
@@ -140,6 +131,10 @@ final class OverlayController {
             if newMaxLines != viewModel.maxLines { viewModel.maxLines = newMaxLines }
 
             viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
+            viewModel.energyLevel = engine.energyLevel
+            viewModel.devices = engine.devices
+            viewModel.selectedDevice = engine.selectedDevice
+            viewModel.errorMessage = engine.errorMessage
 
             panel?.isPositionLocked = settings.overlayLockPosition
 
@@ -155,13 +150,81 @@ final class OverlayController {
                 panel?.animateIn()
                 panelVisible = true
             }
+
+            if !isActive && hasContent && settings.overlayAutoDismiss {
+                scheduleAutoDismiss(seconds: settings.overlayAutoDismissSeconds)
+            } else {
+                autoDismissTask?.cancel()
+            }
         } else if panelVisible {
             panel?.animateOut()
             panelVisible = false
         }
     }
 
-    private func ensurePanel(settings: AppSettings) {
+    // MARK: - Flow Button
+
+    private func updateFlowButton(engine: TranscriptionEngine, settings: AppSettings) {
+        if settings.flowButtonEnabled {
+            ensureFlowButton(engine: engine, settings: settings)
+            flowViewModel.engineStatus = engine.status
+            flowViewModel.energyLevel = engine.energyLevel
+            flowViewModel.errorMessage = engine.errorMessage
+            flowButton?.setListeningBorder(engine.status == .listening)
+
+            if engine.status == .listening {
+                flowButton?.alphaValue = 1.0
+            }
+        } else {
+            flowButton?.hideButton()
+        }
+    }
+
+    private func ensureFlowButton(engine: TranscriptionEngine, settings: AppSettings) {
+        guard !flowButtonCreated else { return }
+        let btn = FlowButton(
+            contentRect: NSRect(x: 0, y: 0, width: 160, height: 36),
+            styleMask: [],
+            backing: .buffered,
+            defer: false
+        )
+        let host = NSHostingView(rootView: FlowButtonView(
+            viewModel: flowViewModel,
+            onToggle: {
+                if engine.status == .listening {
+                    engine.stopListening()
+                } else if engine.status == .idle {
+                    engine.startListening()
+                }
+            },
+            onStop: {
+                engine.stopListening()
+            }
+        ))
+        btn.setSwiftUIContent(host)
+        btn.installTrackingArea()
+
+        btn.onDragEnd = { x in
+            settings.flowButtonX = x
+        }
+        btn.onContextAction = { action in
+            switch action {
+            case .openSettings:
+                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            }
+        }
+
+        let savedX = settings.flowButtonX >= 0 ? settings.flowButtonX : nil
+        btn.positionAtBottom(x: savedX)
+        btn.showButton()
+
+        flowButton = btn
+        flowButtonCreated = true
+    }
+
+    // MARK: - Overlay Panel
+
+    private func ensurePanel(engine: TranscriptionEngine, settings: AppSettings) {
         guard !panelCreated else { return }
         let panel = TranscriptPanel(
             contentRect: NSRect(x: 0, y: 0, width: 560, height: 140),
@@ -169,6 +232,17 @@ final class OverlayController {
             backing: .buffered,
             defer: false
         )
+
+        viewModel.onSelectDevice = { index in
+            engine.setDevice(index)
+        }
+        viewModel.onDismiss = { [weak self] in
+            self?.dismissOverlay()
+        }
+        viewModel.onOpenSettings = {
+            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        }
+
         let host = NSHostingView(rootView: TranscriptOverlayView(viewModel: viewModel))
         panel.setSwiftUIContent(host)
         panel.installTrackingArea()
@@ -185,6 +259,25 @@ final class OverlayController {
         self.panel = panel
         panelCreated = true
     }
+
+    private func dismissOverlay() {
+        dismissed = true
+        panel?.animateOut()
+        panelVisible = false
+    }
+
+    // MARK: - Auto-Dismiss
+
+    private func scheduleAutoDismiss(seconds: Int) {
+        autoDismissTask?.cancel()
+        autoDismissTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self, self.panelVisible else { return }
+            self.dismissOverlay()
+        }
+    }
+
+    // MARK: - Context Menu
 
     private func handleContextAction(_ action: OverlayContextAction, settings: AppSettings) {
         switch action {
@@ -205,6 +298,8 @@ final class OverlayController {
             NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
         }
     }
+
+    // MARK: - Overlay Lines
 
     private static let sampleLines = [
         "This is a preview of the overlay",
