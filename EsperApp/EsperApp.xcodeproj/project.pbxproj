@@ -35,6 +35,8 @@
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
 		A200000004 /* UpdateSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004; };
 		A100000024 /* OverlayPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000023; };
+		A100000025 /* FlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000024 /* FlowButton.swift */; };
+		A100000026 /* FlowButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025 /* FlowButtonView.swift */; };
 		A200000005 /* OverlayPresetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005; };
 /* End PBXBuildFile section */
 
@@ -72,6 +74,8 @@
 		B100000021 /* GlobalHotkey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlobalHotkey.swift; sourceTree = "<group>"; };
 		B100000022 /* ShortcutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsTab.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B100000024 /* FlowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowButton.swift; sourceTree = "<group>"; };
+		B100000025 /* FlowButtonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowButtonView.swift; sourceTree = "<group>"; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
 		B200000003 /* AppSettingsOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsOverlayTests.swift; sourceTree = "<group>"; };
@@ -99,6 +103,7 @@
 				B100000002 /* ProcessBridge.swift */,
 				B100000003 /* TranscriptionEngine.swift */,
 				B100000016 /* TranscriptPanel.swift */,
+				B100000024 /* FlowButton.swift */,
 				D100000003 /* Models */,
 				D100000004 /* Views */,
 				D100000006 /* Helpers */,
@@ -141,6 +146,7 @@
 				B100000019 /* CheckForUpdatesView.swift */,
 				B100000020 /* UpdateSettingsTab.swift */,
 				B100000022 /* ShortcutsTab.swift */,
+				B100000025 /* FlowButtonView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -267,6 +273,8 @@
 				A100000022 /* GlobalHotkey.swift in Sources */,
 				A100000023 /* ShortcutsTab.swift in Sources */,
 				A100000024 /* OverlayPreset.swift in Sources */,
+				A100000025 /* FlowButton.swift in Sources */,
+				A100000026 /* FlowButtonView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
