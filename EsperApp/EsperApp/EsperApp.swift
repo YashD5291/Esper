@@ -3,10 +3,58 @@ import QuartzCore
 import Sparkle
 import SwiftUI
 
+extension Notification.Name {
+    static let openSettingsRequested = Notification.Name("openSettingsRequested")
+}
+
+/// Opens the SwiftUI Settings window by posting a notification that a hidden
+/// SettingsOpener window listens for. The opener calls @Environment(\.openSettings).
+/// The `showSettingsWindow:` selector was removed in macOS 14+, so this is the
+/// supported path for non-activating panels and menu bar buttons.
+func openSettingsWindow() {
+    NSApp.activate(ignoringOtherApps: true)
+    NotificationCenter.default.post(name: .openSettingsRequested, object: nil)
+}
+
+/// Hidden view that listens for the open-settings notification and calls the
+/// SwiftUI environment's openSettings action. Must be hosted inside a Window
+/// scene declared BEFORE the Settings scene in the App body.
+struct SettingsOpener: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .background(WindowHider())
+            .onReceive(NotificationCenter.default.publisher(for: .openSettingsRequested)) { _ in
+                openSettings()
+            }
+    }
+}
+
+/// Makes the host window invisible synchronously (pre-paint) while keeping the
+/// SwiftUI view mounted so it can still receive notifications. Also removes the
+/// closable style so Cmd+W can never unmount the receiver.
+private struct WindowHider: NSViewRepresentable {
+    func makeNSView(context: Context) -> HidingNSView { HidingNSView() }
+    func updateNSView(_ nsView: HidingNSView, context: Context) {}
+}
+
+private final class HidingNSView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+        window.styleMask.remove(.closable)
+        window.setIsVisible(false)
+        window.orderOut(nil)
+        window.collectionBehavior = [.stationary, .ignoresCycle]
+        window.isExcludedFromWindowsMenu = true
+    }
+}
+
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-        sender.activate(ignoringOtherApps: true)
+        openSettingsWindow()
         return true
     }
 }
@@ -20,11 +68,21 @@ struct EsperApp: App {
     private let updaterController: SPUStandardUpdaterController
 
     var body: some Scene {
+        // Hidden window that hosts the SettingsOpener. Must be declared BEFORE
+        // the Settings scene or @Environment(\.openSettings) silently fails on
+        // macOS 15.5+.
+        Window("SettingsOpener", id: "settings-opener") {
+            SettingsOpener()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .commandsRemoved()
+
         MenuBarExtra {
             MenuBarView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
-                .onAppear { ensureLaunched() }
         } label: {
             Image(systemName: engine.status == .listening ? "waveform.circle.fill" : "waveform.circle")
+                .onAppear { ensureLaunched() }
         }
 
         Settings {
@@ -100,8 +158,7 @@ final class OverlayController {
             autoDismissTask?.cancel()
         }
 
-        let shouldShow = settings.overlayEnabled && !dismissed &&
-            (isActive || hasContent || previewMode)
+        let shouldShow = !dismissed && (isActive || hasContent || previewMode)
 
         if shouldShow {
             ensurePanel(engine: engine, settings: settings)
@@ -170,6 +227,7 @@ final class OverlayController {
             flowViewModel.engineStatus = engine.status
             flowViewModel.energyLevel = engine.energyLevel
             flowViewModel.errorMessage = engine.errorMessage
+            flowViewModel.overlayDismissed = dismissed && engine.status == .listening
             flowButton?.setListeningBorder(engine.status == .listening)
 
             if engine.status == .listening {
@@ -199,6 +257,9 @@ final class OverlayController {
             },
             onStop: {
                 engine.stopListening()
+            },
+            onReopen: { [weak self] in
+                self?.reopenOverlay()
             }
         ))
         btn.setSwiftUIContent(host)
@@ -210,7 +271,7 @@ final class OverlayController {
         btn.onContextAction = { action in
             switch action {
             case .openSettings:
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+                openSettingsWindow()
             }
         }
 
@@ -240,7 +301,7 @@ final class OverlayController {
             self?.dismissOverlay()
         }
         viewModel.onOpenSettings = {
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            openSettingsWindow()
         }
 
         let host = NSHostingView(rootView: TranscriptOverlayView(viewModel: viewModel))
@@ -264,6 +325,10 @@ final class OverlayController {
         dismissed = true
         panel?.animateOut()
         panelVisible = false
+    }
+
+    private func reopenOverlay() {
+        dismissed = false
     }
 
     // MARK: - Auto-Dismiss
@@ -295,7 +360,7 @@ final class OverlayController {
         case .lockPosition:
             settings.overlayLockPosition.toggle()
         case .openSettings:
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            openSettingsWindow()
         }
     }
 
