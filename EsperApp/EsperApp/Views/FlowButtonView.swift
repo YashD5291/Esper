@@ -8,6 +8,7 @@ final class FlowButtonViewModel {
     var engineStatus: EngineStatus = .idle
     var energyLevel: Double = 0.0
     var errorMessage: String?
+    var overlayDismissed = false
 }
 
 // MARK: - Flow Button View
@@ -16,26 +17,46 @@ struct FlowButtonView: View {
     let viewModel: FlowButtonViewModel
     var onToggle: (() -> Void)?
     var onStop: (() -> Void)?
+    var onReopen: (() -> Void)?
 
     var body: some View {
         HStack(spacing: 8) {
             switch viewModel.engineStatus {
             case .listening:
-                waveformBars
-                Text("Listening")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.green)
-                Button(action: { onStop?() }) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(.red)
-                        .frame(width: 16, height: 16)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 1)
-                                .fill(.white)
-                                .frame(width: 8, height: 8)
-                        )
+                HStack(spacing: 0) {
+                    // Left zone: waveform + chevron + label → reopens overlay
+                    HStack(spacing: 8) {
+                        waveformBars
+                        if viewModel.overlayDismissed {
+                            Image(systemName: "chevron.up")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(Color.blue.opacity(0.6))
+                        }
+                        Text("Listening")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(.green)
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        if viewModel.overlayDismissed {
+                            onReopen?()
+                        }
+                    }
+
+                    // Right zone: stop button
+                    Button(action: { onStop?() }) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(.red)
+                            .frame(width: 16, height: 16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(.white)
+                                    .frame(width: 8, height: 8)
+                            )
+                            .padding(.leading, 8)
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
             case .transcribing:
                 Circle()
@@ -75,7 +96,11 @@ struct FlowButtonView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .contentShape(Rectangle())
-        .onTapGesture { onToggle?() }
+        .onTapGesture {
+            if viewModel.engineStatus != .listening {
+                onToggle?()
+            }
+        }
     }
 
     // MARK: - Waveform Bars
