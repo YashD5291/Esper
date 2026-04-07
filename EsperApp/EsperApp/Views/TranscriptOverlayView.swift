@@ -70,7 +70,9 @@ struct TranscriptOverlayView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            statusStrip
+            if viewModel.onStop == nil {
+                statusStrip
+            }
             VStack(spacing: 0) {
                 topBar
                 ScrollViewReader { proxy in
@@ -109,8 +111,8 @@ struct TranscriptOverlayView: View {
     private var topBar: some View {
         HStack(spacing: 0) {
             if viewModel.onStop != nil {
-                // Traffic lights mode (morphing panel)
-                trafficLights
+                // Overlay controls (morphing panel)
+                overlayControls
                     .padding(.leading, 10)
                 Spacer()
             }
@@ -168,29 +170,37 @@ struct TranscriptOverlayView: View {
         }
     }
 
-    private var trafficLights: some View {
-        HStack(spacing: 7) {
-            // Red — stop listening
+    private var overlayControls: some View {
+        HStack(spacing: 12) {
+            // Stop listening
             Button(action: { viewModel.onStop?() }) {
-                Circle()
-                    .fill(Color.red)
-                    .frame(width: 12, height: 12)
+                HStack(spacing: 4) {
+                    Image(systemName: "stop.fill")
+                        .font(.system(size: 8))
+                    Text("Stop")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundStyle(.red.opacity(0.8))
             }
             .buttonStyle(.plain)
 
-            // Yellow — collapse to pill
+            // Collapse to pill
             Button(action: { viewModel.onCollapse?() }) {
-                Circle()
-                    .fill(Color.yellow)
-                    .frame(width: 12, height: 12)
+                HStack(spacing: 4) {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 8, weight: .semibold))
+                    Text("Minimize")
+                        .font(.system(size: 10, weight: .medium))
+                }
+                .foregroundStyle(.white.opacity(0.4))
             }
             .buttonStyle(.plain)
 
-            // Green — open settings
+            // Open settings
             Button(action: { viewModel.onOpenSettings?() }) {
-                Circle()
-                    .fill(Color.green)
-                    .frame(width: 12, height: 12)
+                Image(systemName: "gearshape")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
             }
             .buttonStyle(.plain)
         }

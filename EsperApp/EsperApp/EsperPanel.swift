@@ -46,11 +46,11 @@ final class EsperPanel: NSPanel {
     private var pillFrame: NSRect = .zero
     private var overlayFrame: NSRect = .zero
 
-    // Spring parameters
-    private let expandStiffness: CGFloat = 280
-    private let expandDamping: CGFloat = 22
-    private let collapseStiffness: CGFloat = 280
-    private let collapseDamping: CGFloat = 34
+    // Spring parameters — tuned for smooth, deliberate morph
+    private let expandStiffness: CGFloat = 140
+    private let expandDamping: CGFloat = 18
+    private let collapseStiffness: CGFloat = 160
+    private let collapseDamping: CGFloat = 24
 
     // Visual targets per mode
     private let pillCornerRadius: CGFloat = 18
