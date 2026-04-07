@@ -35,6 +35,8 @@
 		A100000025 /* FlowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000024 /* FlowButton.swift */; };
 		A100000026 /* FlowButtonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000025 /* FlowButtonView.swift */; };
 		A200000005 /* OverlayPresetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005; };
+		A100000027 /* EsperPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EsperPanel.swift */; };
+		A100000028 /* EsperPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027 /* EsperPanelView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,6 +78,8 @@
 		B200000004 /* UpdateSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTests.swift; sourceTree = "<group>"; };
 		B100000023 /* OverlayPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPreset.swift; sourceTree = "<group>"; };
 		B200000005 /* OverlayPresetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPresetTests.swift; sourceTree = "<group>"; };
+		B100000026 /* EsperPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperPanel.swift; sourceTree = "<group>"; };
+		B100000027 /* EsperPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperPanelView.swift; sourceTree = "<group>"; };
 		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -98,6 +102,7 @@
 				B100000003 /* TranscriptionEngine.swift */,
 				B100000016 /* TranscriptPanel.swift */,
 				B100000024 /* FlowButton.swift */,
+				B100000026 /* EsperPanel.swift */,
 				D100000003 /* Models */,
 				D100000004 /* Views */,
 				D100000006 /* Helpers */,
@@ -138,6 +143,7 @@
 				B100000020 /* UpdateSettingsTab.swift */,
 				B100000022 /* ShortcutsTab.swift */,
 				B100000025 /* FlowButtonView.swift */,
+				B100000027 /* EsperPanelView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -263,6 +269,8 @@
 				A100000024 /* OverlayPreset.swift in Sources */,
 				A100000025 /* FlowButton.swift in Sources */,
 				A100000026 /* FlowButtonView.swift in Sources */,
+				A100000027 /* EsperPanel.swift in Sources */,
+				A100000028 /* EsperPanelView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

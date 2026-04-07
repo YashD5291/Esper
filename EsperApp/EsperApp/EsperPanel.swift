@@ -38,7 +38,7 @@ final class EsperPanel: NSPanel {
 
     // MARK: Spring Animation
 
-    private var displayLink: CADisplayLink?
+    private var displayLink: Timer?
     private var spring = SpringState()
     private var targetPosition: CGFloat = 0
     private var lastTimestamp: CFTimeInterval = 0
@@ -119,9 +119,7 @@ final class EsperPanel: NSPanel {
         hostView.autoresizingMask = [.width, .height]
         hostView.frame = contentView?.bounds ?? .zero
 
-        if let layer = hostView.layer {
-            layer.layerContentsRedrawPolicy = .onSetNeedsDisplay
-        }
+        hostView.layerContentsRedrawPolicy = .onSetNeedsDisplay
     }
 
     // MARK: - Tracking Area
@@ -359,13 +357,15 @@ final class EsperPanel: NSPanel {
     private func startDisplayLink() {
         displayLink?.invalidate()
 
-        let link = CADisplayLink(target: self, selector: #selector(springStep(_:)))
-        link.add(to: .main, forMode: .common)
-        displayLink = link
         lastTimestamp = CACurrentMediaTime()
+        let link = Timer(timeInterval: 1.0 / 120.0, repeats: true) { [weak self] _ in
+            self?.springStep()
+        }
+        RunLoop.main.add(link, forMode: .common)
+        displayLink = link
     }
 
-    @objc private func springStep(_ link: CADisplayLink) {
+    private func springStep() {
         let now = CACurrentMediaTime()
         let dt = CGFloat(min(now - lastTimestamp, 1.0 / 30.0))
         lastTimestamp = now
