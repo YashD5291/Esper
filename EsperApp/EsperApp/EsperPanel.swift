@@ -153,7 +153,7 @@ final class EsperPanel: NSPanel {
             }
         } else {
             ignoresMouseEvents = false
-            isMovableByWindowBackground = !isPositionLocked
+            isMovableByWindowBackground = false  // Overlay is never draggable
         }
     }
 
