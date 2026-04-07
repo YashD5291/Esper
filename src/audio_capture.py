@@ -69,11 +69,14 @@ class AudioCapture:
         dev_idx = self.device if self.device is not None else sd.default.device[0]
         dev_info = sd.query_devices(dev_idx)
         dev_name = dev_info["name"]
-        log.info("Audio capture starting on device [%d] %s", dev_idx, dev_name)
+        dev_channels = int(dev_info["max_input_channels"])
+        # Use device's native channel count — callback extracts channel 0 only
+        channels = dev_channels if dev_channels > 0 else config.CHANNELS
+        log.info("Audio capture starting on device [%d] %s (%d ch)", dev_idx, dev_name, channels)
 
         self._stream = sd.InputStream(
             samplerate=config.SAMPLE_RATE,
-            channels=config.CHANNELS,
+            channels=channels,
             dtype="float32",
             blocksize=config.CHUNK_SAMPLES,
             device=self.device,
