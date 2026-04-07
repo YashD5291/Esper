@@ -64,7 +64,6 @@ struct TranscriptOverlayView: View {
         let lineHeight = viewModel.fontSize * 1.4
         let spacing: CGFloat = 6
         let padding: CGFloat = 28
-        let topBarHeight: CGFloat = 32
         let errorHeight: CGFloat = viewModel.errorMessage != nil ? 34 : 0
         return topBarHeight + CGFloat(viewModel.maxLines) * (lineHeight + spacing) - spacing + padding + errorHeight
     }
@@ -84,6 +83,7 @@ struct TranscriptOverlayView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 14)
+                        .transaction { $0.disablesAnimations = true }
                     }
                     .onChange(of: viewModel.lines.last?.id) { _, newID in
                         if let id = newID {
@@ -100,66 +100,99 @@ struct TranscriptOverlayView: View {
         .frame(maxHeight: maxHeight)
         .compositingGroup()
         .opacity(viewModel.opacity)
-        .transaction { $0.disablesAnimations = true }
     }
 
     // MARK: - Top Bar
 
+    private let topBarHeight: CGFloat = 32
+
     private var topBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 0) {
+            if viewModel.onStop != nil {
+                // Traffic lights mode (morphing panel)
+                trafficLights
+                    .padding(.leading, 10)
+                Spacer()
+            }
+
             // Audio level meter
-            RoundedRectangle(cornerRadius: 1.5)
-                .fill(.white.opacity(0.08))
-                .frame(width: 80, height: 3)
-                .overlay(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(.green)
-                        .frame(width: 80 * min(viewModel.energyLevel * 3, 1.0), height: 3)
-                }
+            ZStack(alignment: .leading) {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(.white.opacity(0.08))
+                    .frame(width: 80, height: 3)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(.green)
+                    .frame(width: 80 * min(viewModel.energyLevel * 3, 1.0), height: 3)
+            }
 
-            Spacer()
-
-            // Device picker
             if !viewModel.devices.isEmpty {
                 Picker("", selection: Binding(
-                    get: { viewModel.selectedDevice ?? -1 },
-                    set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
+                    get: { viewModel.selectedDevice ?? 0 },
+                    set: { viewModel.onSelectDevice?($0) }
                 )) {
-                    ForEach(viewModel.devices) { device in
-                        Text(device.name).tag(device.index)
+                    ForEach(Array(viewModel.devices.enumerated()), id: \.offset) { index, device in
+                        Text(device.name).tag(index)
                     }
                 }
                 .labelsHidden()
-                .fixedSize()
-                .font(.system(size: 10))
                 .controlSize(.mini)
+                .font(.system(size: 10))
+                .frame(maxWidth: 140)
+                .padding(.leading, 6)
             }
 
-            // Gear icon
-            Button(action: { viewModel.onOpenSettings?() }) {
-                Image(systemName: "gear")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.4))
-            }
-            .buttonStyle(.plain)
+            if viewModel.onStop == nil {
+                Spacer()
+                // Legacy mode — gear + dismiss
+                Button(action: { viewModel.onOpenSettings?() }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 4)
 
-            // Dismiss X
-            Button(action: { viewModel.onDismiss?() }) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.4))
+                Button(action: { viewModel.onDismiss?() }) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .frame(height: 32)
-        .background(
-            Rectangle()
-                .fill(.white.opacity(0.02))
-        )
+        .padding(.horizontal, 8)
+        .frame(height: topBarHeight)
+        .background(.white.opacity(0.02))
         .overlay(alignment: .bottom) {
             Rectangle().fill(.white.opacity(0.06)).frame(height: 1)
+        }
+    }
+
+    private var trafficLights: some View {
+        HStack(spacing: 7) {
+            // Red — stop listening
+            Button(action: { viewModel.onStop?() }) {
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(.plain)
+
+            // Yellow — collapse to pill
+            Button(action: { viewModel.onCollapse?() }) {
+                Circle()
+                    .fill(Color.yellow)
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(.plain)
+
+            // Green — open settings
+            Button(action: { viewModel.onOpenSettings?() }) {
+                Circle()
+                    .fill(Color.green)
+                    .frame(width: 12, height: 12)
+            }
+            .buttonStyle(.plain)
         }
     }
 
