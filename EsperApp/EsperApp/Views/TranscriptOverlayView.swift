@@ -111,41 +111,79 @@ struct TranscriptOverlayView: View {
     private var topBar: some View {
         HStack(spacing: 0) {
             if viewModel.onStop != nil {
-                // Overlay controls (morphing panel)
-                overlayControls
-                    .padding(.leading, 10)
-                Spacer()
-            }
-
-            // Audio level meter
-            ZStack(alignment: .leading) {
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(.white.opacity(0.08))
-                    .frame(width: 80, height: 3)
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(.green)
-                    .frame(width: 80 * min(viewModel.energyLevel * 3, 1.0), height: 3)
-            }
-
-            if !viewModel.devices.isEmpty {
-                Picker("", selection: Binding(
-                    get: { viewModel.selectedDevice ?? -1 },
-                    set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
-                )) {
-                    ForEach(viewModel.devices) { device in
-                        Text(device.name).tag(device.index)
+                // Left: device picker + settings
+                if !viewModel.devices.isEmpty {
+                    Picker("", selection: Binding(
+                        get: { viewModel.selectedDevice ?? -1 },
+                        set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
+                    )) {
+                        ForEach(viewModel.devices) { device in
+                            Text(device.name).tag(device.index)
+                        }
                     }
+                    .labelsHidden()
+                    .controlSize(.mini)
+                    .font(.system(size: 10))
+                    .frame(maxWidth: 140)
                 }
-                .labelsHidden()
-                .controlSize(.mini)
-                .font(.system(size: 10))
-                .frame(maxWidth: 140)
-                .padding(.leading, 6)
-            }
 
-            if viewModel.onStop == nil {
+                Button(action: { viewModel.onOpenSettings?() }) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+                .buttonStyle(.plain)
+                .padding(.leading, 6)
+
                 Spacer()
-                // Legacy mode — gear + dismiss
+
+                // Right: waveform + stop button (same as pill)
+                HStack(spacing: 8) {
+                    overlayWaveformBars
+                    Rectangle()
+                        .fill(.white.opacity(0.08))
+                        .frame(width: 1, height: 16)
+                    Button(action: { viewModel.onStop?() }) {
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(.red)
+                            .frame(width: 16, height: 16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 1)
+                                    .fill(.white)
+                                    .frame(width: 8, height: 8)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+            } else {
+                // Legacy mode — audio meter + device picker + gear + dismiss
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(.white.opacity(0.08))
+                        .frame(width: 80, height: 3)
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(.green)
+                        .frame(width: 80 * min(viewModel.energyLevel * 3, 1.0), height: 3)
+                }
+
+                if !viewModel.devices.isEmpty {
+                    Picker("", selection: Binding(
+                        get: { viewModel.selectedDevice ?? -1 },
+                        set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
+                    )) {
+                        ForEach(viewModel.devices) { device in
+                            Text(device.name).tag(device.index)
+                        }
+                    }
+                    .labelsHidden()
+                    .controlSize(.mini)
+                    .font(.system(size: 10))
+                    .frame(maxWidth: 140)
+                    .padding(.leading, 6)
+                }
+
+                Spacer()
+
                 Button(action: { viewModel.onOpenSettings?() }) {
                     Image(systemName: "gearshape")
                         .font(.system(size: 11, weight: .medium))
@@ -170,40 +208,20 @@ struct TranscriptOverlayView: View {
         }
     }
 
-    private var overlayControls: some View {
-        HStack(spacing: 12) {
-            // Stop listening
-            Button(action: { viewModel.onStop?() }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "stop.fill")
-                        .font(.system(size: 8))
-                    Text("Stop")
-                        .font(.system(size: 10, weight: .medium))
-                }
-                .foregroundStyle(.red.opacity(0.8))
+    private var overlayWaveformBars: some View {
+        HStack(spacing: 2) {
+            ForEach(0..<5, id: \.self) { i in
+                let phase = Double(i) * 0.2
+                let wave = sin(Date.now.timeIntervalSinceReferenceDate * 8 + phase)
+                let modulated = viewModel.energyLevel * (0.5 + 0.5 * wave)
+                let h = 4.0 + 16.0 * min(modulated * 3, 1.0)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(.white)
+                    .frame(width: 3, height: h)
             }
-            .buttonStyle(.plain)
-
-            // Collapse to pill
-            Button(action: { viewModel.onCollapse?() }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 8, weight: .semibold))
-                    Text("Minimize")
-                        .font(.system(size: 10, weight: .medium))
-                }
-                .foregroundStyle(.white.opacity(0.4))
-            }
-            .buttonStyle(.plain)
-
-            // Open settings
-            Button(action: { viewModel.onOpenSettings?() }) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.35))
-            }
-            .buttonStyle(.plain)
         }
+        .frame(height: 20)
+        .animation(.linear(duration: 0.1), value: viewModel.energyLevel)
     }
 
     // MARK: - Error Bar
