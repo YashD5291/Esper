@@ -137,7 +137,7 @@ struct TranscriptOverlayView: View {
 
                 Spacer()
 
-                // Right: waveform + stop button (same as pill)
+                // Right: waveform + stop + close
                 HStack(spacing: 8) {
                     overlayWaveformBars
                     Rectangle()
@@ -152,6 +152,12 @@ struct TranscriptOverlayView: View {
                                     .fill(.white)
                                     .frame(width: 8, height: 8)
                             )
+                    }
+                    .buttonStyle(.plain)
+                    Button(action: { viewModel.onCollapse?() }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.35))
                     }
                     .buttonStyle(.plain)
                 }

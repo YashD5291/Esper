@@ -64,6 +64,7 @@ final class EsperPanel: NSPanel {
     // MARK: Auto-Fade
 
     private var fadeWorkItem: DispatchWorkItem?
+    private var exitWorkItem: DispatchWorkItem?
     private var isMouseInside = false
 
     // MARK: Init
@@ -145,6 +146,7 @@ final class EsperPanel: NSPanel {
     override func mouseEntered(with event: NSEvent) {
         isMouseInside = true
         fadeWorkItem?.cancel()
+        exitWorkItem?.cancel()
         if currentMode == .pill {
             NSAnimationContext.runAnimationGroup { ctx in
                 ctx.duration = 0.15
@@ -153,7 +155,7 @@ final class EsperPanel: NSPanel {
             }
         } else {
             ignoresMouseEvents = false
-            isMovableByWindowBackground = false  // Overlay is never draggable
+            isMovableByWindowBackground = false
         }
     }
 
@@ -162,11 +164,13 @@ final class EsperPanel: NSPanel {
         if currentMode == .pill {
             scheduleAutoFade()
         } else {
+            exitWorkItem?.cancel()
             let item = DispatchWorkItem { [weak self] in
                 guard let self, !self.isMouseInside else { return }
                 self.ignoresMouseEvents = true
                 self.isMovableByWindowBackground = false
             }
+            exitWorkItem = item
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: item)
         }
     }
@@ -311,6 +315,16 @@ final class EsperPanel: NSPanel {
     func morphTo(_ mode: PanelMode, overlayHeight: CGFloat, animated: Bool = true) {
         guard mode != currentMode else { return }
         currentMode = mode
+
+        // Reset mouse state for the new mode
+        exitWorkItem?.cancel()
+        if mode == .overlay {
+            ignoresMouseEvents = false
+            isMovableByWindowBackground = false
+        } else {
+            ignoresMouseEvents = false
+            isMovableByWindowBackground = true
+        }
 
         // Calculate target frames
         let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
