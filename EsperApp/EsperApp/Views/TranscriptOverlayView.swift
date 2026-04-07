@@ -1,6 +1,13 @@
 import AppKit
 import SwiftUI
 
+// MARK: - Panel Mode
+
+enum PanelMode: Equatable {
+    case pill
+    case overlay
+}
+
 // MARK: - Line State
 
 enum LineState: Equatable {
@@ -29,6 +36,15 @@ final class OverlayViewModel {
     var onSelectDevice: ((Int) -> Void)?
     var onDismiss: (() -> Void)?
     var onOpenSettings: (() -> Void)?
+
+    // Panel morph state
+    var mode: PanelMode = .pill
+    var overlayDismissed = false
+
+    // Additional callbacks
+    var onToggle: (() -> Void)?
+    var onStop: (() -> Void)?
+    var onCollapse: (() -> Void)?
 }
 
 struct OverlayLine: Identifiable, Equatable {
@@ -65,6 +81,7 @@ struct TranscriptOverlayView: View {
                                 lineView(line)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 18)
                         .padding(.vertical, 14)
                     }
