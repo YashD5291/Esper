@@ -129,11 +129,11 @@ struct TranscriptOverlayView: View {
 
             if !viewModel.devices.isEmpty {
                 Picker("", selection: Binding(
-                    get: { viewModel.selectedDevice ?? 0 },
-                    set: { viewModel.onSelectDevice?($0) }
+                    get: { viewModel.selectedDevice ?? -1 },
+                    set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
                 )) {
-                    ForEach(Array(viewModel.devices.enumerated()), id: \.offset) { index, device in
-                        Text(device.name).tag(index)
+                    ForEach(viewModel.devices) { device in
+                        Text(device.name).tag(device.index)
                     }
                 }
                 .labelsHidden()
