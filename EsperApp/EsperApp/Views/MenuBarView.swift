@@ -5,7 +5,6 @@ struct MenuBarView: View {
     let engine: TranscriptionEngine
     let overlayController: OverlayController
     let updater: SPUUpdater
-    @State private var overlayEnabled = false
     @State private var flowButtonEnabled = true
 
     var body: some View {
@@ -26,8 +25,10 @@ struct MenuBarView: View {
                 engine.startListening()
             }
         } else {
-            Text("Loading model...")
-                .foregroundStyle(.secondary)
+            Button("Start Listening") {
+                engine.startListening()
+            }
+            .disabled(true)
         }
 
         Divider()
@@ -42,11 +43,6 @@ struct MenuBarView: View {
             }
 
             Divider()
-        }
-
-        Button(overlayEnabled ? "Hide Overlay" : "Show Overlay") {
-            overlayEnabled.toggle()
-            engine.settings.overlayEnabled = overlayEnabled
         }
 
         Button(flowButtonEnabled ? "Hide Flow Button" : "Show Flow Button") {
@@ -73,7 +69,6 @@ struct MenuBarView: View {
         }
         .keyboardShortcut("q")
         .onAppear {
-            overlayEnabled = engine.settings.overlayEnabled
             flowButtonEnabled = engine.settings.flowButtonEnabled
         }
     }

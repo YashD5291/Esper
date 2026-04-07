@@ -17,18 +17,6 @@ final class AppSettings {
 
     // Overlay
     @ObservationIgnored
-    @AppStorage("overlayEnabled") var overlayEnabled: Bool = false
-
-    @ObservationIgnored
-    @AppStorage("overlayPosition") var overlayPosition: String = "bottomCenter"
-
-    @ObservationIgnored
-    @AppStorage("overlayDragX") var overlayDragX: Double = -1
-
-    @ObservationIgnored
-    @AppStorage("overlayDragY") var overlayDragY: Double = -1
-
-    @ObservationIgnored
     @AppStorage("overlayTextSize") var overlayTextSize: String = "medium"
 
     @ObservationIgnored
@@ -62,10 +50,6 @@ final class AppSettings {
     @AppStorage("overlayAutoDismissSeconds") var overlayAutoDismissSeconds: Int = 30
 
     // MARK: - Overlay Computed Helpers
-
-    var parsedOverlayPosition: OverlayPosition {
-        OverlayPosition(rawValue: overlayPosition) ?? .bottomCenter
-    }
 
     var overlayFontSize: CGFloat {
         switch overlayTextSize {
