@@ -233,8 +233,12 @@ final class OverlayController {
                 engine.startListening()
             }
         }
-        viewModel.onStop = {
+        viewModel.onStop = { [weak self] in
             engine.stopListening()
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(800))
+                self?.collapseToPill(settings: settings)
+            }
         }
         viewModel.onCollapse = { [weak self] in
             self?.collapseToPill(settings: settings)
