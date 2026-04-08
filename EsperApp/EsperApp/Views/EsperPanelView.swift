@@ -124,12 +124,22 @@ struct WaveformLine: View {
             Canvas { context, size in
                 let t: CGFloat = CGFloat(timeline.date.timeIntervalSinceReferenceDate)
                 let midY: CGFloat = size.height / 2
-                let amp: CGFloat = min(CGFloat(energy) * 3, 1.0) * midY * 0.85
+                let e: CGFloat = CGFloat(energy)
+
+                // Baseline idle ripple so the line always feels alive
+                let idleAmp: CGFloat = midY * 0.12
+                // Voice amplitude — more aggressive scaling, no hard cap
+                let voiceAmp: CGFloat = min(e * 8, 1.0) * midY * 0.85
+
                 let points = stride(from: CGFloat(0), through: size.width, by: 1).map { (x: CGFloat) -> CGPoint in
                     let norm: CGFloat = x / size.width
-                    let wave1: CGFloat = sin(norm * .pi * 3 + t * 6) * amp
-                    let wave2: CGFloat = sin(norm * .pi * 5 + t * 4.5) * amp * 0.4
-                    return CGPoint(x: x, y: midY + wave1 + wave2)
+                    // Idle: slow gentle wave always present
+                    let idle: CGFloat = sin(norm * .pi * 2 + t * 2) * idleAmp
+                    // Voice: multiple overlapping frequencies for organic feel
+                    let w1: CGFloat = sin(norm * .pi * 4 + t * 8) * voiceAmp
+                    let w2: CGFloat = sin(norm * .pi * 7 + t * 5.5) * voiceAmp * 0.5
+                    let w3: CGFloat = sin(norm * .pi * 11 + t * 12) * voiceAmp * 0.2
+                    return CGPoint(x: x, y: midY + idle + w1 + w2 + w3)
                 }
                 var path = Path()
                 if let first = points.first {
