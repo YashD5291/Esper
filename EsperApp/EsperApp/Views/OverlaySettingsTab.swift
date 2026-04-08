@@ -4,49 +4,64 @@ struct OverlaySettingsTab: View {
     @Bindable var settings: AppSettings
     var overlayController: OverlayController?
 
-    @State private var enabled = false
     @State private var preset = "custom"
     @State private var textSize = "medium"
     @State private var textColor = "#FFFFFF"
     @State private var maxLines = 3
     @State private var opacity = 1.0
     @State private var showTelegramStatus = true
+    @State private var autoDismiss = false
+    @State private var autoDismissSeconds = 30
+    @State private var flowButtonEnabled = true
 
     var body: some View {
         Form {
-            Section {
-                Toggle("Show Overlay", isOn: $enabled)
+            Section("Preset") {
+                Picker("Preset", selection: $preset) {
+                    ForEach(OverlayPreset.allCases, id: \.rawValue) { p in
+                        Text(p.displayName).tag(p.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
             }
 
-            if enabled {
-                Section("Preset") {
-                    Picker("Preset", selection: $preset) {
-                        ForEach(OverlayPreset.allCases, id: \.rawValue) { p in
-                            Text(p.displayName).tag(p.rawValue)
-                        }
+            Section("Appearance") {
+                textSizeControl
+                textColorControl
+                linesControl
+                opacityControl
+            }
+
+            Section("Indicators") {
+                Toggle("Show Telegram Status", isOn: $showTelegramStatus)
+                Text("Show sent/queued indicators on each line when Telegram is enabled")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Dismiss") {
+                Toggle("Auto-dismiss after stopping", isOn: $autoDismiss)
+                if autoDismiss {
+                    Picker("After", selection: $autoDismissSeconds) {
+                        Text("10 seconds").tag(10)
+                        Text("30 seconds").tag(30)
+                        Text("60 seconds").tag(60)
+                        Text("2 minutes").tag(120)
                     }
-                    .pickerStyle(.segmented)
                 }
+            }
 
-                Section("Appearance") {
-                    textSizeControl
-                    textColorControl
-                    linesControl
-                    opacityControl
-                }
+            Section("Flow Button") {
+                Toggle("Show Flow Button", isOn: $flowButtonEnabled)
+                Text("Floating button for quick start/stop. You can also use Option+Space.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
 
-                Section("Indicators") {
-                    Toggle("Show Telegram Status", isOn: $showTelegramStatus)
-                    Text("Show sent/queued indicators on each line when Telegram is enabled")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section {
-                    Text("Right-click the overlay for quick settings. Drag to reposition.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+            Section {
+                Text("Right-click the overlay for quick settings. Drag to reposition.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
@@ -55,7 +70,6 @@ struct OverlaySettingsTab: View {
             overlayController?.previewMode = true
         }
         .onDisappear { overlayController?.previewMode = false }
-        .onChange(of: enabled) { _, val in settings.overlayEnabled = val }
         .onChange(of: preset) { _, val in
             settings.overlayPreset = val
             if let p = OverlayPreset(rawValue: val), p != .custom {
@@ -71,16 +85,21 @@ struct OverlaySettingsTab: View {
         .onChange(of: maxLines) { _, val in settings.overlayMaxLines = val; switchToCustom() }
         .onChange(of: opacity) { _, val in settings.overlayOpacity = val; switchToCustom() }
         .onChange(of: showTelegramStatus) { _, val in settings.overlayShowTelegramStatus = val }
+        .onChange(of: autoDismiss) { _, val in settings.overlayAutoDismiss = val }
+        .onChange(of: autoDismissSeconds) { _, val in settings.overlayAutoDismissSeconds = val }
+        .onChange(of: flowButtonEnabled) { _, val in settings.flowButtonEnabled = val }
     }
 
     private func loadFromSettings() {
-        enabled = settings.overlayEnabled
         preset = settings.overlayPreset
         textSize = settings.overlayTextSize
         textColor = settings.overlayTextColor
         maxLines = settings.overlayMaxLines
         opacity = settings.overlayOpacity
         showTelegramStatus = settings.overlayShowTelegramStatus
+        autoDismiss = settings.overlayAutoDismiss
+        autoDismissSeconds = settings.overlayAutoDismissSeconds
+        flowButtonEnabled = settings.flowButtonEnabled
     }
 
     private func switchToCustom() {

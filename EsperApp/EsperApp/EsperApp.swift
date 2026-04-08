@@ -4,20 +4,57 @@ import Sparkle
 import SwiftUI
 
 extension Notification.Name {
-    static let reopenMainWindow = Notification.Name("reopenMainWindow")
+    static let openSettingsRequested = Notification.Name("openSettingsRequested")
+}
+
+/// Opens the SwiftUI Settings window by posting a notification that a hidden
+/// SettingsOpener window listens for. The opener calls @Environment(\.openSettings).
+/// The `showSettingsWindow:` selector was removed in macOS 14+, so this is the
+/// supported path for non-activating panels and menu bar buttons.
+func openSettingsWindow() {
+    NSApp.activate(ignoringOtherApps: true)
+    NotificationCenter.default.post(name: .openSettingsRequested, object: nil)
+}
+
+/// Hidden view that listens for the open-settings notification and calls the
+/// SwiftUI environment's openSettings action. Must be hosted inside a Window
+/// scene declared BEFORE the Settings scene in the App body.
+struct SettingsOpener: View {
+    @Environment(\.openSettings) private var openSettings
+
+    var body: some View {
+        Color.clear
+            .frame(width: 1, height: 1)
+            .background(WindowHider())
+            .onReceive(NotificationCenter.default.publisher(for: .openSettingsRequested)) { _ in
+                openSettings()
+            }
+    }
+}
+
+/// Makes the host window invisible synchronously (pre-paint) while keeping the
+/// SwiftUI view mounted so it can still receive notifications. Also removes the
+/// closable style so Cmd+W can never unmount the receiver.
+private struct WindowHider: NSViewRepresentable {
+    func makeNSView(context: Context) -> HidingNSView { HidingNSView() }
+    func updateNSView(_ nsView: HidingNSView, context: Context) {}
+}
+
+private final class HidingNSView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard let window else { return }
+        window.styleMask.remove(.closable)
+        window.setIsVisible(false)
+        window.orderOut(nil)
+        window.collectionBehavior = [.stationary, .ignoresCycle]
+        window.isExcludedFromWindowsMenu = true
+    }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // MenuBarExtra makes hasVisibleWindows unreliable — it reports true even
-        // when no real windows are on screen. Check for actual visible windows instead.
-        let hasRealWindow = sender.windows.contains { window in
-            window.isVisible && !window.className.contains("StatusBar") && !(window is NSPanel)
-        }
-        if !hasRealWindow {
-            NotificationCenter.default.post(name: .reopenMainWindow, object: nil)
-        }
-        sender.activate(ignoringOtherApps: true)
+        openSettingsWindow()
         return true
     }
 }
@@ -29,27 +66,24 @@ struct EsperApp: App {
     @State private var launched = false
     @State private var overlayController = OverlayController()
     private let updaterController: SPUStandardUpdaterController
-    @Environment(\.openWindow) private var openWindow
 
     var body: some Scene {
+        // Hidden window that hosts the SettingsOpener. Must be declared BEFORE
+        // the Settings scene or @Environment(\.openSettings) silently fails on
+        // macOS 15.5+.
+        Window("SettingsOpener", id: "settings-opener") {
+            SettingsOpener()
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+        .commandsRemoved()
+
         MenuBarExtra {
-            MenuBarView(engine: engine, updater: updaterController.updater)
-                .onAppear { ensureLaunched() }
+            MenuBarView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
         } label: {
             Image(systemName: engine.status == .listening ? "waveform.circle.fill" : "waveform.circle")
+                .onAppear { ensureLaunched() }
         }
-
-        WindowGroup("Esper", id: "main") {
-            MainWindowView(engine: engine)
-                .onAppear {
-                    ensureLaunched()
-                    NSApp.activate(ignoringOtherApps: true)
-                }
-                .onReceive(NotificationCenter.default.publisher(for: .reopenMainWindow)) { _ in
-                    openWindow(id: "main")
-                }
-        }
-        .defaultSize(width: 520, height: 640)
 
         Settings {
             SettingsView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
@@ -77,9 +111,6 @@ struct EsperApp: App {
             updaterDelegate: nil,
             userDriverDelegate: nil
         )
-        DispatchQueue.main.async { [self] in
-            openWindow(id: "main")
-        }
     }
 }
 
@@ -88,12 +119,17 @@ struct EsperApp: App {
 @Observable
 @MainActor
 final class OverlayController {
-    private var panel: TranscriptPanel?
+    private var panel: EsperPanel?
     private let viewModel = OverlayViewModel()
     private var panelCreated = false
     private var updateTask: Task<Void, Never>?
     private var lastColorHex: String = ""
-    private var panelVisible = false
+    private var wasActive = false
+    private var wasListeningBorder = false
+    private var autoDismissTask: Task<Void, Never>?
+    private var expandTask: Task<Void, Never>?
+    private var stopCollapseTask: Task<Void, Never>?
+
     var previewMode = false
 
     func bind(engine: TranscriptionEngine, settings: AppSettings) {
@@ -107,86 +143,208 @@ final class OverlayController {
         }
     }
 
+    // MARK: - Update Loop
+
     private func update(engine: TranscriptionEngine, settings: AppSettings) {
+        guard settings.flowButtonEnabled else {
+            panel?.hidePanel()
+            return
+        }
+
+        ensurePanel(engine: engine, settings: settings)
+
+        let isActive = engine.status == .listening || engine.status == .transcribing
+        let isLoading = engine.status == .downloadingModel || engine.status == .compilingShaders || engine.status == .loadingModel
         let hasContent = !engine.sentences.isEmpty || !engine.currentText.isEmpty
-        let shouldShow = settings.overlayEnabled &&
-            (engine.status == .listening || engine.status == .transcribing || hasContent || previewMode)
 
-        if shouldShow {
-            ensurePanel(settings: settings)
-
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-
-            let newLines = overlayLines(engine: engine, settings: settings)
-            if newLines != viewModel.lines { viewModel.lines = newLines }
-
-            let newStatus = engine.status
-            if newStatus != viewModel.engineStatus { viewModel.engineStatus = newStatus }
-
-            let newSize = settings.overlayFontSize
-            if newSize != viewModel.fontSize { viewModel.fontSize = newSize }
-
-            let newOpacity = settings.overlayOpacity
-            if newOpacity != viewModel.opacity { viewModel.opacity = newOpacity }
-
-            let newColorHex = settings.overlayTextColor
-            if newColorHex != lastColorHex {
-                lastColorHex = newColorHex
-                viewModel.textColor = settings.parsedOverlayColor
+        // Transition: idle → active — cancel any pending stop-collapse, expand
+        if (isActive || isLoading) && !wasActive {
+            stopCollapseTask?.cancel()
+            if viewModel.mode == .pill {
+                expandAfterDelay(engine: engine, settings: settings)
             }
+        }
 
-            let newMaxLines = settings.overlayMaxLines
-            if newMaxLines != viewModel.maxLines { viewModel.maxLines = newMaxLines }
-
-            viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
-
-            panel?.isPositionLocked = settings.overlayLockPosition
-
-            CATransaction.commit()
-
-            if !panelVisible {
-                let locked = settings.overlayLockPosition
-                if !locked, settings.overlayDragX >= 0, settings.overlayDragY >= 0 {
-                    panel?.repositionToCoordinate(x: settings.overlayDragX, y: settings.overlayDragY)
-                } else {
-                    panel?.reposition(to: settings.parsedOverlayPosition)
+        // Transition: active → idle — defer to onStop's collapse if it's pending
+        if !isActive && !isLoading && wasActive {
+            if stopCollapseTask == nil {
+                // Only auto-dismiss if onStop didn't already schedule a collapse
+                if hasContent && settings.overlayAutoDismiss {
+                    scheduleAutoDismiss(seconds: settings.overlayAutoDismissSeconds, settings: settings)
                 }
-                panel?.animateIn()
-                panelVisible = true
             }
-        } else if panelVisible {
-            panel?.animateOut()
-            panelVisible = false
+        }
+
+        wasActive = isActive || isLoading
+
+        // Update view model
+        updateViewModel(engine: engine, settings: settings)
+
+        // Update panel state
+        panel?.isPositionLocked = settings.overlayLockPosition
+
+        // Only reset alpha on transition, not every tick
+        let showListeningBorder = isActive || isLoading
+        if showListeningBorder && !wasListeningBorder {
+            panel?.alphaValue = 1.0
+        }
+        if showListeningBorder != wasListeningBorder {
+            panel?.setListeningBorder(showListeningBorder)
+            wasListeningBorder = showListeningBorder
         }
     }
 
-    private func ensurePanel(settings: AppSettings) {
+    // MARK: - View Model Sync
+
+    private func updateViewModel(engine: TranscriptionEngine, settings: AppSettings) {
+        viewModel.engineStatus = engine.status
+        viewModel.energyLevel = engine.energyLevel
+        viewModel.errorMessage = engine.errorMessage
+        viewModel.overlayDismissed = viewModel.mode == .pill && (engine.status == .listening || engine.status == .transcribing)
+
+        let newLines = overlayLines(engine: engine, settings: settings)
+        if newLines != viewModel.lines { viewModel.lines = newLines }
+
+        let newSize = settings.overlayFontSize
+        if newSize != viewModel.fontSize { viewModel.fontSize = newSize }
+
+        let newOpacity = settings.overlayOpacity
+        if newOpacity != viewModel.opacity { viewModel.opacity = newOpacity }
+
+        let newColorHex = settings.overlayTextColor
+        if newColorHex != lastColorHex {
+            lastColorHex = newColorHex
+            viewModel.textColor = settings.parsedOverlayColor
+        }
+
+        let newMaxLines = settings.overlayMaxLines
+        if newMaxLines != viewModel.maxLines { viewModel.maxLines = newMaxLines }
+
+        viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
+        viewModel.devices = engine.devices
+        viewModel.selectedDevice = engine.selectedDevice
+    }
+
+    // MARK: - Panel Lifecycle
+
+    private func ensurePanel(engine: TranscriptionEngine, settings: AppSettings) {
         guard !panelCreated else { return }
-        let panel = TranscriptPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 140),
+
+        let panel = EsperPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 160, height: 36),
             styleMask: [],
             backing: .buffered,
             defer: false
         )
-        let host = NSHostingView(rootView: TranscriptOverlayView(viewModel: viewModel))
+
+        viewModel.onToggle = { [weak self] in
+            if engine.status == .listening || engine.status == .transcribing {
+                self?.expandToOverlay(settings: settings)
+            } else if engine.status == .idle {
+                engine.startListening()
+            }
+        }
+        viewModel.onStop = { [weak self] in
+            engine.stopListening()
+            self?.expandTask?.cancel()
+            self?.stopCollapseTask?.cancel()
+            self?.stopCollapseTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled else { return }
+                self?.collapseToPill(settings: settings)
+                self?.stopCollapseTask = nil
+            }
+        }
+        viewModel.onCollapse = { [weak self] in
+            self?.collapseToPill(settings: settings)
+        }
+        viewModel.onDismiss = { [weak self] in
+            self?.collapseToPill(settings: settings)
+        }
+        viewModel.onSelectDevice = { index in
+            engine.setDevice(index)
+        }
+        viewModel.onOpenSettings = {
+            openSettingsWindow()
+        }
+
+        let host = NSHostingView(rootView: EsperPanelView(viewModel: viewModel))
         panel.setSwiftUIContent(host)
         panel.installTrackingArea()
 
-        panel.onDragEnd = { origin in
-            settings.overlayDragX = origin.x
-            settings.overlayDragY = origin.y
+        panel.onDragEnd = { x in
+            settings.flowButtonX = x
         }
-        panel.onHoverChanged = { _ in }
         panel.onContextAction = { [weak self] action in
             self?.handleContextAction(action, settings: settings)
         }
+
+        let savedX = settings.flowButtonX >= 0 ? settings.flowButtonX : nil
+        panel.positionAtBottom(x: savedX)
+        panel.showPanel()
 
         self.panel = panel
         panelCreated = true
     }
 
-    private func handleContextAction(_ action: OverlayContextAction, settings: AppSettings) {
+    // MARK: - Morph Transitions
+
+    private func expandToOverlay(settings: AppSettings) {
+        autoDismissTask?.cancel()
+        let height = overlayHeight(settings: settings)
+        withAnimation(.easeInOut(duration: 0.15)) {
+            viewModel.mode = .overlay
+        }
+        panel?.morphTo(.overlay, overlayHeight: height)
+    }
+
+    private func collapseToPill(settings: AppSettings) {
+        guard viewModel.mode == .overlay else { return }
+        expandTask?.cancel()
+        let height = overlayHeight(settings: settings)
+        withAnimation(.easeInOut(duration: 0.15)) {
+            viewModel.mode = .pill
+        }
+        panel?.morphTo(.pill, overlayHeight: height)
+    }
+
+    private func expandAfterDelay(engine: TranscriptionEngine, settings: AppSettings) {
+        expandTask?.cancel()
+        expandTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled, let self else { return }
+            let isActive = engine.status == .listening || engine.status == .transcribing
+            let isLoading = engine.status == .downloadingModel || engine.status == .compilingShaders || engine.status == .loadingModel
+            if isActive || isLoading {
+                self.expandToOverlay(settings: settings)
+            }
+        }
+    }
+
+    private func overlayHeight(settings: AppSettings) -> CGFloat {
+        let fontSize = settings.overlayFontSize
+        let maxLines = settings.overlayMaxLines
+        let lineHeight = fontSize * 1.4 + 6
+        let topBarHeight: CGFloat = 32
+        let padding: CGFloat = 28
+        let errorHeight: CGFloat = viewModel.errorMessage != nil ? 34 : 0
+        return topBarHeight + CGFloat(maxLines) * lineHeight - 6 + padding + errorHeight
+    }
+
+    // MARK: - Auto-Dismiss
+
+    private func scheduleAutoDismiss(seconds: Int, settings: AppSettings) {
+        autoDismissTask?.cancel()
+        autoDismissTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self, self.viewModel.mode == .overlay else { return }
+            self.collapseToPill(settings: settings)
+        }
+    }
+
+    // MARK: - Context Menu
+
+    private func handleContextAction(_ action: EsperPanelContextAction, settings: AppSettings) {
         switch action {
         case .textSize(let size):
             settings.overlayTextSize = size
@@ -196,15 +354,14 @@ final class OverlayController {
             settings.overlayPreset = "custom"
         case .preset(let preset):
             preset.apply(to: settings)
-        case .position(let pos):
-            settings.overlayPosition = pos.rawValue
-            panel?.reposition(to: pos)
         case .lockPosition:
             settings.overlayLockPosition.toggle()
         case .openSettings:
-            NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+            openSettingsWindow()
         }
     }
+
+    // MARK: - Overlay Lines
 
     private static let sampleLines = [
         "This is a preview of the overlay",

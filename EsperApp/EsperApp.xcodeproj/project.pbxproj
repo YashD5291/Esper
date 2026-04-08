@@ -15,15 +15,10 @@
 		A100000004 /* Protocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000004; };
 		A100000005 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000005; };
 		A100000006 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000006; };
-		A100000007 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000007; };
-		A100000008 /* TranscriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000008; };
-		A100000009 /* AudioLevelMeter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000009; };
 		A100000010 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000010; };
 		A100000011 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000011; };
 		A100000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B100000012; };
 		A100000013 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000014; };
-		A100000014 /* OverlayPosition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000015; };
-		A100000015 /* TranscriptPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000016; };
 		A100000016 /* TranscriptOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000017; };
 		A100000017 /* OverlaySettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000018; };
 		A100000018 /* CheckForUpdatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000019; };
@@ -31,11 +26,12 @@
 		A100000022 /* GlobalHotkey.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000021; };
 		A100000023 /* ShortcutsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000022; };
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
-		A200000002 /* OverlayPositionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000002; };
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
 		A200000004 /* UpdateSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004; };
 		A100000024 /* OverlayPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000023; };
 		A200000005 /* OverlayPresetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005; };
+		A100000027 /* EsperPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EsperPanel.swift */; };
+		A100000028 /* EsperPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027 /* EsperPanelView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -55,17 +51,12 @@
 		B100000004 /* Protocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Protocol.swift; sourceTree = "<group>"; };
 		B100000005 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		B100000006 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
-		B100000007 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
-		B100000008 /* TranscriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptView.swift; sourceTree = "<group>"; };
-		B100000009 /* AudioLevelMeter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioLevelMeter.swift; sourceTree = "<group>"; };
 		B100000010 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B100000011 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		B100000012 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B100000013 /* EsperApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = EsperApp.entitlements; sourceTree = "<group>"; };
 		B100000014 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
-		B100000015 /* OverlayPosition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPosition.swift; sourceTree = "<group>"; };
 		B100000017 /* TranscriptOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptOverlayView.swift; sourceTree = "<group>"; };
-		B100000016 /* TranscriptPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranscriptPanel.swift; sourceTree = "<group>"; };
 		B100000018 /* OverlaySettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlaySettingsTab.swift; sourceTree = "<group>"; };
 		B100000019 /* CheckForUpdatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CheckForUpdatesView.swift; sourceTree = "<group>"; };
 		B100000020 /* UpdateSettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTab.swift; sourceTree = "<group>"; };
@@ -73,11 +64,12 @@
 		B100000022 /* ShortcutsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsTab.swift; sourceTree = "<group>"; };
 		C100000001 /* EsperApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = EsperApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
-		B200000002 /* OverlayPositionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPositionTests.swift; sourceTree = "<group>"; };
 		B200000003 /* AppSettingsOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsOverlayTests.swift; sourceTree = "<group>"; };
 		B200000004 /* UpdateSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTests.swift; sourceTree = "<group>"; };
 		B100000023 /* OverlayPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPreset.swift; sourceTree = "<group>"; };
 		B200000005 /* OverlayPresetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPresetTests.swift; sourceTree = "<group>"; };
+		B100000026 /* EsperPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperPanel.swift; sourceTree = "<group>"; };
+		B100000027 /* EsperPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperPanelView.swift; sourceTree = "<group>"; };
 		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -98,7 +90,7 @@
 				B100000021 /* GlobalHotkey.swift */,
 				B100000002 /* ProcessBridge.swift */,
 				B100000003 /* TranscriptionEngine.swift */,
-				B100000016 /* TranscriptPanel.swift */,
+				B100000026 /* EsperPanel.swift */,
 				D100000003 /* Models */,
 				D100000004 /* Views */,
 				D100000006 /* Helpers */,
@@ -114,7 +106,6 @@
 				B100000004 /* Protocol.swift */,
 				B100000005 /* AppSettings.swift */,
 				B100000023 /* OverlayPreset.swift */,
-				B100000015 /* OverlayPosition.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -131,9 +122,6 @@
 			isa = PBXGroup;
 			children = (
 				B100000006 /* MenuBarView.swift */,
-				B100000007 /* MainWindowView.swift */,
-				B100000008 /* TranscriptView.swift */,
-				B100000009 /* AudioLevelMeter.swift */,
 				B100000010 /* SettingsView.swift */,
 				B100000011 /* StatusBadge.swift */,
 				B100000017 /* TranscriptOverlayView.swift */,
@@ -141,6 +129,7 @@
 				B100000019 /* CheckForUpdatesView.swift */,
 				B100000020 /* UpdateSettingsTab.swift */,
 				B100000022 /* ShortcutsTab.swift */,
+				B100000027 /* EsperPanelView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -158,7 +147,6 @@
 			isa = PBXGroup;
 			children = (
 				B200000001 /* ProtocolTests.swift */,
-				B200000002 /* OverlayPositionTests.swift */,
 				B200000003 /* AppSettingsOverlayTests.swift */,
 				B200000004 /* UpdateSettingsTests.swift */,
 				B200000005 /* OverlayPresetTests.swift */,
@@ -252,14 +240,9 @@
 				A100000004 /* Protocol.swift in Sources */,
 				A100000005 /* AppSettings.swift in Sources */,
 				A100000006 /* MenuBarView.swift in Sources */,
-				A100000007 /* MainWindowView.swift in Sources */,
-				A100000008 /* TranscriptView.swift in Sources */,
-				A100000009 /* AudioLevelMeter.swift in Sources */,
 				A100000010 /* SettingsView.swift in Sources */,
 				A100000011 /* StatusBadge.swift in Sources */,
 				A100000013 /* KeychainHelper.swift in Sources */,
-				A100000014 /* OverlayPosition.swift in Sources */,
-				A100000015 /* TranscriptPanel.swift in Sources */,
 				A100000016 /* TranscriptOverlayView.swift in Sources */,
 				A100000017 /* OverlaySettingsTab.swift in Sources */,
 				A100000018 /* CheckForUpdatesView.swift in Sources */,
@@ -267,6 +250,8 @@
 				A100000022 /* GlobalHotkey.swift in Sources */,
 				A100000023 /* ShortcutsTab.swift in Sources */,
 				A100000024 /* OverlayPreset.swift in Sources */,
+				A100000027 /* EsperPanel.swift in Sources */,
+				A100000028 /* EsperPanelView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -275,7 +260,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A200000001 /* ProtocolTests.swift in Sources */,
-				A200000002 /* OverlayPositionTests.swift in Sources */,
 				A200000003 /* AppSettingsOverlayTests.swift in Sources */,
 				A200000004 /* UpdateSettingsTests.swift in Sources */,
 				A200000005 /* OverlayPresetTests.swift in Sources */,

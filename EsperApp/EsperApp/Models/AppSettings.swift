@@ -17,18 +17,6 @@ final class AppSettings {
 
     // Overlay
     @ObservationIgnored
-    @AppStorage("overlayEnabled") var overlayEnabled: Bool = false
-
-    @ObservationIgnored
-    @AppStorage("overlayPosition") var overlayPosition: String = "bottomCenter"
-
-    @ObservationIgnored
-    @AppStorage("overlayDragX") var overlayDragX: Double = -1
-
-    @ObservationIgnored
-    @AppStorage("overlayDragY") var overlayDragY: Double = -1
-
-    @ObservationIgnored
     @AppStorage("overlayTextSize") var overlayTextSize: String = "medium"
 
     @ObservationIgnored
@@ -49,11 +37,19 @@ final class AppSettings {
     @ObservationIgnored
     @AppStorage("overlayLockPosition") var overlayLockPosition: Bool = false
 
-    // MARK: - Overlay Computed Helpers
+    @ObservationIgnored
+    @AppStorage("flowButtonEnabled") var flowButtonEnabled: Bool = true
 
-    var parsedOverlayPosition: OverlayPosition {
-        OverlayPosition(rawValue: overlayPosition) ?? .bottomCenter
-    }
+    @ObservationIgnored
+    @AppStorage("flowButtonX") var flowButtonX: Double = -1
+
+    @ObservationIgnored
+    @AppStorage("overlayAutoDismiss") var overlayAutoDismiss: Bool = false
+
+    @ObservationIgnored
+    @AppStorage("overlayAutoDismissSeconds") var overlayAutoDismissSeconds: Int = 30
+
+    // MARK: - Overlay Computed Helpers
 
     var overlayFontSize: CGFloat {
         switch overlayTextSize {
@@ -83,22 +79,43 @@ final class AppSettings {
 
     /// Dev-mode project directory.
     var devProjectDir: String {
-        // 1. Environment variable override (for any developer)
-        if let envDir = ProcessInfo.processInfo.environment["ESPER_PROJECT_DIR"] {
+        let fm = FileManager.default
+        func hasServer(_ dir: String) -> Bool {
+            fm.fileExists(atPath: (dir as NSString).appendingPathComponent("src/server.py"))
+        }
+
+        // 1. Environment variable override
+        if let envDir = ProcessInfo.processInfo.environment["ESPER_PROJECT_DIR"], hasServer(envDir) {
             return envDir
         }
         // 2. Infer from executable location (works if launched from project)
-        let execDir = Bundle.main.bundlePath
-        let projectDir = (execDir as NSString).deletingLastPathComponent
-        if FileManager.default.fileExists(atPath: (projectDir as NSString).appendingPathComponent("src/server.py")) {
+        let projectDir = (Bundle.main.bundlePath as NSString).deletingLastPathComponent
+        if hasServer(projectDir) {
             return projectDir
         }
-        // 3. Final fallback: current working directory
-        let cwd = FileManager.default.currentDirectoryPath
-        if FileManager.default.fileExists(atPath: (cwd as NSString).appendingPathComponent("src/server.py")) {
+        // 3. Walk up from the built .app through DerivedData to find the repo
+        var searchDir = (Bundle.main.bundlePath as NSString).deletingLastPathComponent
+        for _ in 0..<10 {
+            if hasServer(searchDir) { return searchDir }
+            let parent = (searchDir as NSString).deletingLastPathComponent
+            if parent == searchDir { break }
+            searchDir = parent
+        }
+        // 5. Current working directory
+        let cwd = fm.currentDirectoryPath
+        if hasServer(cwd) {
             return cwd
         }
-        // 4. Last resort: current working directory (will fail gracefully at launch)
+        // 6. Hardcoded common locations
+        let home = NSHomeDirectory()
+        let candidates = [
+            (home as NSString).appendingPathComponent("Codebase/Fun/Esper"),
+            (home as NSString).appendingPathComponent("Developer/Esper"),
+            (home as NSString).appendingPathComponent("Projects/Esper"),
+        ]
+        for dir in candidates {
+            if hasServer(dir) { return dir }
+        }
         return cwd
     }
 }

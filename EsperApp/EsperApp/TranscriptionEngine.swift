@@ -193,7 +193,7 @@ final class TranscriptionEngine {
             NSLog("[Engine] got %d devices", list.count)
             devices = list
             if selectedDevice == nil {
-                selectedDevice = list.first(where: { $0.isDefault })?.index ?? list.first?.index
+                selectedDevice = preferBuiltInDevice(from: list)
             }
 
         case .status(let newStatus):
@@ -264,6 +264,29 @@ final class TranscriptionEngine {
         @unknown default:
             return true
         }
+    }
+
+    /// Prefer built-in MacBook microphone over loopback/external devices.
+    private func preferBuiltInDevice(from list: [AudioDevice]) -> Int? {
+        let nonLoopback = list.filter {
+            !$0.name.localizedCaseInsensitiveContains("loopback")
+        }
+        // MacBook Pro/Air Microphone
+        if let d = nonLoopback.first(where: { $0.name.localizedCaseInsensitiveContains("MacBook") }) {
+            return d.index
+        }
+        // Built-in or Internal Microphone
+        if let d = nonLoopback.first(where: {
+            $0.name.localizedCaseInsensitiveContains("Built-in") ||
+            $0.name.localizedCaseInsensitiveContains("Internal")
+        }) {
+            return d.index
+        }
+        // System default (non-loopback)
+        if let d = nonLoopback.first(where: { $0.isDefault }) {
+            return d.index
+        }
+        return nonLoopback.first?.index ?? list.first?.index
     }
 
     private static func friendlyError(_ message: String) -> String {

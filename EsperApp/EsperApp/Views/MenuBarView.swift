@@ -3,9 +3,9 @@ import SwiftUI
 
 struct MenuBarView: View {
     let engine: TranscriptionEngine
+    let overlayController: OverlayController
     let updater: SPUUpdater
-    @Environment(\.openWindow) private var openWindow
-    @State private var overlayEnabled = false
+    @State private var flowButtonEnabled = true
 
     var body: some View {
         HStack {
@@ -25,32 +25,13 @@ struct MenuBarView: View {
                 engine.startListening()
             }
         } else {
-            Text("Loading model...")
-                .foregroundStyle(.secondary)
+            Button("Start Listening") {
+                engine.startListening()
+            }
+            .disabled(true)
         }
 
         Divider()
-
-        if !engine.devices.isEmpty {
-            Text("Input Device")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            ForEach(engine.devices) { device in
-                Button {
-                    engine.setDevice(device.index)
-                } label: {
-                    HStack {
-                        if engine.selectedDevice == device.index {
-                            Image(systemName: "checkmark")
-                        }
-                        Text(device.name)
-                    }
-                }
-            }
-
-            Divider()
-        }
 
         if let error = engine.errorMessage {
             Label(error, systemImage: "exclamationmark.triangle")
@@ -64,9 +45,9 @@ struct MenuBarView: View {
             Divider()
         }
 
-        Button(overlayEnabled ? "Hide Overlay" : "Show Overlay") {
-            overlayEnabled.toggle()
-            engine.settings.overlayEnabled = overlayEnabled
+        Button(flowButtonEnabled ? "Hide Flow Button" : "Show Flow Button") {
+            flowButtonEnabled.toggle()
+            engine.settings.flowButtonEnabled = flowButtonEnabled
         }
 
         Divider()
@@ -74,12 +55,6 @@ struct MenuBarView: View {
         CheckForUpdatesView(updater: updater)
 
         Divider()
-
-        Button("Open Window") {
-            openWindow(id: "main")
-            NSApp.activate(ignoringOtherApps: true)
-        }
-        .keyboardShortcut("o")
 
         SettingsLink {
             Text("Settings...")
@@ -93,6 +68,8 @@ struct MenuBarView: View {
             }
         }
         .keyboardShortcut("q")
-        .onAppear { overlayEnabled = engine.settings.overlayEnabled }
+        .onAppear {
+            flowButtonEnabled = engine.settings.flowButtonEnabled
+        }
     }
 }
