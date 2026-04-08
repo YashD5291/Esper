@@ -92,6 +92,16 @@ struct TranscriptOverlayView: View {
                             proxy.scrollTo(id, anchor: .bottom)
                         }
                     }
+                    .onAppear {
+                        if let id = viewModel.lines.last?.id {
+                            proxy.scrollTo(id, anchor: .bottom)
+                        }
+                    }
+                    .onChange(of: viewModel.mode) { _, newMode in
+                        if newMode == .overlay, let id = viewModel.lines.last?.id {
+                            proxy.scrollTo(id, anchor: .bottom)
+                        }
+                    }
                 }
                 if let error = viewModel.errorMessage {
                     errorBar(error)
