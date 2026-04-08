@@ -125,7 +125,10 @@ final class OverlayController {
     private var updateTask: Task<Void, Never>?
     private var lastColorHex: String = ""
     private var wasActive = false
+    private var wasListeningBorder = false
     private var autoDismissTask: Task<Void, Never>?
+    private var expandTask: Task<Void, Never>?
+    private var stopCollapseTask: Task<Void, Never>?
 
     var previewMode = false
 
@@ -154,19 +157,21 @@ final class OverlayController {
         let isLoading = engine.status == .downloadingModel || engine.status == .compilingShaders || engine.status == .loadingModel
         let hasContent = !engine.sentences.isEmpty || !engine.currentText.isEmpty
 
-        // Transition: idle → active — clear dismiss, expand
+        // Transition: idle → active — cancel any pending stop-collapse, expand
         if (isActive || isLoading) && !wasActive {
+            stopCollapseTask?.cancel()
             if viewModel.mode == .pill {
                 expandAfterDelay(engine: engine, settings: settings)
             }
         }
 
-        // Transition: active → idle — start auto-dismiss
+        // Transition: active → idle — defer to onStop's collapse if it's pending
         if !isActive && !isLoading && wasActive {
-            if hasContent && settings.overlayAutoDismiss {
-                scheduleAutoDismiss(seconds: settings.overlayAutoDismissSeconds, settings: settings)
-            } else if !hasContent {
-                collapseToPill(settings: settings)
+            if stopCollapseTask == nil {
+                // Only auto-dismiss if onStop didn't already schedule a collapse
+                if hasContent && settings.overlayAutoDismiss {
+                    scheduleAutoDismiss(seconds: settings.overlayAutoDismissSeconds, settings: settings)
+                }
             }
         }
 
@@ -177,10 +182,16 @@ final class OverlayController {
 
         // Update panel state
         panel?.isPositionLocked = settings.overlayLockPosition
-        if isActive {
+
+        // Only reset alpha on transition, not every tick
+        let showListeningBorder = isActive || isLoading
+        if showListeningBorder && !wasListeningBorder {
             panel?.alphaValue = 1.0
         }
-        panel?.setListeningBorder(isActive || isLoading)
+        if showListeningBorder != wasListeningBorder {
+            panel?.setListeningBorder(showListeningBorder)
+            wasListeningBorder = showListeningBorder
+        }
     }
 
     // MARK: - View Model Sync
@@ -235,9 +246,13 @@ final class OverlayController {
         }
         viewModel.onStop = { [weak self] in
             engine.stopListening()
-            Task { @MainActor in
+            self?.expandTask?.cancel()
+            self?.stopCollapseTask?.cancel()
+            self?.stopCollapseTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .milliseconds(800))
+                guard !Task.isCancelled else { return }
                 self?.collapseToPill(settings: settings)
+                self?.stopCollapseTask = nil
             }
         }
         viewModel.onCollapse = { [weak self] in
@@ -284,6 +299,8 @@ final class OverlayController {
     }
 
     private func collapseToPill(settings: AppSettings) {
+        guard viewModel.mode == .overlay else { return }
+        expandTask?.cancel()
         let height = overlayHeight(settings: settings)
         withAnimation(.easeInOut(duration: 0.15)) {
             viewModel.mode = .pill
@@ -292,9 +309,10 @@ final class OverlayController {
     }
 
     private func expandAfterDelay(engine: TranscriptionEngine, settings: AppSettings) {
-        Task { @MainActor [weak self] in
+        expandTask?.cancel()
+        expandTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .milliseconds(500))
-            guard let self else { return }
+            guard !Task.isCancelled, let self else { return }
             let isActive = engine.status == .listening || engine.status == .transcribing
             let isLoading = engine.status == .downloadingModel || engine.status == .compilingShaders || engine.status == .loadingModel
             if isActive || isLoading {
@@ -309,7 +327,8 @@ final class OverlayController {
         let lineHeight = fontSize * 1.4 + 6
         let topBarHeight: CGFloat = 32
         let padding: CGFloat = 28
-        return topBarHeight + CGFloat(maxLines) * lineHeight - 6 + padding
+        let errorHeight: CGFloat = viewModel.errorMessage != nil ? 34 : 0
+        return topBarHeight + CGFloat(maxLines) * lineHeight - 6 + padding + errorHeight
     }
 
     // MARK: - Auto-Dismiss

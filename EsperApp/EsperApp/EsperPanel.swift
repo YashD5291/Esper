@@ -66,6 +66,7 @@ final class EsperPanel: NSPanel {
     private var fadeWorkItem: DispatchWorkItem?
     private var exitWorkItem: DispatchWorkItem?
     private var isMouseInside = false
+    private var isExpanding = false
 
     // MARK: Init
 
@@ -100,6 +101,12 @@ final class EsperPanel: NSPanel {
         rootLayer.addSublayer(backgroundLayer)
     }
 
+    deinit {
+        displayLink?.invalidate()
+        fadeWorkItem?.cancel()
+        exitWorkItem?.cancel()
+    }
+
     override var canBecomeKey: Bool { false }
     override var canBecomeMain: Bool { false }
 
@@ -114,12 +121,10 @@ final class EsperPanel: NSPanel {
     // MARK: - SwiftUI Content
 
     func setSwiftUIContent(_ hostView: NSHostingView<some View>) {
-        hostView.translatesAutoresizingMaskIntoConstraints = false
         hostView.sizingOptions = []
         contentView?.addSubview(hostView)
         hostView.autoresizingMask = [.width, .height]
         hostView.frame = contentView?.bounds ?? .zero
-
         hostView.layerContentsRedrawPolicy = .onSetNeedsDisplay
     }
 
@@ -318,12 +323,13 @@ final class EsperPanel: NSPanel {
 
         // Reset mouse state for the new mode
         exitWorkItem?.cancel()
+        isExpanding = mode == .overlay
         if mode == .overlay {
             ignoresMouseEvents = false
             isMovableByWindowBackground = false
         } else {
             ignoresMouseEvents = false
-            isMovableByWindowBackground = true
+            isMovableByWindowBackground = !isPositionLocked
         }
 
         // Calculate target frames
@@ -384,9 +390,9 @@ final class EsperPanel: NSPanel {
         let dt = CGFloat(min(now - lastTimestamp, 1.0 / 30.0))
         lastTimestamp = now
 
-        // Choose spring params based on direction
-        let stiffness = targetPosition > spring.position ? expandStiffness : collapseStiffness
-        let damping = targetPosition > spring.position ? expandDamping : collapseDamping
+        // Use direction set at morph start — avoids jitter during overshoot
+        let stiffness = isExpanding ? expandStiffness : collapseStiffness
+        let damping = isExpanding ? expandDamping : collapseDamping
 
         // Damped spring (semi-implicit Euler)
         let displacement = spring.position - targetPosition
@@ -428,9 +434,8 @@ final class EsperPanel: NSPanel {
         let radius = lerp(pillCornerRadius, overlayCornerRadius, t)
         let bgAlpha = lerp(pillBgAlpha, overlayBgAlpha, t)
 
-        let fromBorder = currentMode == .overlay ? pillBorderColor : overlayBorderColor
-        let toBorder = currentMode == .overlay ? overlayBorderColor : pillBorderColor
-        let borderColor = interpolateColor(from: fromBorder, to: toBorder, t: t)
+        // t=0 is pill, t=1 is overlay — always interpolate in this direction
+        let borderColor = interpolateColor(from: pillBorderColor, to: overlayBorderColor, t: t)
 
         CATransaction.begin()
         CATransaction.setDisableActions(true)
