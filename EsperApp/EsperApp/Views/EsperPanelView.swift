@@ -103,37 +103,44 @@ struct EsperPanelView: View {
         TranscriptOverlayView(viewModel: viewModel)
     }
 
-    // MARK: - Waveform Bars
+    // MARK: - Waveform
 
     private var waveformBars: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<5, id: \.self) { i in
-                PillWaveBar(energy: viewModel.energyLevel, index: i)
-            }
-        }
-        .frame(height: 20)
+        WaveformLine(energy: viewModel.energyLevel)
     }
 }
 
-// MARK: - Pill Wave Bar
+// MARK: - Waveform Line
 
-private struct PillWaveBar: View {
+struct WaveformLine: View {
     let energy: Double
-    let index: Int
-
-    private var barHeight: CGFloat {
-        let base = 4.0
-        let maxExtra = 16.0
-        let phase = Double(index) * 0.2
-        let wave = sin(Date.now.timeIntervalSinceReferenceDate * 8 + phase)
-        let modulated = energy * (0.5 + 0.5 * wave)
-        return base + maxExtra * min(modulated * 3, 1.0)
-    }
+    var width: CGFloat = 40
+    var height: CGFloat = 20
+    var lineWidth: CGFloat = 2
+    var color: Color = .white
 
     var body: some View {
-        RoundedRectangle(cornerRadius: 1.5)
-            .fill(.white)
-            .frame(width: 3, height: barHeight)
-            .animation(.linear(duration: 0.1), value: energy)
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0)) { timeline in
+            Canvas { context, size in
+                let t: CGFloat = CGFloat(timeline.date.timeIntervalSinceReferenceDate)
+                let midY: CGFloat = size.height / 2
+                let amp: CGFloat = min(CGFloat(energy) * 3, 1.0) * midY * 0.85
+                let points = stride(from: CGFloat(0), through: size.width, by: 1).map { (x: CGFloat) -> CGPoint in
+                    let norm: CGFloat = x / size.width
+                    let wave1: CGFloat = sin(norm * .pi * 3 + t * 6) * amp
+                    let wave2: CGFloat = sin(norm * .pi * 5 + t * 4.5) * amp * 0.4
+                    return CGPoint(x: x, y: midY + wave1 + wave2)
+                }
+                var path = Path()
+                if let first = points.first {
+                    path.move(to: first)
+                    for pt in points.dropFirst() {
+                        path.addLine(to: pt)
+                    }
+                }
+                context.stroke(path, with: .color(color), lineWidth: lineWidth)
+            }
+        }
+        .frame(width: width, height: height)
     }
 }

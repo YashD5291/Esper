@@ -215,19 +215,7 @@ struct TranscriptOverlayView: View {
     }
 
     private var overlayWaveformBars: some View {
-        HStack(spacing: 2) {
-            ForEach(0..<5, id: \.self) { i in
-                let phase = Double(i) * 0.2
-                let wave = sin(Date.now.timeIntervalSinceReferenceDate * 8 + phase)
-                let modulated = viewModel.energyLevel * (0.5 + 0.5 * wave)
-                let h = 4.0 + 16.0 * min(modulated * 3, 1.0)
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(.white)
-                    .frame(width: 3, height: h)
-            }
-        }
-        .frame(height: 20)
-        .animation(.linear(duration: 0.1), value: viewModel.energyLevel)
+        WaveformLine(energy: viewModel.energyLevel, width: 50, height: 20, lineWidth: 1.5)
     }
 
     // MARK: - Error Bar
