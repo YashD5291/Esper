@@ -68,6 +68,11 @@ final class EsperPanel: NSPanel {
     private var isMouseInside = false
     private var isExpanding = false
 
+    // Suppresses didMove snap-back during our own programmatic moves
+    // (positioning, morph animations). Background-drag moves are driven by
+    // the window server and never set this flag, so they get constrained.
+    private var isProgrammaticMove = false
+
     // MARK: Init
 
     override init(
@@ -78,9 +83,9 @@ final class EsperPanel: NSPanel {
     ) {
         super.init(contentRect: contentRect, styleMask: styleMask, backing: backing, defer: flag)
 
-        level = .floating
+        level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
         isFloatingPanel = true
-        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
         backgroundColor = .clear
         isOpaque = false
         hasShadow = true
@@ -99,12 +104,26 @@ final class EsperPanel: NSPanel {
         backgroundLayer.borderWidth = 1
         backgroundLayer.borderColor = pillBorderColor
         rootLayer.addSublayer(backgroundLayer)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidMoveNotif(_:)),
+            name: NSWindow.didMoveNotification,
+            object: self
+        )
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self)
         displayLink?.invalidate()
         fadeWorkItem?.cancel()
         exitWorkItem?.cancel()
+    }
+
+    @objc private func windowDidMoveNotif(_ note: Notification) {
+        guard !isProgrammaticMove, currentMode == .pill else { return }
+        constrainToBottomEdge()
+        onDragEnd?(frame.origin.x)
     }
 
     override var canBecomeKey: Bool { false }
@@ -255,18 +274,44 @@ final class EsperPanel: NSPanel {
 
     // MARK: - Positioning
 
+    /// The screen that owns the global menu bar — stable across launches and
+    /// independent of where Settings windows ended up on external displays.
+    private static var primaryScreen: NSScreen? {
+        NSScreen.screens.first ?? NSScreen.main
+    }
+
+    /// Picks the screen whose visibleFrame contains the given x on its bottom
+    /// edge, else the primary screen. Defends against stale saved X values
+    /// from previous multi-monitor configurations.
+    private static func screen(for savedX: Double?) -> NSScreen? {
+        if let savedX {
+            if let hit = NSScreen.screens.first(where: {
+                let f = $0.visibleFrame
+                return savedX >= f.minX && savedX <= f.maxX
+            }) {
+                return hit
+            }
+        }
+        return primaryScreen
+    }
+
     func positionAtBottom(x: Double? = nil) {
-        guard let screen = NSScreen.main?.visibleFrame else { return }
-        let xPos = x ?? (screen.midX - frame.width / 2)
+        guard let screen = Self.screen(for: x)?.visibleFrame else { return }
+        let rawX = x ?? (screen.midX - frame.width / 2)
+        let xPos = min(max(rawX, screen.minX + 16), screen.maxX - frame.width - 16)
         let yPos = screen.minY + 16
+        isProgrammaticMove = true
         setFrameOrigin(NSPoint(x: xPos, y: yPos))
+        isProgrammaticMove = false
     }
 
     func constrainToBottomEdge() {
-        guard let screen = NSScreen.main?.visibleFrame else { return }
+        guard let screen = Self.screen(for: frame.origin.x)?.visibleFrame else { return }
         let y = screen.minY + 16
         let x = min(max(frame.origin.x, screen.minX + 16), screen.maxX - frame.width - 16)
+        isProgrammaticMove = true
         setFrameOrigin(NSPoint(x: x, y: y))
+        isProgrammaticMove = false
     }
 
     // MARK: - Auto-Fade (Pill Mode Only)
@@ -332,8 +377,10 @@ final class EsperPanel: NSPanel {
             isMovableByWindowBackground = !isPositionLocked
         }
 
-        // Calculate target frames
-        let screen = NSScreen.main?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        // Calculate target frames — use the screen the pill is currently on,
+        // not NSScreen.main (which may be a different display).
+        let screen = (Self.screen(for: frame.origin.x)?.visibleFrame)
+            ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         let currentCenterX = frame.midX
         let bottomY = frame.origin.y
 
@@ -362,7 +409,9 @@ final class EsperPanel: NSPanel {
 
         if !animated || reduceMotion {
             let targetFrame = mode == .overlay ? overlayFrame : pillFrame
+            isProgrammaticMove = true
             setFrame(targetFrame, display: true)
+            isProgrammaticMove = false
             applyLayerState(t: target)
             spring.position = target
             spring.velocity = 0
@@ -427,7 +476,9 @@ final class EsperPanel: NSPanel {
             width: w,
             height: h
         )
+        isProgrammaticMove = true
         setFrame(newFrame, display: false)
+        isProgrammaticMove = false
     }
 
     private func applyLayerState(t: CGFloat) {

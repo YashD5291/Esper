@@ -232,7 +232,7 @@ final class OverlayController {
 
         let panel = EsperPanel(
             contentRect: NSRect(x: 0, y: 0, width: 160, height: 36),
-            styleMask: [],
+            styleMask: [.nonactivatingPanel, .borderless],
             backing: .buffered,
             defer: false
         )
