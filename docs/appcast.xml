@@ -6,21 +6,22 @@
     <description>Esper app updates</description>
     <language>en</language>
     <item>
-      <title>Version 3.5.2</title>
-      <sparkle:version>286</sparkle:version>
-      <sparkle:shortVersionString>3.5.2</sparkle:shortVersionString>
+      <title>Version 3.6.0</title>
+      <sparkle:version>288</sparkle:version>
+      <sparkle:shortVersionString>3.6.0</sparkle:shortVersionString>
       <description><![CDATA[
         <ul>
-          <li>Overlay now visible over fullscreen apps</li>
-          <li>stays on the correct display when expanding</li>
-          <li>and snaps back above the dock after dragging</li>
+          <li>Minimal overlay mode (v3.3.0-style vibrancy text)</li>
+          <li>modernized Settings window</li>
+          <li>Stop/Collapse in right-click menu</li>
+          <li>fixes for multi-monitor and fullscreen overlay visibility</li>
         </ul>
       ]]></description>
-      <pubDate>Tue, 21 Apr 2026 20:01:22 +0000</pubDate>
+      <pubDate>Fri, 24 Apr 2026 20:07:24 +0000</pubDate>
       <enclosure
-        url="https://github.com/YashD5291/Esper/releases/download/v3.5.2/Esper-3.5.2-arm64.dmg"
-        sparkle:edSignature="oqBv05NKHZxnx4kpNLhbXF714Xn4vaaSQDUoSjAUI8+0eMhPq65rMJ5L7/MnnsqdOebcfJtR0u8BOd8DbjCmBg=="
-        length="1697077268"
+        url="https://github.com/YashD5291/Esper/releases/download/v3.6.0/Esper-3.6.0-arm64.dmg"
+        sparkle:edSignature="1Nd8OTLwdSaVBrgCNimsBn6eeaJj3uLOSVsWXW2+Eh3lXtmjMyn+mFI12PeY/BMv9YChjZXceOp8CX4SIPoGBw=="
+        length="1697221911"
         type="application/octet-stream"
       />
     </item>
