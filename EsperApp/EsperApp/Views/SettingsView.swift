@@ -31,53 +31,53 @@ struct SettingsView: View {
     @State private var selectedTab: SettingsTab = .general
 
     var body: some View {
-        HStack(spacing: 0) {
-            List(SettingsTab.allCases, selection: $selectedTab) { tab in
-                Label(tab.rawValue, systemImage: tab.icon)
-                    .tag(tab)
-            }
-            .listStyle(.sidebar)
-            .frame(width: 180)
-
-            Divider()
-
-            Group {
-                switch selectedTab {
-                case .general:
-                GeneralTab(
-                    settings: engine.settings,
-                    devices: engine.devices,
-                    selectedDevice: engine.selectedDevice,
-                    onSelectDevice: { engine.setDevice($0) },
-                    onRefreshDevices: { engine.refreshDevices() }
-                )
-            case .shortcuts:
-                ShortcutsTab()
-            case .telegram:
-                TelegramTab(
-                    settings: engine.settings,
-                    onTestTelegram: { botToken, chatId in
-                        engine.testTelegram(botToken: botToken, chatId: chatId)
-                    },
-                    telegramTestResult: engine.telegramTestResult
-                )
-            case .overlay:
-                OverlaySettingsTab(settings: engine.settings, overlayController: overlayController)
-            case .updates:
-                UpdateSettingsTab(updater: updater)
-            case .advanced:
-                AdvancedTab(settings: engine.settings)
-            }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .frame(minWidth: 560, minHeight: 400)
-        .onAppear {
-            DispatchQueue.main.async {
-                if let window = NSApp.windows.first(where: { $0.title == "Settings" || $0.identifier?.rawValue == "com_apple_SwiftUI_Settings_window" }) {
-                    window.styleMask.insert(.resizable)
+        NavigationSplitView {
+            List(selection: $selectedTab) {
+                Section("Settings") {
+                    ForEach(SettingsTab.allCases) { tab in
+                        Label(tab.rawValue, systemImage: tab.icon)
+                            .tag(tab)
+                    }
                 }
             }
+            .listStyle(.sidebar)
+            .navigationTitle("Esper")
+            .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 280)
+        } detail: {
+            detailView
+                .navigationTitle(selectedTab.rawValue)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .frame(minWidth: 720, minHeight: 500)
+    }
+
+    @ViewBuilder
+    private var detailView: some View {
+        switch selectedTab {
+        case .general:
+            GeneralTab(
+                settings: engine.settings,
+                devices: engine.devices,
+                selectedDevice: engine.selectedDevice,
+                onSelectDevice: { engine.setDevice($0) },
+                onRefreshDevices: { engine.refreshDevices() }
+            )
+        case .shortcuts:
+            ShortcutsTab()
+        case .telegram:
+            TelegramTab(
+                settings: engine.settings,
+                onTestTelegram: { botToken, chatId in
+                    engine.testTelegram(botToken: botToken, chatId: chatId)
+                },
+                telegramTestResult: engine.telegramTestResult
+            )
+        case .overlay:
+            OverlaySettingsTab(settings: engine.settings, overlayController: overlayController)
+        case .updates:
+            UpdateSettingsTab(updater: updater)
+        case .advanced:
+            AdvancedTab(settings: engine.settings)
         }
     }
 }

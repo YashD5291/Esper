@@ -7,7 +7,7 @@ final class AppSettingsOverlayTests: XCTestCase {
     private let overlayKeys = [
         "overlayTextSize", "overlayTextColor", "overlayMaxLines",
         "overlayOpacity",
-        "overlayPreset", "overlayShowTelegramStatus", "overlayLockPosition",
+        "overlayShowTelegramStatus", "overlayLockPosition",
         "flowButtonEnabled", "flowButtonX",
         "overlayAutoDismiss", "overlayAutoDismissSeconds",
     ]
@@ -32,7 +32,6 @@ final class AppSettingsOverlayTests: XCTestCase {
         XCTAssertEqual(settings.overlayTextColor, "#FFFFFF")
         XCTAssertEqual(settings.overlayMaxLines, 3)
         XCTAssertEqual(settings.overlayOpacity, 1.0, accuracy: 0.01)
-        XCTAssertEqual(settings.overlayPreset, "custom")
         XCTAssertTrue(settings.overlayShowTelegramStatus)
         XCTAssertFalse(settings.overlayLockPosition)
         XCTAssertTrue(settings.flowButtonEnabled)

@@ -29,9 +29,6 @@ final class AppSettings {
     @AppStorage("overlayOpacity") var overlayOpacity: Double = 1.0
 
     @ObservationIgnored
-    @AppStorage("overlayPreset") var overlayPreset: String = "custom"
-
-    @ObservationIgnored
     @AppStorage("overlayShowTelegramStatus") var overlayShowTelegramStatus: Bool = true
 
     @ObservationIgnored
@@ -48,6 +45,10 @@ final class AppSettings {
 
     @ObservationIgnored
     @AppStorage("overlayAutoDismissSeconds") var overlayAutoDismissSeconds: Int = 30
+
+    /// "minimal" (v3.3.0 — just text on screen) or "modern" (current — toolbar + indicators).
+    @ObservationIgnored
+    @AppStorage("overlayStyle") var overlayStyle: String = "modern"
 
     // MARK: - Overlay Computed Helpers
 

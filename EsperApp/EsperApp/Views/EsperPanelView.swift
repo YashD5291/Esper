@@ -25,18 +25,17 @@ struct EsperPanelView: View {
         HStack(spacing: 8) {
             switch viewModel.engineStatus {
             case .listening, .transcribing, .downloadingModel, .compilingShaders, .loadingModel:
-                HStack(spacing: 0) {
-                    // Left zone: waveform + chevron + label
+                if viewModel.style == "minimal" {
                     HStack(spacing: 8) {
                         waveformBars
                         if viewModel.overlayDismissed {
                             Image(systemName: "chevron.up")
                                 .font(.system(size: 9, weight: .medium))
-                                .foregroundStyle(Color.blue.opacity(0.6))
+                                .foregroundStyle(.primary.opacity(0.5))
                         }
                         Text("Listening")
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.primary.opacity(0.85))
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -44,25 +43,46 @@ struct EsperPanelView: View {
                             viewModel.onToggle?()
                         }
                     }
+                } else {
+                    HStack(spacing: 0) {
+                        // Left zone: waveform + chevron + label
+                        HStack(spacing: 8) {
+                            waveformBars
+                            if viewModel.overlayDismissed {
+                                Image(systemName: "chevron.up")
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundStyle(Color.blue.opacity(0.6))
+                            }
+                            Text("Listening")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundStyle(.green)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if viewModel.overlayDismissed {
+                                viewModel.onToggle?()
+                            }
+                        }
 
-                    // Separator
-                    Rectangle()
-                        .fill(.white.opacity(0.08))
-                        .frame(width: 1, height: 16)
-                        .padding(.horizontal, 6)
+                        // Separator
+                        Rectangle()
+                            .fill(.white.opacity(0.08))
+                            .frame(width: 1, height: 16)
+                            .padding(.horizontal, 6)
 
-                    // Right zone: stop button
-                    Button(action: { viewModel.onStop?() }) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(.red)
-                            .frame(width: 16, height: 16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 1)
-                                    .fill(.white)
-                                    .frame(width: 8, height: 8)
-                            )
+                        // Right zone: stop button
+                        Button(action: { viewModel.onStop?() }) {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(.red)
+                                .frame(width: 16, height: 16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 1)
+                                        .fill(.white)
+                                        .frame(width: 8, height: 8)
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
 
             case .idle:
@@ -72,19 +92,16 @@ struct EsperPanelView: View {
                         .frame(width: 8, height: 8)
                     Text(String(error.prefix(30)))
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(viewModel.style == "minimal" ? Color.primary.opacity(0.85) : Color.white.opacity(0.7))
                         .lineLimit(1)
                 } else {
                     Circle()
-                        .fill(Color(white: 0.55))
+                        .fill(viewModel.style == "minimal" ? Color.primary.opacity(0.4) : Color(white: 0.55))
                         .frame(width: 8, height: 8)
                     Text("Esper")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(viewModel.style == "minimal" ? Color.primary.opacity(0.65) : Color.white.opacity(0.5))
                 }
-
-            default:
-                EmptyView()
             }
         }
         .padding(.horizontal, 16)

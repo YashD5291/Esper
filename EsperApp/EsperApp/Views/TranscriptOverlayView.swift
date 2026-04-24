@@ -29,12 +29,12 @@ final class OverlayViewModel {
     var opacity: Double = 1.0
     var maxLines: Int = 3
     var showTelegramStatus: Bool = true
+    var style: String = "modern"  // "minimal" or "modern"
     var energyLevel: Double = 0.0
     var devices: [AudioDevice] = []
     var selectedDevice: Int? = nil
     var errorMessage: String? = nil
     var onSelectDevice: ((Int) -> Void)?
-    var onDismiss: (() -> Void)?
     var onOpenSettings: (() -> Void)?
 
     // Panel morph state
@@ -63,55 +63,95 @@ struct TranscriptOverlayView: View {
     private var maxHeight: CGFloat {
         let lineHeight = viewModel.fontSize * 1.4
         let spacing: CGFloat = 6
-        let padding: CGFloat = 28
+        let padding: CGFloat = 32
         let errorHeight: CGFloat = viewModel.errorMessage != nil ? 34 : 0
-        return topBarHeight + CGFloat(viewModel.maxLines) * (lineHeight + spacing) - spacing + padding + errorHeight
+        let barHeight = viewModel.style == "minimal" ? 0 : topBarHeight
+        return barHeight + CGFloat(viewModel.maxLines) * (lineHeight + spacing) - spacing + padding + errorHeight
     }
 
     var body: some View {
-        HStack(spacing: 0) {
-            if viewModel.onStop == nil {
-                statusStrip
-            }
-            VStack(spacing: 0) {
-                topBar
-                ScrollViewReader { proxy in
-                    ScrollView(.vertical, showsIndicators: true) {
-                        VStack(alignment: .leading, spacing: 6) {
-                            ForEach(viewModel.lines) { line in
-                                lineView(line)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 14)
-                        .transaction { $0.disablesAnimations = true }
-                    }
-                    .onChange(of: viewModel.lines.last?.id) { _, newID in
-                        if let id = newID {
-                            proxy.scrollTo(id, anchor: .bottom)
-                        }
-                    }
-                    .onAppear {
-                        if let id = viewModel.lines.last?.id {
-                            proxy.scrollTo(id, anchor: .bottom)
-                        }
-                    }
-                    .onChange(of: viewModel.mode) { _, newMode in
-                        if newMode == .overlay, let id = viewModel.lines.last?.id {
-                            proxy.scrollTo(id, anchor: .bottom)
-                        }
-                    }
-                }
-                if let error = viewModel.errorMessage {
-                    errorBar(error)
-                }
+        Group {
+            if viewModel.style == "minimal" {
+                minimalBody
+            } else {
+                modernBody
+                    .frame(width: 560, alignment: .leading)
+                    .frame(maxHeight: maxHeight)
+                    .compositingGroup()
+                    .opacity(viewModel.opacity)
             }
         }
-        .frame(width: 560, alignment: .leading)
-        .frame(maxHeight: maxHeight)
+    }
+
+    // MARK: - Minimal Style (v3.3.0 — exact)
+
+    private var minimalLines: [OverlayLine] {
+        Array(viewModel.lines.suffix(max(1, viewModel.maxLines)))
+    }
+
+    private var minimalBody: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Array(minimalLines.enumerated()), id: \.element.id) { index, line in
+                let isLast = index == minimalLines.count - 1
+                Text(line.text)
+                    .font(.system(size: 20, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.white)
+                    .shadow(color: .black.opacity(0.7), radius: 2, x: 1, y: 1)
+                    .opacity(isLast ? 1.0 : 0.5)
+                    .id(line.id)
+            }
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color(red: 1, green: 0.4, blue: 0.38))
+                    .shadow(color: .black.opacity(0.7), radius: 2, x: 1, y: 1)
+                    .lineLimit(2)
+            }
+        }
         .compositingGroup()
-        .opacity(viewModel.opacity)
+        .padding(.horizontal, 28)
+        .padding(.vertical, 16)
+        .frame(width: 660, alignment: .leading)
+        .transaction { $0.disablesAnimations = true }
+    }
+
+    // MARK: - Modern Style
+
+    private var modernBody: some View {
+        VStack(spacing: 0) {
+            topBar
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(viewModel.lines) { line in
+                            lineView(line)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .transaction { $0.disablesAnimations = true }
+                }
+                .onChange(of: viewModel.lines.last?.id) { _, newID in
+                    if let id = newID {
+                        proxy.scrollTo(id, anchor: .bottom)
+                    }
+                }
+                .onAppear {
+                    if let id = viewModel.lines.last?.id {
+                        proxy.scrollTo(id, anchor: .bottom)
+                    }
+                }
+                .onChange(of: viewModel.mode) { _, newMode in
+                    if newMode == .overlay, let id = viewModel.lines.last?.id {
+                        proxy.scrollTo(id, anchor: .bottom)
+                    }
+                }
+            }
+            if let error = viewModel.errorMessage {
+                errorBar(error)
+            }
+        }
     }
 
     // MARK: - Top Bar
@@ -120,95 +160,48 @@ struct TranscriptOverlayView: View {
 
     private var topBar: some View {
         HStack(spacing: 0) {
-            if viewModel.onStop != nil {
-                // Left: device picker + settings
-                if !viewModel.devices.isEmpty {
-                    Picker("", selection: Binding(
-                        get: { viewModel.selectedDevice ?? -1 },
-                        set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
-                    )) {
-                        ForEach(viewModel.devices) { device in
-                            Text(device.name).tag(device.index)
-                        }
+            if !viewModel.devices.isEmpty {
+                Picker("", selection: Binding(
+                    get: { viewModel.selectedDevice ?? -1 },
+                    set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
+                )) {
+                    ForEach(viewModel.devices) { device in
+                        Text(device.name).tag(device.index)
                     }
-                    .labelsHidden()
-                    .controlSize(.mini)
-                    .font(.system(size: 10))
-                    .frame(maxWidth: 140)
                 }
+                .labelsHidden()
+                .controlSize(.mini)
+                .font(.system(size: 10))
+                .frame(maxWidth: 140)
+            }
 
-                Button(action: { viewModel.onOpenSettings?() }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.35))
+            Button(action: { viewModel.onOpenSettings?() }) {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 6)
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                overlayWaveformBars
+                Rectangle()
+                    .fill(.white.opacity(0.08))
+                    .frame(width: 1, height: 16)
+                Button(action: { viewModel.onStop?() }) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(.red)
+                        .frame(width: 16, height: 16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 1)
+                                .fill(.white)
+                                .frame(width: 8, height: 8)
+                        )
                 }
                 .buttonStyle(.plain)
-                .padding(.leading, 6)
-
-                Spacer()
-
-                // Right: waveform + stop + close
-                HStack(spacing: 8) {
-                    overlayWaveformBars
-                    Rectangle()
-                        .fill(.white.opacity(0.08))
-                        .frame(width: 1, height: 16)
-                    Button(action: { viewModel.onStop?() }) {
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(.red)
-                            .frame(width: 16, height: 16)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 1)
-                                    .fill(.white)
-                                    .frame(width: 8, height: 8)
-                            )
-                    }
-                    .buttonStyle(.plain)
-                    Button(action: { viewModel.onCollapse?() }) {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundStyle(.white.opacity(0.35))
-                    }
-                    .buttonStyle(.plain)
-                }
-            } else {
-                // Legacy mode — audio meter + device picker + gear + dismiss
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(.white.opacity(0.08))
-                        .frame(width: 80, height: 3)
-                    RoundedRectangle(cornerRadius: 1.5)
-                        .fill(.green)
-                        .frame(width: 80 * min(viewModel.energyLevel * 3, 1.0), height: 3)
-                }
-
-                if !viewModel.devices.isEmpty {
-                    Picker("", selection: Binding(
-                        get: { viewModel.selectedDevice ?? -1 },
-                        set: { if $0 != -1 { viewModel.onSelectDevice?($0) } }
-                    )) {
-                        ForEach(viewModel.devices) { device in
-                            Text(device.name).tag(device.index)
-                        }
-                    }
-                    .labelsHidden()
-                    .controlSize(.mini)
-                    .font(.system(size: 10))
-                    .frame(maxWidth: 140)
-                    .padding(.leading, 6)
-                }
-
-                Spacer()
-
-                Button(action: { viewModel.onOpenSettings?() }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.35))
-                }
-                .buttonStyle(.plain)
-                .padding(.trailing, 4)
-
-                Button(action: { viewModel.onDismiss?() }) {
+                Button(action: { viewModel.onCollapse?() }) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.35))
@@ -245,24 +238,6 @@ struct TranscriptOverlayView: View {
         .background(Color(red: 1, green: 0.27, blue: 0.23).opacity(0.15))
         .overlay(alignment: .top) {
             Rectangle().fill(Color(red: 1, green: 0.27, blue: 0.23).opacity(0.2)).frame(height: 1)
-        }
-    }
-
-    // MARK: - Status Strip
-
-    private var statusStrip: some View {
-        Rectangle()
-            .fill(statusStripColor)
-            .frame(width: 3)
-            .opacity(0.65)
-    }
-
-    private var statusStripColor: Color {
-        switch viewModel.engineStatus {
-        case .listening: .green
-        case .transcribing: .orange
-        case .idle: .gray
-        default: .red
         }
     }
 

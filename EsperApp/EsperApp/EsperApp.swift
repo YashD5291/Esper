@@ -16,18 +16,17 @@ func openSettingsWindow() {
     NotificationCenter.default.post(name: .openSettingsRequested, object: nil)
 }
 
-/// Hidden view that listens for the open-settings notification and calls the
-/// SwiftUI environment's openSettings action. Must be hosted inside a Window
-/// scene declared BEFORE the Settings scene in the App body.
+/// Hidden view that listens for the open-settings notification and opens the
+/// Settings window scene via the environment action.
 struct SettingsOpener: View {
-    @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         Color.clear
             .frame(width: 1, height: 1)
             .background(WindowHider())
             .onReceive(NotificationCenter.default.publisher(for: .openSettingsRequested)) { _ in
-                openSettings()
+                openWindow(id: "settings")
             }
     }
 }
@@ -85,9 +84,11 @@ struct EsperApp: App {
                 .onAppear { ensureLaunched() }
         }
 
-        Settings {
+        Window("Settings", id: "settings") {
             SettingsView(engine: engine, overlayController: overlayController, updater: updaterController.updater)
         }
+        .defaultSize(width: 800, height: 560)
+        .commandsRemoved()
     }
 
     private func ensureLaunched() {
@@ -197,10 +198,12 @@ final class OverlayController {
     // MARK: - View Model Sync
 
     private func updateViewModel(engine: TranscriptionEngine, settings: AppSettings) {
-        viewModel.engineStatus = engine.status
-        viewModel.energyLevel = engine.energyLevel
-        viewModel.errorMessage = engine.errorMessage
-        viewModel.overlayDismissed = viewModel.mode == .pill && (engine.status == .listening || engine.status == .transcribing)
+        if viewModel.engineStatus != engine.status { viewModel.engineStatus = engine.status }
+        if viewModel.energyLevel != engine.energyLevel { viewModel.energyLevel = engine.energyLevel }
+        if viewModel.errorMessage != engine.errorMessage { viewModel.errorMessage = engine.errorMessage }
+
+        let dismissed = viewModel.mode == .pill && (engine.status == .listening || engine.status == .transcribing)
+        if viewModel.overlayDismissed != dismissed { viewModel.overlayDismissed = dismissed }
 
         let newLines = overlayLines(engine: engine, settings: settings)
         if newLines != viewModel.lines { viewModel.lines = newLines }
@@ -220,9 +223,19 @@ final class OverlayController {
         let newMaxLines = settings.overlayMaxLines
         if newMaxLines != viewModel.maxLines { viewModel.maxLines = newMaxLines }
 
-        viewModel.showTelegramStatus = settings.overlayShowTelegramStatus && settings.telegramEnabled
-        viewModel.devices = engine.devices
-        viewModel.selectedDevice = engine.selectedDevice
+        let newShowTg = settings.overlayShowTelegramStatus && settings.telegramEnabled
+        if viewModel.showTelegramStatus != newShowTg { viewModel.showTelegramStatus = newShowTg }
+        if viewModel.devices != engine.devices { viewModel.devices = engine.devices }
+        if viewModel.selectedDevice != engine.selectedDevice { viewModel.selectedDevice = engine.selectedDevice }
+        if viewModel.style != settings.overlayStyle { viewModel.style = settings.overlayStyle }
+
+        let wantMinimal = settings.overlayStyle == "minimal"
+        if panel?.overlayUseMinimalStyle != wantMinimal {
+            panel?.overlayUseMinimalStyle = wantMinimal
+            if viewModel.mode == .overlay {
+                panel?.resyncOverlaySize(height: overlayHeight(settings: settings))
+            }
+        }
     }
 
     // MARK: - Panel Lifecycle
@@ -258,9 +271,6 @@ final class OverlayController {
         viewModel.onCollapse = { [weak self] in
             self?.collapseToPill(settings: settings)
         }
-        viewModel.onDismiss = { [weak self] in
-            self?.collapseToPill(settings: settings)
-        }
         viewModel.onSelectDevice = { index in
             engine.setDevice(index)
         }
@@ -276,7 +286,7 @@ final class OverlayController {
             settings.flowButtonX = x
         }
         panel.onContextAction = { [weak self] action in
-            self?.handleContextAction(action, settings: settings)
+            self?.handleContextAction(action, engine: engine, settings: settings)
         }
 
         let savedX = settings.flowButtonX >= 0 ? settings.flowButtonX : nil
@@ -322,12 +332,20 @@ final class OverlayController {
     }
 
     private func overlayHeight(settings: AppSettings) -> CGFloat {
+        let maxLines = max(1, settings.overlayMaxLines)
+        let hasError = viewModel.errorMessage != nil
+        if settings.overlayStyle == "minimal" {
+            let lineHeight = 20.0 * 1.4
+            let spacing = 6.0
+            let padding = 32.0
+            let errorHeight: CGFloat = hasError ? 28 : 0
+            return CGFloat(maxLines) * lineHeight + CGFloat(maxLines - 1) * spacing + padding + errorHeight
+        }
         let fontSize = settings.overlayFontSize
-        let maxLines = settings.overlayMaxLines
         let lineHeight = fontSize * 1.4 + 6
         let topBarHeight: CGFloat = 32
         let padding: CGFloat = 28
-        let errorHeight: CGFloat = viewModel.errorMessage != nil ? 34 : 0
+        let errorHeight: CGFloat = hasError ? 34 : 0
         return topBarHeight + CGFloat(maxLines) * lineHeight - 6 + padding + errorHeight
     }
 
@@ -344,20 +362,21 @@ final class OverlayController {
 
     // MARK: - Context Menu
 
-    private func handleContextAction(_ action: EsperPanelContextAction, settings: AppSettings) {
+    private func handleContextAction(_ action: EsperPanelContextAction, engine: TranscriptionEngine, settings: AppSettings) {
         switch action {
         case .textSize(let size):
             settings.overlayTextSize = size
-            settings.overlayPreset = "custom"
         case .opacity(let value):
             settings.overlayOpacity = value
-            settings.overlayPreset = "custom"
-        case .preset(let preset):
-            preset.apply(to: settings)
         case .lockPosition:
             settings.overlayLockPosition.toggle()
         case .openSettings:
             openSettingsWindow()
+        case .stop:
+            engine.stopListening()
+            collapseToPill(settings: settings)
+        case .collapseToPill:
+            collapseToPill(settings: settings)
         }
     }
 
@@ -398,6 +417,13 @@ final class OverlayController {
             raw.append(OverlayLine(id: "current", text: current, state: .draft, confidence: confidence))
         }
 
+        // Cap to avoid unbounded growth in long sessions. Modern scrolls
+        // within maxLines; minimal renders only maxLines anyway. Keep a small
+        // buffer so the scroll view has a tiny history beyond the visible lines.
+        let cap = max(1, settings.overlayMaxLines) + 10
+        if raw.count > cap {
+            raw = Array(raw.suffix(cap))
+        }
         return raw
     }
 }

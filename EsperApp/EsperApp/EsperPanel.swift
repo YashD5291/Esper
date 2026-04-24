@@ -6,9 +6,10 @@ import SwiftUI
 enum EsperPanelContextAction {
     case textSize(String)
     case opacity(Double)
-    case preset(OverlayPreset)
     case lockPosition
     case openSettings
+    case stop
+    case collapseToPill
 }
 
 // MARK: - Spring State
@@ -35,6 +36,16 @@ final class EsperPanel: NSPanel {
     // MARK: Layer
 
     private let backgroundLayer = CALayer()
+    private let vibrancyView = NSVisualEffectView()
+
+    /// When true, the overlay renders v3.3.0-style: HUD vibrancy background,
+    /// corner radius 16, width 660. Pill mode is unaffected.
+    var overlayUseMinimalStyle: Bool = false {
+        didSet { applyBackgroundForCurrentMode() }
+    }
+
+    private let minimalOverlayCornerRadius: CGFloat = 16
+    private let minimalOverlayWidth: CGFloat = 660
 
     // MARK: Spring Animation
 
@@ -104,6 +115,20 @@ final class EsperPanel: NSPanel {
         backgroundLayer.borderWidth = 1
         backgroundLayer.borderColor = pillBorderColor
         rootLayer.addSublayer(backgroundLayer)
+
+        // Vibrancy view for v3.3.0 "minimal" style — hidden by default.
+        vibrancyView.material = .hudWindow
+        vibrancyView.blendingMode = .behindWindow
+        vibrancyView.state = .active
+        vibrancyView.wantsLayer = true
+        vibrancyView.layer?.cornerRadius = minimalOverlayCornerRadius
+        vibrancyView.layer?.masksToBounds = true
+        vibrancyView.layer?.borderWidth = 1
+        vibrancyView.layer?.borderColor = NSColor.white.withAlphaComponent(0.10).cgColor
+        vibrancyView.isHidden = true
+        vibrancyView.autoresizingMask = [.width, .height]
+        vibrancyView.frame = contentView?.bounds ?? .zero
+        contentView?.addSubview(vibrancyView, positioned: .below, relativeTo: nil)
 
         NotificationCenter.default.addObserver(
             self,
@@ -208,6 +233,20 @@ final class EsperPanel: NSPanel {
     override func rightMouseDown(with event: NSEvent) {
         let menu = NSMenu()
 
+        let stopItem = NSMenuItem(title: "Stop Transcription", action: #selector(contextAction(_:)), keyEquivalent: "")
+        stopItem.target = self
+        stopItem.representedObject = EsperPanelContextAction.stop
+        menu.addItem(stopItem)
+
+        if currentMode == .overlay {
+            let collapseItem = NSMenuItem(title: "Collapse to Pill", action: #selector(contextAction(_:)), keyEquivalent: "")
+            collapseItem.target = self
+            collapseItem.representedObject = EsperPanelContextAction.collapseToPill
+            menu.addItem(collapseItem)
+        }
+
+        menu.addItem(.separator())
+
         if currentMode == .overlay {
             // Text Size submenu
             let sizeMenu = NSMenu()
@@ -233,18 +272,6 @@ final class EsperPanel: NSPanel {
             opacityItem.submenu = opacityMenu
             menu.addItem(opacityItem)
 
-            // Preset submenu
-            let presetMenu = NSMenu()
-            for preset in OverlayPreset.allCases where preset != .custom {
-                let item = NSMenuItem(title: preset.displayName, action: #selector(contextAction(_:)), keyEquivalent: "")
-                item.target = self
-                item.representedObject = EsperPanelContextAction.preset(preset)
-                presetMenu.addItem(item)
-            }
-            let presetItem = NSMenuItem(title: "Preset", action: nil, keyEquivalent: "")
-            presetItem.submenu = presetMenu
-            menu.addItem(presetItem)
-
             // Lock Position
             let lockItem = NSMenuItem(
                 title: isPositionLocked ? "Unlock Position" : "Lock Position",
@@ -258,7 +285,6 @@ final class EsperPanel: NSPanel {
             menu.addItem(.separator())
         }
 
-        // Settings (both modes)
         let settingsItem = NSMenuItem(title: "Settings…", action: #selector(contextAction(_:)), keyEquivalent: "")
         settingsItem.target = self
         settingsItem.representedObject = EsperPanelContextAction.openSettings
@@ -362,9 +388,31 @@ final class EsperPanel: NSPanel {
 
     // MARK: - Spring Morph Animation
 
+    /// Snap the overlay to its target size for the current style. Call when
+    /// `overlayUseMinimalStyle` changes while already expanded — the overlay
+    /// width differs between styles (560 vs 660), so we need to resize the
+    /// panel frame to match the SwiftUI content and avoid clipping/gaps.
+    func resyncOverlaySize(height: CGFloat) {
+        guard currentMode == .overlay else { return }
+        let screen = (Self.screen(for: frame.origin.x)?.visibleFrame)
+            ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        let width: CGFloat = overlayUseMinimalStyle ? minimalOverlayWidth : 560
+        var x = max(screen.minX + 16, frame.midX - width / 2)
+        if x + width > screen.maxX - 16 {
+            x = screen.maxX - width - 16
+        }
+        let target = NSRect(x: x, y: frame.origin.y, width: width, height: height)
+        pillFrame = NSRect(x: frame.midX - 80, y: frame.origin.y, width: 160, height: 36)
+        overlayFrame = target
+        isProgrammaticMove = true
+        setFrame(target, display: true)
+        isProgrammaticMove = false
+    }
+
     func morphTo(_ mode: PanelMode, overlayHeight: CGFloat, animated: Bool = true) {
         guard mode != currentMode else { return }
         currentMode = mode
+        applyBackgroundForCurrentMode()
 
         // Reset mouse state for the new mode
         exitWorkItem?.cancel()
@@ -391,15 +439,16 @@ final class EsperPanel: NSPanel {
             height: 36
         )
 
+        let overlayWidth: CGFloat = overlayUseMinimalStyle ? minimalOverlayWidth : 560
         overlayFrame = NSRect(
-            x: max(screen.minX + 16, currentCenterX - 280),
+            x: max(screen.minX + 16, currentCenterX - overlayWidth / 2),
             y: bottomY,
-            width: 560,
+            width: overlayWidth,
             height: overlayHeight
         )
         // Clamp right edge
         if overlayFrame.maxX > screen.maxX - 16 {
-            overlayFrame.origin.x = screen.maxX - 560 - 16
+            overlayFrame.origin.x = screen.maxX - overlayWidth - 16
         }
 
         let target: CGFloat = mode == .overlay ? 1.0 : 0.0
@@ -482,7 +531,10 @@ final class EsperPanel: NSPanel {
     }
 
     private func applyLayerState(t: CGFloat) {
-        let radius = lerp(pillCornerRadius, overlayCornerRadius, t)
+        let targetOverlayCornerRadius = (overlayUseMinimalStyle && currentMode == .overlay)
+            ? minimalOverlayCornerRadius
+            : overlayCornerRadius
+        let radius = lerp(pillCornerRadius, targetOverlayCornerRadius, t)
         let bgAlpha = lerp(pillBgAlpha, overlayBgAlpha, t)
 
         // t=0 is pill, t=1 is overlay — always interpolate in this direction
@@ -495,6 +547,24 @@ final class EsperPanel: NSPanel {
         backgroundLayer.borderColor = borderColor
         contentView?.layer?.cornerRadius = radius
         backgroundLayer.frame = contentView?.bounds ?? .zero
+        if overlayUseMinimalStyle {
+            vibrancyView.layer?.cornerRadius = radius
+        }
+        CATransaction.commit()
+    }
+
+    /// Toggles which background is visible based on `overlayUseMinimalStyle`.
+    /// Only called when the style actually changes or after a morph completes —
+    /// NOT on every spring frame.
+    private func applyBackgroundForCurrentMode() {
+        let useVibrancy = overlayUseMinimalStyle
+        vibrancyView.isHidden = !useVibrancy
+        backgroundLayer.isHidden = useVibrancy
+        let radius = currentMode == .overlay ? minimalOverlayCornerRadius : pillCornerRadius
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        vibrancyView.layer?.cornerRadius = radius
+        vibrancyView.frame = contentView?.bounds ?? .zero
         CATransaction.commit()
     }
 

@@ -28,8 +28,6 @@
 		A200000001 /* ProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000001; };
 		A200000003 /* AppSettingsOverlayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000003; };
 		A200000004 /* UpdateSettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000004; };
-		A100000024 /* OverlayPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000023; };
-		A200000005 /* OverlayPresetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000005; };
 		A100000027 /* EsperPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000026 /* EsperPanel.swift */; };
 		A100000028 /* EsperPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100000027 /* EsperPanelView.swift */; };
 /* End PBXBuildFile section */
@@ -66,8 +64,6 @@
 		B200000001 /* ProtocolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProtocolTests.swift; sourceTree = "<group>"; };
 		B200000003 /* AppSettingsOverlayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettingsOverlayTests.swift; sourceTree = "<group>"; };
 		B200000004 /* UpdateSettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateSettingsTests.swift; sourceTree = "<group>"; };
-		B100000023 /* OverlayPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPreset.swift; sourceTree = "<group>"; };
-		B200000005 /* OverlayPresetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverlayPresetTests.swift; sourceTree = "<group>"; };
 		B100000026 /* EsperPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperPanel.swift; sourceTree = "<group>"; };
 		B100000027 /* EsperPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EsperPanelView.swift; sourceTree = "<group>"; };
 		C200000001 /* EsperAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EsperAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -105,7 +101,6 @@
 			children = (
 				B100000004 /* Protocol.swift */,
 				B100000005 /* AppSettings.swift */,
-				B100000023 /* OverlayPreset.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -149,7 +144,6 @@
 				B200000001 /* ProtocolTests.swift */,
 				B200000003 /* AppSettingsOverlayTests.swift */,
 				B200000004 /* UpdateSettingsTests.swift */,
-				B200000005 /* OverlayPresetTests.swift */,
 			);
 			path = EsperAppTests;
 			sourceTree = "<group>";
@@ -249,7 +243,6 @@
 				A100000019 /* UpdateSettingsTab.swift in Sources */,
 				A100000022 /* GlobalHotkey.swift in Sources */,
 				A100000023 /* ShortcutsTab.swift in Sources */,
-				A100000024 /* OverlayPreset.swift in Sources */,
 				A100000027 /* EsperPanel.swift in Sources */,
 				A100000028 /* EsperPanelView.swift in Sources */,
 			);
@@ -262,7 +255,6 @@
 				A200000001 /* ProtocolTests.swift in Sources */,
 				A200000003 /* AppSettingsOverlayTests.swift in Sources */,
 				A200000004 /* UpdateSettingsTests.swift in Sources */,
-				A200000005 /* OverlayPresetTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
